@@ -7662,7 +7662,7 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
       logros_ciclo: incT(i, 'logros') ? lineas(i.logros) : '', proximos_pasos: incT(i, 'proximos') ? lineas(i.proximos) : '',
       issue: incT(i, 'issue') ? lineas(i.issue) : '', riesgo: i.riesgoTxt || (top ? top.desc : ''),
       proximo_hito: hs[0] ? hs[0].nombre : '', proximo_hito_fecha: hs[0] ? hs[0].fecha : null,
-      fase_inicio_real: i.faseDesde || null, avance_fase: '', incluir_en_presentacion: true,
+      fase_inicio_real: i.faseDesde || null, avance_fase: avFase(i).v, incluir_en_presentacion: true,
       _fase: i.fase, _estadoApih: i.estado
     };
   }
