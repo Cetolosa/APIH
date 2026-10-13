@@ -742,7 +742,7 @@ const RISK_CATS = ['Técnico', 'Alcance', 'Recursos', 'Proveedor', 'Cronograma',
 const RISK_ESTADOS = ['Abierto', 'En mitigación', 'Materializado', 'Cerrado'];
 const BIT_TIPOS = ['Cambio', 'Actualización', 'Riesgo', 'Comentario', 'Decisión'];
 const BIT_C = { 'Cambio': '#0D446A', 'Actualización': '#107C10', 'Riesgo': '#D13438', 'Comentario': '#8764B8', 'Decisión': '#CA5010' };
-const AREAS_DEF = ['BISE', 'MINERÍA', 'FINANZAS', 'SUPPLY CHAIN'];
+const AREAS_DEF = ['BISE', 'MINERÍA', 'FINANZAS', 'SUPPLY CHAIN', 'Transversal'];
 const CATS_DEF = ['Transformación Operacional', 'Innovación', 'Arquitectura', 'Transversal', 'Retail', 'Próximos Desafíos'];
 
 /* ---------- iconos ---------- */
@@ -793,6 +793,7 @@ const METODO_DEF = () => {
 };
 /* aplica la metodología a las listas de fases (se mutan en el lugar: todo el código las usa por referencia) */
 function syncFases() {
+  if (St && St.cfg && Array.isArray(St.cfg.areas) && !St.cfg.areas.includes('Transversal')) St.cfg.areas.push('Transversal');   // área común: visible y editable por todos
   if (St) { St.compromisos = St.compromisos || []; St.cambios = St.cambios || []; }
   const m = St && St.cfg ? (St.cfg.metodo = St.cfg.metodo || METODO_DEF()) : METODO_DEF();
   const fp = (m.fasesProp && m.fasesProp.length ? m.fasesProp : METODO_DEF().fasesProp), fj = (m.fasesPrj && m.fasesPrj.length ? m.fasesPrj : METODO_DEF().fasesPrj);
@@ -3055,12 +3056,12 @@ Acts.ganttfocus = d => { const f = F('gantt', {}); f.focus = d.id; f.q = ''; f.f
 function heatColor(e) { return e >= 20 ? '#B3262B' : e >= 15 ? '#D13438' : e >= 10 ? '#F08A4B' : e >= 5 ? '#F7C948' : '#8FCB8F'; }
 Views.riesgos = {
   render() {
-    const f = F('risk', { q: '', estado: '', cat: '', nivel: '', dueno: '', cell: '', hideClosed: true });
+    const f = F('risk', { q: '', estado: '', cat: '', nivel: '', dueno: '', cell: '', ini: '', hideClosed: true });
     let all = St.riesgos.filter(r => (!byId(r.ini) || inArea(byId(r.ini))) && respItem(r, 'dueno')); const open = all.filter(riesgoAbierto);
     let rows = all.slice();
     if (f.hideClosed) rows = rows.filter(riesgoAbierto);
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(r => (r.desc + r.id + nameOf(r.ini) + r.dueno).toLowerCase().includes(q)); }
-    if (f.estado) rows = rows.filter(r => r.estado === f.estado); if (f.cat) rows = rows.filter(r => r.cat === f.cat); if (f.dueno) rows = rows.filter(r => r.dueno === f.dueno);
+    if (f.ini) rows = rows.filter(r => r.ini === f.ini); if (f.estado) rows = rows.filter(r => r.estado === f.estado); if (f.cat) rows = rows.filter(r => r.cat === f.cat); if (f.dueno) rows = rows.filter(r => r.dueno === f.dueno);
     if (f.nivel) rows = rows.filter(r => nivelRiesgo(expo(r)).n === f.nivel);
     if (f.cell) { const [p, i] = f.cell.split(',').map(Number); rows = rows.filter(r => r.prob === p && r.imp === i); }
     rows.sort(by(r => -expo(r)));
@@ -3077,7 +3078,7 @@ Views.riesgos = {
     <div class="grid12"><section class="card c6"><header><h2>Matriz de calor 5×5</h2><small>${f.cell ? '<a class="lnk" data-act="hcell" data-c="' + f.cell + '">Quitar filtro de celda</a>' : 'Clic en una celda para filtrar'}</small></header>${heat}</section>
       <section class="card c6"><header><h2>Exposición por proyecto</h2><small>Suma de exposición de riesgos abiertos</small></header>${hbars(byIni, 0, v => v)}<div style="margin-top:14px"><h3 class="sub">Por categoría</h3>${hbars(RISK_CATS.map(c => ({ l: c, v: open.filter(r => r.cat === c).length, c: '#2a78d6' })).filter(x => x.v), 0)}</div></section></div>
     <div class="toolbar" style="margin-top:14px"><div class="search"><span>${icon('search', 14)}</span><input data-key="rk-q" data-chg="flt" data-v="risk" data-f="q" type="search" placeholder="Buscar riesgo…" value="${esc(f.q)}"></div>
-      <select data-chg="flt" data-v="risk" data-f="estado">${selOpts(RISK_ESTADOS, f.estado, 'Todos los estados')}</select><select data-chg="flt" data-v="risk" data-f="cat">${selOpts(RISK_CATS, f.cat, 'Todas las categorías')}</select>
+      <select data-chg="flt" data-v="risk" data-f="ini">${selOpts(uniq(all.map(r => r.ini).filter(Boolean)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todos los proyectos')}</select><select data-chg="flt" data-v="risk" data-f="estado">${selOpts(RISK_ESTADOS, f.estado, 'Todos los estados')}</select><select data-chg="flt" data-v="risk" data-f="cat">${selOpts(RISK_CATS, f.cat, 'Todas las categorías')}</select>
       <select data-chg="flt" data-v="risk" data-f="nivel">${selOpts(['Crítico', 'Alto', 'Medio', 'Bajo'], f.nivel, 'Todos los niveles')}</select><select data-chg="flt" data-v="risk" data-f="dueno">${selOpts(uniq(St.riesgos.map(r => r.dueno).filter(Boolean)).sort(), f.dueno, 'Todos los dueños')}</select>
       <label class="chk tb-c"><input type="checkbox" ${f.hideClosed ? 'checked' : ''} data-chg="flt" data-v="risk" data-f="hideClosed" data-bool="1"> <span>Ocultar cerrados</span></label></div>
     <div class="tbl-w"><table class="tbl"><thead><tr><th>ID</th><th>Proyecto</th><th style="min-width:260px">Descripción</th><th class="n">Impacto</th><th class="n">Prob.</th><th class="n">Exposición</th><th style="min-width:240px">Mitigación</th><th>Dueño</th><th>Estado</th></tr></thead><tbody>
@@ -4516,13 +4517,13 @@ function rolActual() {
 const areasDe = a => String(Array.isArray(a) ? a.join(',') : a || '').split(',').map(x => x.trim()).filter(Boolean);
 const areasPropias = () => { const u = usuarioActual(); return u ? areasDe(u.area) : []; };
 function puedeVerTodo() { const r = rolActual(), u = usuarioActual(); return r === 'Gasto' || r === 'Administrador' || !!(u && (u.veTodo === true || u.veTodo === 'TRUE')) || (!FL.verComo && esAdminReal()); }
-const areaVisible = a => puedeVerTodo() || areasDe(a).some(x => areasPropias().includes(x));
-function puedeEditarArea(a) { const r = rolActual(); if (r === 'Gasto') return true; if (r === 'Invitado') return false; return areasDe(a).some(x => areasPropias().includes(x)); }
+const areaVisible = a => puedeVerTodo() || areasDe(a).includes('Transversal') || areasDe(a).some(x => areasPropias().includes(x));
+function puedeEditarArea(a) { const r = rolActual(); if (r === 'Gasto') return true; if (r === 'Invitado') return false; return areasDe(a).includes('Transversal') || areasDe(a).some(x => areasPropias().includes(x)); }
 const puedeEditarIni = i => !!i && puedeEditarArea(i.area);
 const puedeUsarIA = () => APIH_CONFIG.ia !== false && rolActual() === 'Gasto';
 const puedeGobernar = () => ['Gasto', 'Administrador'].includes(rolActual());   // comités: agenda, acuerdos
 const soloLectura = () => !!St.cfg.readOnly || rolActual() === 'Invitado';
-const areasPermitidas = () => puedeVerTodo() ? St.cfg.areas : St.cfg.areas.filter(a => areasPropias().includes(a));
+const areasPermitidas = () => puedeVerTodo() ? St.cfg.areas : St.cfg.areas.filter(a => a === 'Transversal' || areasPropias().includes(a));
 const NO_PERM = (m) => toast(m || 'No tienes permiso para esta acción', 'err');
 
 /* área de la entidad a la que apunta una acción (d.id / d.ini / d.c …) */
