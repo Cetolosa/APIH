@@ -2138,6 +2138,15 @@ Acts.spretry = async () => {
   const S = await d.init(); St = S; UI.sel = null; shell(); render(); toast(d.svc ? 'Conectado a ' + BK() : 'Sigue sin conexión: ' + (d.offlineWhy || d.st.err), d.svc ? 'ok' : 'err');
 };
 function BK() { return (typeof DataService !== 'undefined' && DataService.svc && DataService.svc.mode === 'supabase') ? 'Supabase' : 'SharePoint'; }
+/* Avance de la fase activa: manual (1-100) > % hitos de la fase > avance general */
+function avFase(i) {
+  const m = +i.avanceFase;
+  if (m > 0) return { v: Math.min(100, Math.round(m)), src: 'manual' };
+  const hs = hitosDe(i.id).filter(h => h.fase === i.fase);
+  if (hs.length) { const d = hs.filter(h => h.completado).length; return { v: Math.round(d / hs.length * 100), src: 'hitos', d, n: hs.length }; }
+  return { v: Math.round(i.avance || 0), src: 'general' };
+}
+const avFaseTip = i => { const a = avFase(i); return a.src === 'manual' ? 'Fase ' + i.fase + ': valor manual' : a.src === 'hitos' ? 'Fase ' + i.fase + ': ' + a.d + ' de ' + a.n + ' hitos cerrados' : 'Fase ' + i.fase + ': sin hitos en la fase, se usa el avance general'; };
 Acts.spseed = () => confirmBox('Se crearán en ' + BK() + ' ~' + (seedState().ini.length + seedState().hitos.length + seedState().riesgos.length + seedState().bitacora.length) + ' elementos (datos del archivo original) en las listas APIH_*. ¿Continuar?', async () => {
   try { await DataService.seedRemote(); delete St.empty; toast('Datos cargados en ' + BK()); render(); } catch (e) { toast(e.message, 'err'); }
 }, 'Cargar');
@@ -2435,7 +2444,7 @@ function iniForm(i, isPropArg) {
     { k: 'clasif', l: 'Clasificación', t: 'select', opts: ['Táctico', 'Estratégico'] }, { k: 'gasto', l: 'Tipo de gasto', t: 'select', opts: ['OPEX', 'CAPEX'] }, { k: 'prioridad', l: 'Prioridad', t: 'select', opts: PRIOS },
     { sec: PR ? 'Fase' : 'Fase y salud' },
     { k: 'fase', l: 'Fase del workflow', t: 'select', opts: fasesDe(v) },
-    ...(PR ? [] : [{ k: 'rag', l: 'Salud (RAG)', t: 'select', opts: RAGS }, { k: 'avance', l: 'Avance', t: 'range', suf: '%' }]),
+    ...(PR ? [] : [{ k: 'rag', l: 'Salud (RAG)', t: 'select', opts: RAGS }, { k: 'avance', l: 'Avance', t: 'range', suf: '%' }, { k: 'avanceFase', l: 'Avance de la fase activa (manual, 0 = automático)', t: 'number', min: 0, max: 100, hint: 'Automático: hitos cerrados de la fase actual; si no hay, el avance general' }]),
     { sec: PR ? 'Finanzas estimadas (' + St.cfg.unidad + ')' : 'Finanzas (' + St.cfg.unidad + ')' },
     { k: 'presupuesto', l: PR ? 'Costo estimado' : 'Presupuesto', t: 'number', min: 0 }, ...(PR ? [] : [{ k: 'gastado', l: 'Consumido', t: 'number', min: 0 }]), { k: 'beneficio', l: PR ? 'Beneficio estimado' : 'Beneficio esperado', t: 'number', min: 0 }, ...(PR ? [] : [{ k: 'ahorroReal', l: 'Beneficio real (acumulado)', t: 'number', min: 0 }, { k: 'resultadoNota', l: 'Resultado alcanzado (obligatorio para la 3ª estrella si no hay beneficio medible)', w: 3 }]),
     { sec: 'Fechas' },
@@ -2902,11 +2911,11 @@ Views.proyectos = {
     const card = i => { const hs = hitosDe(i.id), hd = hs.filter(h => h.completado).length, nh = nextHito(i); return `<article class="icard ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini">
       <div class="ic-t"><span class="mono">${i.id}</span>${i.estado !== 'En curso' ? estPill(i.estado) : ''}${ragPill(i.rag)}</div><h3>${esc(i.titulo)}</h3>${(g => g ? `<div class="ic-g">${g}</div>` : '')(starsMini(i))}
       ${f.mode === 'cards' ? `<p class="ic-d">${esc((i.resumen || i.desc || '').slice(0, 150))}</p>` : ''}
-      <div class="ic-m">${prog(i.avance, i.rag, 5)}<b>${pct(i.avance)}</b></div>
+      <div class="ic-m" title="${esc(avFaseTip(i))}"><small style="width:46px">Fase</small>${prog(avFase(i).v, i.rag, 5)}<b>${avFase(i).v}%</b></div><div class="ic-m"><small style="width:46px">Total</small>${prog(i.avance, i.rag, 3)}<b>${pct(i.avance)}</b></div>
       <div class="ic-f"><span class="pp">${avatar(i.lider, 20)}<small>${esc(i.lider.split(' ')[0])}</small></span>${prioPill(i.prioridad)}${desv(i) > cfgI(i,'tolDesv') ? `<span class="pill bad">+${desv(i)} d</span>` : ''}</div>
       ${f.mode === 'cards' ? `<div class="ic-x"><span>${icon('flag', 13)} ${hd}/${hs.length} hitos</span><span>${icon('shield', 13)} ${riesgosDe(i.id).filter(riesgoAbierto).length}</span><span>${icon('money', 13)} ${fmtN(i.presupuesto)}</span><span>${icon('cal', 13)} ${fmtD(forecast(i))}</span></div>${nh ? `<small class="mut">Próx. hito: ${esc(nh.nombre)} · ${fmtD(nh.fecha)}</small>` : ''}` : ''}</article>`; };
     const body = f.mode === 'board'
-      ? `<div class="kanban k4c" data-keep="kb" style="grid-template-columns:repeat(${FASES_PRJ.length},minmax(200px,1fr))">${FASES_PRJ.map(fs => { const it = rows.filter(i => i.fase === fs); return `<div class="kcol" data-fase="${fs}"><div class="k-h"><i style="background:${FASE_COLOR[fs]}"></i><b>${fs}</b><em>${it.length}</em></div><div class="k-b">${it.map(card).join('') || '<div class="k-e">Arrastra aquí</div>'}</div></div>`; }).join('')}</div>`
+      ? `<div class="kanban k4c" data-keep="kb" style="grid-template-columns:repeat(${FASES_PRJ.length},minmax(200px,1fr))">${FASES_PRJ.map(fs => { const it = rows.filter(i => i.fase === fs); return `<div class="kcol" data-fase="${fs}"><div class="k-h"><i style="background:${FASE_COLOR[fs]}"></i><b>${fs}</b><em>${it.length}</em>${it.length ? `<small class="mut" style="margin-left:auto" title="Promedio de avance de la fase activa">fase ${Math.round(it.reduce((s, x) => s + avFase(x).v, 0) / it.length)}%</small>` : ''}</div><div class="k-b">${it.map(card).join('') || '<div class="k-e">Arrastra aquí</div>'}</div></div>`; }).join('')}</div>`
       : `<div class="cards">${rows.sort(by(i => -critScore(i))).map(card).join('') || empty('Sin proyectos')}</div>`;
     return pageHead('Proyectos', `${rows.length} proyectos · Planificación → Ejecución → Transición → Cierre, con compuertas de gobierno. Arrastra una tarjeta para cambiar de fase. Los proyectos nacen al aprobar una propuesta.`, `<span class="edit-only">${btn('Ir a Propuestas', 'go', { d: { v: 'propuestas' }, ic: 'bulb', cls: 'pri' })}${btn('Alta directa', 'new', { d: { t: 'prj' }, ic: 'plus' })}</span>`) + `
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="in-q" data-chg="flt" data-v="prj" data-f="q" type="search" placeholder="Buscar proyecto…" value="${esc(f.q)}"></div>
