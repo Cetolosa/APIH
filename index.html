@@ -4567,7 +4567,7 @@ openForm = function (o) {
   if (os) o.onSave = function (out) {
     if (soloLectura()) { NO_PERM(chequeo('form', {}, null)); return false; }
     const v = o.values || {}, ini = byId(out && out.ini || v.ini);
-    const a = (out && out.area) || (ini && ini.area) || v.area;
+    const a = (out && out.areaArr && out.areaArr.length ? out.areaArr : out && out.area) || (ini && ini.area) || v.area;
     if (a && !puedeEditarArea(a)) { NO_PERM('Sin permiso para guardar en el área ' + areasDe(a).join(', ') + ' (tu rol edita solo ' + (areasPropias().join(', ') || 'ninguna área') + ')'); return false; }
     return os.apply(this, arguments);
   };
