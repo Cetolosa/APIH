@@ -22,7 +22,7 @@ h1,h2,h3,h4{margin:0;font-weight:600}button{font:inherit;color:inherit;cursor:po
 .top{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 14px;background:linear-gradient(90deg,#0B2A4A,#0E4377);color:#fff;z-index:30;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .brand{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:196px}.logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#4FC3F7,#0D446A);display:grid;place-items:center;font-weight:800;color:#fff;font-size:18px}.logo.big{width:4cqw;height:4cqw;font-size:2.4cqw;border-radius:.8cqw}
 .b-t{display:flex;flex-direction:column;line-height:1.1}.b-t b{font-size:15px;letter-spacing:.5px}.b-t small{color:#B6D4F0;font-size:11px}
-.gsearch{position:relative;flex:1;max-width:520px}.gs-i{position:absolute;left:10px;top:9px;color:#B6D4F0}.gsearch input{width:100%;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;padding:0 12px 0 32px;outline:none}.gsearch input::placeholder{color:#B6D4F0}.gsearch input:focus{background:var(--card);color:var(--tx)}
+.top .gstog{display:none}.gsearch{position:relative;flex:1;max-width:520px}.gs-i{position:absolute;left:10px;top:9px;color:#B6D4F0}.gsearch input{width:100%;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;padding:0 12px 0 32px;outline:none}.gsearch input::placeholder{color:#B6D4F0}.gsearch input:focus{background:var(--card);color:var(--tx)}
 .gs-res{display:none;position:absolute;top:38px;left:0;right:0;background:var(--card);color:var(--tx);border-radius:8px;box-shadow:var(--shl);border:1px solid var(--bd);overflow:hidden;z-index:50}.gs-res.open{display:block}
 .gs-res button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:8px 12px}.gs-res button:hover{background:var(--pri-l)}.gs-res b{display:block;font-weight:600;font-size:13px}
 .top-r{margin-left:auto;display:flex;align-items:center;gap:10px}.areasel{display:flex;align-items:center;gap:6px;font-size:11px;color:#B6D4F0}.areasel select{height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;padding:0 6px}.areasel option{color:#000}
@@ -204,7 +204,7 @@ table.mini{width:100%;border-collapse:collapse;font-size:12px}table.mini th{text
 /* ---------- misc ---------- */
 .ro .edit-only,.ro .composer.big{display:none!important}
 @media (max-width:1280px){#app{grid-template-columns:200px minmax(0,1fr) 340px}.agents{grid-template-columns:repeat(2,1fr)}.kpis{grid-template-columns:repeat(2,1fr)}.kpis.k5{grid-template-columns:repeat(3,1fr)}.c4,.c5,.c6,.c7{grid-column:span 12}.cal-w,.com-w,.pres-w{grid-template-columns:1fr}.com-l,.pres-c,.cal-side{position:static;max-height:none}}
-@media (max-width:980px){#app{grid-template-columns:minmax(0,1fr);grid-template-rows:52px minmax(0,1fr)}#app .side{position:fixed;left:0;top:52px;bottom:0;width:224px;z-index:40;transform:translateX(-100%);transition:.2s;box-shadow:var(--shl)}#app.side-open .side{transform:none}.hamb{display:inline-grid}#panel{position:fixed;right:0;top:52px;bottom:0;width:min(392px,100%);z-index:35;box-shadow:var(--shl)}.b-t small,.usr span,.areasel span{display:none}.brand{min-width:0}.fgrid{grid-template-columns:1fr 1fr}.funnel{grid-template-columns:repeat(4,1fr);height:auto}}
+@media (max-width:980px){#app.side-open::after{content:'';position:fixed;left:0;right:0;top:52px;bottom:0;background:rgba(0,0,0,.35);z-index:39}#app{grid-template-columns:minmax(0,1fr);grid-template-rows:52px minmax(0,1fr)}#app .side{position:fixed;left:0;top:52px;bottom:0;width:224px;z-index:40;transform:translateX(-100%);transition:.2s;box-shadow:var(--shl)}#app.side-open .side{transform:none}.hamb{display:inline-grid}#panel{position:fixed;right:0;top:52px;bottom:0;width:min(392px,100%);z-index:35;box-shadow:var(--shl)}.b-t small,.usr span,.areasel span{display:none}.brand{min-width:0}.fgrid{grid-template-columns:1fr 1fr}.funnel{grid-template-columns:repeat(4,1fr);height:auto}}
 @media (max-width:640px){#main{padding:12px 12px 40px}.kpis,.kpis.k4,.kpis.k5,.agents{grid-template-columns:1fr}.ph{flex-direction:column}.ph-act{margin-left:0;justify-content:flex-start}.fgrid{grid-template-columns:1fr}.fld.w2,.fld.w3{grid-column:auto}.areasel,.gsearch{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{body{overflow:visible;height:auto;background:#fff}#app,#modal,#toasts{display:none!important}#printdeck{display:block}#printdeck .slide{width:100%;border-radius:0;box-shadow:none;page-break-after:always;break-after:page}@page{size:landscape;margin:0}}
@@ -283,7 +283,7 @@ body{font-family:var(--font)}
 .logo{background:var(--ar-red);border-radius:4px;letter-spacing:-1px}.brand-img{height:26px;display:block}.b-t.app{border-left:1px solid #555;padding-left:10px;margin-left:2px}.side-logo{display:block;width:140px;margin:0 0 8px;opacity:.95}
 .b-t b{letter-spacing:1.2px;text-transform:uppercase;font-size:15px}.b-t small{color:#BCBCBC}
 .gsearch input{border-radius:4px}.gs-i,.gsearch input::placeholder{color:#BCBCBC}
-.side{background:#fff}.nav{border-radius:4px}.nav.on{background:var(--pri-l);color:var(--pri-d)}.nav.on::before{background:var(--pri);width:4px;left:-8px;border-radius:0}
+.side{background:var(--card)}.nav{border-radius:4px}.nav.on{background:var(--pri-l);color:var(--pri-d)}.nav.on::before{background:var(--pri);width:4px;left:-8px;border-radius:0}
 .btn,.seg,.chip,.modal,.pop,.gs-res{border-radius:4px}.btn.pri{background:var(--pri);border-color:var(--pri)}.btn.pri:hover{background:var(--pri-d)}
 .card{border-radius:var(--r);border-top:3px solid var(--bd2)}.card:hover{border-top-color:var(--pri)}
 .ph h1{font-size:24px;font-weight:700;color:var(--tx);letter-spacing:0}
@@ -337,7 +337,7 @@ input,select,textarea{accent-color:var(--pri);caret-color:var(--pri)}
   #panel{width:100%}
 }
 @media (max-width:980px){#app,#app.nopanel{grid-template-columns:minmax(0,1fr)}.top{overflow:hidden}.brand{flex:none}.b-t.app{display:none}.top-r{min-width:0}.top-r>*{flex:none}}
-@media (max-width:640px){.top-r>select,.top-r .areasel,.top-r .usr{display:none}.bell,.top .icon-btn{width:34px}.alert-banner,.note{flex-wrap:wrap}}
+@media (max-width:640px){.top .gstog{display:inline-grid;margin-left:auto}.top.gs-open .gsearch{display:block;position:absolute;left:8px;right:8px;top:9px;z-index:60;max-width:none;min-width:0}.top-r>select,.top-r .areasel,.top-r .usr{display:none}.bell,.top .icon-btn{width:34px}.alert-banner,.note{flex-wrap:wrap}}
 .kcard .mono,.tcard .mono{flex:none}
 @media (max-width:640px){.top select{display:none}}
 
@@ -715,6 +715,8 @@ const sumM = (L, f) => { const o = {}; L.forEach(i => { const v = +f(i) || 0; if
 const monKeys = o => ['CLP', 'USD', 'UF'].filter(k => o && o[k]);
 const monMain = o => monKeys(o)[0] || 'CLP';
 const fmtTot = (o, sep) => monKeys(o).map(k => fmtMon(o[k], k)).join(sep || ' · ') || fmtMon(0, 'CLP');
+/* ROI = (beneficio − costo) / costo; solo si ambos están en una única moneda comparable; si no, «—» */
+const roiTxt = (b, p) => { const kp = Object.keys(p || {}), kb = Object.keys(b || {}); if (!kp.length || kp.length > 1 || kb.length > 1 || (kb.length && kb[0] !== kp[0]) || !p[kp[0]]) return '—'; return Math.round(((b[kp[0]] || 0) - p[kp[0]]) / p[kp[0]] * 100) + '%'; };
 const fmtBig = o => { const m = monMain(o); return fmtN((o && o[m]) || 0) + ' ' + MONEDAS[m].big; };
 const restTxt = o => monKeys(o).length > 1 ? '+ ' + monKeys(o).slice(1).map(k => fmtMon(o[k], k)).join(' + ') + ' · ' : '';
 const pctMon = (g, p) => { const m = monMain(p); return p && p[m] ? Math.round(((g && g[m]) || 0) / p[m] * 100) : 0; };
@@ -1841,7 +1843,7 @@ function navBadge(k) {
   if (k === 'ia') return typeof computeAlerts === 'function' ? computeAlerts().filter(a => a.sev === 3).length : 0;
   return 0;
 }
-function go(v) { if (!Views[v]) return; UI.view = v; if (location.hash !== '#/' + v) { try { history.pushState(null, '', '#/' + v); } catch (e) { } } /* sin historial en vistas previas aisladas */ closePops(); render(); $('#main').scrollTop = 0; }
+function go(v) { if (!Views[v]) return; UI.view = v; if (location.hash !== '#/' + v) { try { history.pushState(null, '', '#/' + v); } catch (e) { } } /* sin historial en vistas previas aisladas */ closePops(); { const ap = $('#app'); if (ap) ap.classList.remove('side-open'); const tp = $('.top'); if (tp) tp.classList.remove('gs-open'); } render(); $('#main').scrollTop = 0; }
 window.addEventListener('popstate', () => { const v = (location.hash || '').replace('#/', ''); if (Views[v] && v !== UI.view) { UI.view = v; render(); } });
 
 /* ---------- shell ---------- */
@@ -1851,6 +1853,7 @@ function shell() {
   <header class="top" role="banner">
     <button class="icon-btn hamb" data-act="side" aria-label="Menú">${icon('menu', 18)}</button>
     <div class="brand" data-act="go" data-v="dashboard"><img class="brand-img" src="${LOGO.arBR}" alt="Aramark"><span class="b-t app"><b>APIH</b><small>Portfolio Intelligence Hub</small></span></div>
+    <button class="icon-btn gstog" data-act="gstog" aria-label="Buscar">${icon('search', 18)}</button>
     <div class="gsearch"><span class="gs-i">${icon('search', 15)}</span><input id="gs" data-key="gs" type="search" placeholder="Buscar proyectos, propuestas, riesgos, hitos…  ( / )" autocomplete="off" data-chg="gsearch"><div class="gs-res" id="gsres"></div></div>
     <div class="top-r">
       <button class="sync" id="syncChip" data-act="syncgo" title="Estado de la conexión"></button>
@@ -2030,6 +2033,8 @@ Acts.mconfirm = () => { const y = Modal.cur && Modal.cur.yes; Modal.close(); if 
 Acts.go = d => go(d.v);
 Acts.pop = d => popToggle(d.id);
 Acts.side = () => $('#app').classList.toggle('side-open');
+Acts.gstog = () => { const t = $('.top'); if (!t) return; t.classList.toggle('gs-open'); if (t.classList.contains('gs-open')) setTimeout(() => { const g = $('#gs'); if (g) g.focus(); }, 30); };
+document.addEventListener('click', e => { const ap = $('#app'); if (ap && ap.classList.contains('side-open') && !e.target.closest('#side, [data-act=side]')) ap.classList.remove('side-open'); const t = $('.top'); if (t && t.classList.contains('gs-open') && !e.target.closest('.gsearch, [data-act=gstog]')) t.classList.remove('gs-open'); });
 Acts.panel = () => { UI.panel = !UI.panel; renderChrome(); saveUI(); };
 Acts.sel = d => selectEntity(d.t, d.id);
 Acts.panelx = () => { UI.sel = null; UI.panel = false; renderChrome(); renderPanel(); saveUI(); };
@@ -2280,7 +2285,8 @@ function cxTemplate(conDatos) {
     ['5. Hitos: se identifican por ID Iniciativa + nombre del hito. Si existe, se actualiza; si no, se crea (requiere Fecha plan).'],
     ['6. «Completado»: Sí/No. Si indica Fecha real sin marcar Completado, el hito queda completado.'],
     ['7. Fase (opcional): ' + FASES.join(' · ')],
-    ['8. Suba el archivo en «Cargar Excel»: verá una vista previa con errores antes de aplicar cambios.']];
+    ['8. Suba el archivo en «Cargar Excel»: verá una vista previa con errores antes de aplicar cambios.'],
+    ['9. Esta carga actualiza planificación e hitos de proyectos que YA existen en APIH; no crea proyectos nuevos. Las filas que dicen «Ejemplo:» se ignoran.']];
   return xlsxBlob([{ name: 'Instrucciones', rows: ins }, { name: 'Planificación', rows: plan }, { name: 'Hitos', rows: hit }]);
 }
 const cxDate = v => {
@@ -2307,6 +2313,7 @@ function cxParse(sheets) {
   const E = (h, n, m) => R.errs.push(`${h} · fila ${n}: ${m}`), Wn = (h, n, m) => R.warns.push(`${h} · fila ${n}: ${m}`);   // E = error (se omite la fila) · Wn = aviso (se aplica, pero conviene revisar)
   (tp || []).forEach(x => {
     const id = String(x.g('ID Iniciativa') || '').trim(), i = byId(id);
+    if (/^ejemplo:/i.test(String(x.g(CX_PLAN[1]) || '').trim())) return;   // fila de ejemplo de la plantilla
     if (!id) return E('Planificación', x.n, 'falta ID Iniciativa'); if (!i) return E('Planificación', x.n, `la iniciativa ${id} no existe`); if (!ok(i)) return E('Planificación', x.n, `sin permiso para editar ${id}`);
     const ch = {}, bad = [];
     [['Inicio plan', 'inicioPlan'], ['Fin plan', 'finPlan'], ['Inicio real', 'inicioReal'], ['Fin real', 'finReal']].forEach(([c, k]) => { const d = cxDate(x.g(c)); if (d.e) bad.push(c + ' inválida'); else if (d.v && d.v !== i[k]) ch[k] = d.v; });
@@ -2318,6 +2325,7 @@ function cxParse(sheets) {
   const seen = new Set();
   (th || []).forEach(x => {
     const id = String(x.g('ID Iniciativa') || '').trim(), i = byId(id), nm = String(x.g('Hito') || '').trim();
+    if (/^ejemplo:/i.test(nm)) return;   // fila de ejemplo de la plantilla
     if (!id) return E('Hitos', x.n, 'falta ID Iniciativa'); if (!i) return E('Hitos', x.n, `la iniciativa ${id} no existe`); if (!ok(i)) return E('Hitos', x.n, `sin permiso para editar ${id}`); if (!nm) return E('Hitos', x.n, 'falta el nombre del hito');
     const key = id + '|' + _nz(nm); if (seen.has(key)) return E('Hitos', x.n, `hito repetido en el archivo: ${nm}`); seen.add(key);
     const cur = St.hitos.find(h => h.ini === id && _nz(h.nombre) === _nz(nm)), v = {}, bad = [];
@@ -2335,6 +2343,7 @@ function cxParse(sheets) {
   R.vacio = !R.plan.length && !R.hitos.length;
   return R;
 }
+const cxLoc = m => { const k = /^(.+?) · fila (\d+): ([\s\S]*)$/.exec(m); return k ? [k[1], 'Fila ' + k[2], k[3]] : ['', '', m]; };
 function cxPreview() {
   const R = CX.res; if (!R) return '';
   const nN = R.hitos.filter(h => h.nuevo).length, nU = R.hitos.length - nN;
@@ -2343,9 +2352,10 @@ function cxPreview() {
   const det = (cur, ch) => Object.keys(ch).map(k => `${lbl[k] || k}: ${esc(fv(k, cur[k]))} → <b>${esc(fv(k, ch[k]))}</b>`).join(' · ');
   const rows = [...R.plan.map(p => `<tr><td>Planificación</td><td>${esc(p.i.id)} · ${esc(p.i.titulo)}</td><td>${det(p.i, p.ch)}</td></tr>`), ...R.hitos.map(h => `<tr><td>Hito ${h.nuevo ? 'nuevo' : 'actualizado'}</td><td>${esc(h.id)} · ${esc(h.nm)}</td><td>${h.nuevo ? `Fecha plan <b>${esc(fv('fecha', h.nuevo.fecha))}</b>${h.nuevo.completado ? ' · completado' : ''}` : det(h.cur, h.ch)}</td></tr>`)];
   return `<div class="chips" style="margin:8px 0"><span class="pill">${R.plan.length} iniciativas con cambios de planificación</span><span class="pill">${nN} hitos nuevos</span><span class="pill">${nU} hitos actualizados</span><span class="pill ${R.errs.length ? 'bad' : ''}" style="${R.errs.length ? 'background:var(--redbg);color:var(--red)' : ''}">${R.errs.length} errores</span>${R.warns.length ? `<span class="pill" style="background:#FFF4CE;color:#8A5A00">${R.warns.length} avisos</span>` : ''}</div>`
+    + (!rows.length && R.errs.length ? `<p class="mut" style="margin:6px 0 0">No hay filas válidas para aplicar. Corrige los errores del archivo y vuelve a subirlo.</p>` : '')
     + (rows.length || R.errs.length || R.warns.length ? `<div class="tbl-w" style="max-height:300px;overflow:auto"><table class="tbl"><thead><tr><th>Estado</th><th>Tipo</th><th>Elemento</th><th>Cambio / detalle</th></tr></thead><tbody>${[
-        ...R.errs.map(m => { const [h, r] = m.split(': ', 1).concat(m.slice(m.indexOf(': ') + 2)); return `<tr style="background:var(--redbg)"><td><b style="color:var(--red)">✕ Se omite</b></td><td colspan="2">${esc(h)}</td><td>${esc(r)}</td></tr>`; }),
-        ...R.warns.map(m => { const k = m.indexOf(': '); return `<tr style="background:#FFF4CE"><td><b style="color:#8A5A00">⚠ Revisar</b></td><td colspan="2">${esc(m.slice(0, k))}</td><td>${esc(m.slice(k + 2))}</td></tr>`; }),
+        ...R.errs.map(m => { const [h, u, d] = cxLoc(m); return `<tr style="background:var(--redbg)"><td><b style="color:var(--red)">✕ Se omite</b></td><td>${esc(h)}</td><td>${esc(u)}</td><td>${esc(d)}</td></tr>`; }),
+        ...R.warns.map(m => { const [h, u, d] = cxLoc(m); return `<tr style="background:#FFF4CE"><td><b style="color:#8A5A00">⚠ Revisar</b></td><td>${esc(h)}</td><td>${esc(u)}</td><td>${esc(d)}</td></tr>`; }),
         ...rows.map(r => r.replace('<tr>', '<tr style="background:#E4F3E5"><td><b style="color:#13420f">✓ Válida</b></td>'))
       ].join('')}</tbody></table></div>` : '<p class="mut">El archivo no trae cambios respecto de lo que ya está cargado.</p>');
 }
@@ -2353,7 +2363,7 @@ Acts.cargaxl = () => {
   if (soloLectura()) return toast('Modo solo lectura: no se puede cargar', 'err');
   CX.res = null;
   Modal.open({ title: 'Cargar planificación e hitos desde Excel', wide: true,
-    body: `<p class="desc" style="margin:0 0 8px">1) Descargue la plantilla, 2) complétela (o edite la que trae sus datos actuales) y 3) súbala: verá una vista previa antes de aplicar. Solo se cargan iniciativas que usted puede editar; las celdas vacías no modifican nada.</p>
+    body: `<p class="desc" style="margin:0 0 8px"><b>Actualiza planificación e hitos de proyectos que ya existen (no crea proyectos nuevos).</b> 1) Descargue la plantilla, 2) complétela (o edite la que trae sus datos actuales) y 3) súbala: verá una vista previa antes de aplicar. Solo se cargan iniciativas que usted puede editar; las celdas vacías no modifican nada.</p>
       <div class="chips" style="margin:0 0 10px">${btn('Plantilla en blanco (con ejemplo)', 'cxtpl', { d: { m: 'blank' }, ic: 'down' })}${btn('Plantilla con mis datos actuales', 'cxtpl', { d: { m: 'data' }, ic: 'down' })}<button class="btn pri" data-act="cxpick">${icon('up', 15)}<span>Elegir archivo Excel…</span></button><input type="file" id="cxfile" accept=".xlsx" data-chg="cxfile" hidden></div>
       <div id="cxprev"><p class="mut">Aún no se ha subido ningún archivo.</p></div>`,
     footer: `<button class="btn" data-act="mclose">Cancelar</button><button class="btn pri" id="cxok" data-act="cxapply" disabled>Aplicar cambios</button>` });
@@ -2929,8 +2939,8 @@ Views.propuestas = {
     return pageHead('Propuestas · Pipeline de innovación', 'Del problema al caso de negocio y la aprobación. Al aprobar una propuesta se crea un proyecto. Cada fase exige compuertas de gobierno antes de avanzar.', `<span class="edit-only">${btn('Nueva propuesta', 'new', { d: { t: 'prop' }, ic: 'plus', cls: 'pri' })}</span>`) + `
     <section class="kpis k4"><div class="kpi"><div class="k-top"><span class="k-ic">${icon('bulb', 16)}</span><span class="k-l">En pipeline</span></div><div class="k-v">${total.n}</div><div class="k-s">${total.esp} en espera · ${rows.filter(i => i.fase === 'Aprobación' && i.estado === 'Vigente').length} listas para aprobar</div></div>
       <div class="kpi"><div class="k-top"><span class="k-ic">${icon('money', 16)}</span><span class="k-l">Costo estimado</span></div><div class="k-v">${fmtBig(total.p)}</div><div class="k-s">${restTxt(total.p)}<sup class="est">est.</sup></div></div>
-      <div class="kpi good"><div class="k-top"><span class="k-ic">${icon('target', 16)}</span><span class="k-l">Valor potencial</span></div><div class="k-v">${fmtMs(total.b)}</div><div class="k-s">Beneficio esperado <sup class="est">est.</sup></div></div>
-      <div class="kpi"><div class="k-top"><span class="k-ic">${icon('trend', 16)}</span><span class="k-l">ROI potencial</span></div><div class="k-v">${total.p ? Math.round((total.b - total.p) / total.p * 100) : 0}%</div><div class="k-s">(beneficio − costo) / costo</div></div></section>
+      <div class="kpi good"><div class="k-top"><span class="k-ic">${icon('target', 16)}</span><span class="k-l">Valor potencial</span></div><div class="k-v">${fmtBig(total.b)}</div><div class="k-s">${restTxt(total.b)}Beneficio esperado <sup class="est">est.</sup></div></div>
+      <div class="kpi"><div class="k-top"><span class="k-ic">${icon('trend', 16)}</span><span class="k-l">ROI potencial</span></div><div class="k-v">${roiTxt(total.b, total.p)}</div><div class="k-s">(beneficio − costo) / costo</div></div></section>
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="pp-q" data-chg="flt" data-v="prop" data-f="q" type="search" placeholder="Buscar propuesta…" value="${esc(f.q)}"></div><label class="chk tb-c"><input type="checkbox" ${f.showEnd ? 'checked' : ''} data-chg="flt" data-v="prop" data-f="showEnd" data-bool="1"> <span>Mostrar finalizadas (${allP.filter(isDone).length})</span></label></div>
     <div class="kanban k4c" data-keep="kb2" style="grid-template-columns:repeat(${FASES_PIPE.length},minmax(200px,1fr))">${FASES_PIPE.map(fs => { const it = rows.filter(i => i.fase === fs).sort(by(i => -priorScore(i))); return `<div class="kcol" data-fase="${fs}"><div class="k-h"><i style="background:${FASE_COLOR[fs]}"></i><b>${fs}</b><em>${it.length}</em></div><div class="k-b">${it.map(card).join('') || '<div class="k-e">Sin propuestas</div>'}</div></div>`; }).join('')}</div>
     ${f.showEnd ? `<section class="card" style="margin-top:14px"><header><h2>Propuestas finalizadas</h2><small>Aprobadas generan un proyecto · Rechazadas y Retiradas pueden reabrirse</small></header><table class="mini"><thead><tr><th>Propuesta</th><th>Estado</th><th>Motivo / resultado</th><th></th></tr></thead><tbody>${allP.filter(isDone).map(i => `<tr><td><button class="lnk0" data-act="sel" data-t="ini" data-id="${i.id}"><b>${esc(i.titulo)}</b></button><small>${i.id}</small></td><td>${estPill(i.estado)}</td><td>${i.estado === 'Aprobada' && i.proyecto ? `Proyecto ${iniLink(i.proyecto, i.proyecto)}` : esc(i.estadoMotivo || '—')}</td><td class="n">${['Rechazada', 'Retirada'].includes(i.estado) ? `<span class="edit-only">${btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' })}</span>` : ''}</td></tr>`).join('') || '<tr><td colspan="4" class="mut">Sin propuestas finalizadas</td></tr>'}</tbody></table></section>` : ''}
@@ -8952,7 +8962,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.9', b: '14-10-2026 10:25' };
+  const VER = { v: 'V22.10', b: '14-10-2026 10:52' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9005,7 +9015,13 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   const presLayout0 = presLayout;
   presLayout = function () { presLayout0.apply(this, arguments); const b = sr('.p2-bar [data-act=pdrawer] span'); if (b) b.textContent = 'Diapositivas'; const t = sr('.p2-bar input[data-k=titulo]'); if (t) { t.placeholder = 'Título de la presentación'; t.setAttribute('aria-label', 'Título'); } };
   const render0 = render;
-  render = function () { render0.apply(this, arguments); try { primaria(); compactar(); } catch (e) { console.error(e); } };
+  render = function () {
+    /* compactar() mueve los filtros a otra fila y eso quita el foco del campo que se está escribiendo: se restaura al final */
+    const act = document.activeElement, key = act && act.dataset ? act.dataset.key : null, ss = act && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
+    render0.apply(this, arguments);
+    try { primaria(); compactar(); } catch (e) { console.error(e); }
+    if (key) { const el = $(`[data-key="${key}"]`); if (el && el !== document.activeElement) { el.focus(); if (ss && el.setSelectionRange) try { el.setSelectionRange(ss[0], ss[1]); } catch (e) { } } }
+  };
   const banner0 = banner;
   banner = function () {
     let h = banner0.apply(this, arguments);
