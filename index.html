@@ -3322,7 +3322,7 @@ Views.decisiones = {
     const all = St.decisiones, pend = all.filter(d => d.estado === 'Pendiente');
     const tcard = t => `<button class="kpi sm tcard ${f.tipo === t ? 'on' : ''}" style="--c:${DEC_C[t]}" data-act="dtipo" data-t="${t}"><div class="k-top"><span class="dtype" style="background:${DEC_C[t]}">${icon(DEC_ICON[t], 14)}</span><span class="k-l">${t}</span></div><div class="k-v">${pend.filter(d => d.tipo === t).length}<small> pend.</small></div><div class="k-s">${all.filter(d => d.tipo === t && d.estado !== 'Pendiente').length} resueltas</div></button>`;
     return pageHead('Decisiones', 'Gestión independiente de decisiones de portafolio. Al aprobar, se puede aplicar el efecto sobre el proyecto o la propuesta automáticamente.', `<span class="edit-only">${btn('Nueva decisión', 'new', { d: { t: 'dec' }, ic: 'plus', cls: 'pri' })}</span>`) + `
-    <div class="chips-row tc">${DEC_TIPOS.map(tcard).join('')}</div>
+    ${all.length ? `<div class="chips-row tc">${DEC_TIPOS.map(tcard).join('')}</div>` : ''}
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="d-q" data-chg="flt" data-v="dec" data-f="q" type="search" placeholder="Buscar decisión…" value="${esc(f.q)}"></div>
       <div class="seg">${['Pendiente', 'Aprobada', 'Rechazada', ''].map(e => `<button class="${f.estado === e ? 'on' : ''}" data-act="dest" data-e="${e}">${e || 'Todas'}</button>`).join('')}</div>${f.tipo ? btn('Quitar filtro ' + f.tipo, 'dtipo', { d: { t: f.tipo }, ic: 'x' }) : ''}</div>
     <div class="dlist">${rows.map(d => { const over = d.estado === 'Pendiente' && d.limite && d.limite < hoy(); return `<article class="dcard ${UI.sel && UI.sel.id === d.id ? 'sel' : ''}" style="--c:${DEC_C[d.tipo]}"><div class="d-t"><span class="dtype" style="background:${DEC_C[d.tipo]}">${icon(DEC_ICON[d.tipo], 15)}</span><b>${d.tipo}</b><span class="mono mut">${d.id}</span><span class="pill soft e-${d.estado}">${d.estado}</span>${over ? '<span class="pill bad">vencida ' + (-diffD(d.limite, hoy())) + ' d</span>' : ''}${decEscalada(d) ? '<span class="pill bad">escalada a Gasto</span>' : ''}${d.aplicada ? '<span class="pill ok">efecto aplicado</span>' : ''}<span style="margin-left:auto" class="mut">${d.estado === 'Pendiente' ? 'Límite: ' + fmtD(d.limite) + ' (' + rel(d.limite) + ')' : 'Resuelta: ' + fmtD(d.fResol)}</span></div>
@@ -3664,12 +3664,12 @@ Views.compromisos = {
         <td>${a.limite ? fmtD(a.limite) + ' ' + (a.abierto ? `<span class="pill ${late ? 'bad' : 'soft'}">${late ? 'vencido ' + (-dd) + ' d' : dd === 0 ? 'hoy' : 'en ' + dd + ' d'}</span>` : '') : '—'}</td>
         <td class="edit-only">${a.src === 'acu' ? `<button class="btn sm" data-act="acuedit" data-id="${a.id}" aria-label="Editar">${icon('edit', 13)}</button>` : `<button class="btn sm" data-act="go" data-v="comite" aria-label="Ver comité">${icon('users', 13)}</button>`}</td></tr>`; };
     return pageHead('Compromisos', 'Qué debes y qué te deben. Incluye los acuerdos de reuniones y las acciones de comité.', `<span class="edit-only">${btn('Nuevo compromiso', 'acunew', { d: {}, ic: 'plus', cls: 'pri' })}</span>`) + `
-    <section class="kpis k4" style="margin-bottom:10px">${kp('Abiertos', ab.length)}${kp('Vencidos', ven.length, ven.length ? 'var(--red)' : '')}${kp('Vencen en 7 días', sem.length)}${kp('Cumplidos (esta vista)', base.length - ab.length)}</section>
+    ${base.length ? `<section class="kpis k4" style="margin-bottom:10px">${kp('Abiertos', ab.length)}${kp('Vencidos', ven.length, ven.length ? 'var(--red)' : '')}${kp('Vencen en 7 días', sem.length)}${kp('Cumplidos (esta vista)', base.length - ab.length)}</section>` : ''}
     <div class="toolbar"><div class="seg">${[['debo', 'Debo', all.filter(a => debo(a) && a.abierto).length], ['deben', 'Me deben', all.filter(a => deben(a) && a.abierto).length], ['todos', 'Todos', all.filter(a => a.abierto).length]].map(([k, l, n]) => `<button class="${f.vista === k ? 'on' : ''}" data-act="acuv" data-k="${k}">${l} <small style="display:inline;color:inherit;opacity:.75">${n}</small></button>`).join('')}</div>
       <div class="seg">${[['Abierto', 'Abiertos'], ['Cerrado', 'Cerrados'], ['', 'Todos']].map(([k, l]) => `<button class="${f.est === k ? 'on' : ''}" data-act="acue" data-k="${k}">${l}</button>`).join('')}</div>
       <div class="search"><span>${icon('search', 14)}</span><input data-key="acu-q" data-chg="flt" data-v="acu" data-f="q" type="search" placeholder="Buscar compromiso…" value="${esc(f.q)}"></div>
       <select data-chg="flt" data-v="acu" data-f="ini" aria-label="Iniciativa">${selOpts([{ v: '__gen', t: 'Solo generales' }, ...iniOpts()], f.ini, 'Todas las iniciativas')}</select></div>
-    <div class="tbl-w"><table class="tbl cards-m"><thead><tr><th></th><th>Compromiso</th><th>Responsable</th><th>Solicitado por</th><th>Iniciativa</th><th>Fecha</th><th class="edit-only"></th></tr></thead><tbody>${rows.map(tr).join('') || `<tr><td colspan="7" class="mut" style="text-align:center;padding:22px">${f.vista === 'debo' ? 'No tienes compromisos en esta vista.' : 'Sin compromisos en esta vista.'}</td></tr>`}</tbody></table></div>`;
+    ${rows.length ? `<div class="tbl-w"><table class="tbl cards-m"><thead><tr><th></th><th>Compromiso</th><th>Responsable</th><th>Solicitado por</th><th>Iniciativa</th><th>Fecha</th><th class="edit-only"></th></tr></thead><tbody>${rows.map(tr).join('')}</tbody></table></div>` : empty(f.vista === 'debo' ? 'No tienes compromisos en esta vista' : 'No hay compromisos en esta vista', 'check')}`;
   }
 };
 Acts.acuv = d => { F('acu', {}).vista = d.k; render(); };
@@ -3770,7 +3770,7 @@ Views.cambios = {
     <div class="toolbar"><div class="seg">${[['Solicitado', 'Pendientes'], ['Aprobado', 'Aprobados'], ['Rechazado', 'Rechazados'], ['', 'Todos']].map(([k, l]) => `<button class="${f.est === k ? 'on' : ''}" data-act="chge" data-k="${k}">${l} <small style="display:inline;color:inherit;opacity:.75">${k ? n(k) : all.length}</small></button>`).join('')}</div>
       <div class="search"><span>${icon('search', 14)}</span><input data-key="chg-q" data-chg="flt" data-v="chg" data-f="q" type="search" placeholder="Buscar cambio…" value="${esc(f.q)}"></div>
       <select data-chg="flt" data-v="chg" data-f="tipo" aria-label="Tipo">${selOpts(CHG_TIPOS, f.tipo, 'Todos los tipos')}</select></div>
-    <div class="tbl-w"><table class="tbl cards-m"><thead><tr><th>ID</th><th>Proyecto</th><th>Tipo</th><th>Cambio</th><th>Solicita</th><th>Estado</th><th class="edit-only"></th></tr></thead><tbody>${rows.map(tr).join('') || '<tr><td colspan="7" class="mut" style="text-align:center;padding:22px">Sin solicitudes en esta vista.</td></tr>'}</tbody></table></div>`;
+    ${rows.length ? `<div class="tbl-w"><table class="tbl cards-m"><thead><tr><th>ID</th><th>Proyecto</th><th>Tipo</th><th>Cambio</th><th>Solicita</th><th>Estado</th><th class="edit-only"></th></tr></thead><tbody>${rows.map(tr).join('')}</tbody></table></div>` : empty('No hay solicitudes de cambio en esta vista', 'refresh')}`;
   }
 };
 Acts.chge = d => { F('chg', {}).est = d.k; render(); };
@@ -3979,10 +3979,10 @@ function cocaPase(me, P, C, meta, adm) {
   const slots = ls.slice(f.pg * NP, f.pg * NP + NP), selX = ls.find(x => x.i.id === f.sel);
   const d = (pD(hoy()).getDay() + 6) % 7, resta = 6 - d, DN = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
   const nx = NIV.find(n => n[0] === P.nivel), sigN = (NIV[NIV.indexOf(nx) + 1] || [])[0], falt = nx[2] - P.total;
-  const l2 = !ls.length ? 'No lideras proyectos activos esta semana.' : !P.off ? '¡Mesa perfecta! Los 5 tenedores en todos tus proyectos.' : resta ? 'Cierra el domingo: aún puedes encender tenedores.' : 'Último día del servicio: te faltan ' + P.off + ' tenedor' + (P.off === 1 ? '' : 'es') + '.';
+  const l2 = !ls.length ? 'No lideras proyectos activos esta semana.' : !P.off ? 'Los 5 tenedores en todos tus proyectos.' : resta ? 'Cierra el domingo: aún puedes encender tenedores.' : 'Último día del servicio: te faltan ' + P.off + ' tenedor' + (P.off === 1 ? '' : 'es') + '.';
   const B = insignias(me), cap = (me && P) ? Math.min(P.racha, 6) : 0;
   let h = CS_DEFS + `<div class="cs-out" id="csout"><div class="cs-in"><img class="cs-base" src="${CS_IMG}" alt="">` + csExt();
-  h += csBoard({ d: d, r: cap, l1: 'Hoy es ' + DN[d], l2, n: P.nivel, nx: sigN ? falt + ' sem. perfecta' + (falt === 1 ? '' : 's') + ' para ' + sigN : 'Nivel máximo' });
+  h += csBoard({ d: d, r: cap, l1: 'Hoy es ' + DN[d], l2, n: P.nivel, nx: sigN ? falt + ' sem. para ' + sigN : 'Nivel máximo' });
   h += csPos(28, 442, `<div class="cs-s" style="left:0;top:0;position:relative"><h3>Salón de chefs <small>${C.llenas} de ${C.n} platos completos</small></h3><div class="m"><svg width="92" height="92" viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="none" stroke="#dacdb0" stroke-width="11"/><circle cx="60" cy="60" r="48" fill="none" stroke="url(#csgold)" stroke-width="11" stroke-linecap="round" stroke-dasharray="${301 * C.pct / 100} 301" transform="rotate(-90 60 60)"/><text x="60" y="68" text-anchor="middle" font-size="26" font-weight="700" fill="#2a2622">${C.pct}%</text></svg><div><b>${C.pct >= meta ? '¡Meta lograda!' : 'Vamos por la meta (' + meta + '%)'}</b><br>${C.prom.toFixed(1)} de 5 tenedores en promedio<br>${MS_SVG(true, 16)} ${C.msTot} estrella${C.msTot === 1 ? '' : 's'} Michelin</div></div><div class="cs-ms">${B.map(b => `<span class="cs-m ${b.ok ? 'on' : ''}" data-act="startip" data-t="${esc(b.n + ': ' + (b.ok ? 'obtenida' : b.v + ' de ' + b.of))}" title="${esc(b.n + ': ' + (b.ok ? 'obtenida' : b.v + ' de ' + b.of))}">${icon(b.ic, 19)}</span>`).join('')}</div>${adm && C.ayuda.length ? `<div class="help">Necesitan una mano: ${C.ayuda.slice(0, 3).map(x => esc(cut(x.i.titulo, 22))).join(' · ')}${C.ayuda.length > 3 ? ' +' + (C.ayuda.length - 3) : ''}</div>` : ''}</div>`);
   if (!ls.length) h += csPos(690, 250, `<div class="cs-e">No encuentro proyectos activos con líder «${esc(me || '—')}».<br>Cuando lideres uno, su plato aparecerá aquí.</div>`);
   slots.forEach((x, k) => {
@@ -9112,7 +9112,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.27', b: '14-10-2026 19:00' };
+  const VER = { v: 'V22.28', b: '14-10-2026 20:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9409,6 +9409,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const P = cieloPersona(me), L = V.misionPend(me), pend = L.filter(x => x.m.length), n = P.off, resta = 6 - ((pD(hoy()).getDay() + 6) % 7);
     if (!L.length) return '';
     const ok = !pend.length;
+    if (ok) return '';
     return `<div class="v22-mstrip ${ok ? 'ok' : ''}" id="v22-mstrip">${icon(ok ? 'check' : 'target', 20)}<div class="grow">${ok ? '<b>¡Mesa perfecta!</b> Todos tus proyectos tienen los 5 tenedores. Mantenlo hasta el domingo.' : `<b>Tu misión:</b> ${n} tenedor${n === 1 ? '' : 'es'} por encender en ${pend.length} proyecto${pend.length === 1 ? '' : 's'} · cierra el domingo (${resta === 0 ? 'hoy' : 'faltan ' + diaPlural(resta)}).`}</div>${ok ? '' : btn('Ver qué hacer', 'misir', { ic: 'chevd', cls: 'pri' })}</div>`;
   }
   Acts.misir = () => { const el = sr('#v22-mis'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
