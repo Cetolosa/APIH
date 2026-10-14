@@ -1680,7 +1680,7 @@ const SB = {
     }
     return SB.sess.access;
   },
-  async key() { if (!SB._key) SB._key = await SBC.aesKey(SBC.unb64(SB.sess.enc)); return SB._key; },
+  async key() { if (!SB.sess.enc) return null; if (!SB._key) SB._key = await SBC.aesKey(SBC.unb64(SB.sess.enc)); return SB._key; },
   logout() { SB.clear(); }
 };
 
@@ -1710,7 +1710,7 @@ const SBLogin = {
 (function () {
   const A = AuthService, init0 = A.init;
   Object.defineProperty(A, 'needsLogin', { get() { return this.provider === 'msal' ? !this.acct : this.provider === 'supabase' ? !SB.sess : false; }, configurable: true });
-  A.init = async function () { if (this.provider !== 'supabase') return init0.apply(this, arguments); this.error = ''; if (!(SB.cfg.url && SB.cfg.anonKey)) throw new Error('supabase.url / supabase.anonKey vacíos'); SB.restore(); if (!SB.sess) SBLogin.show(); };
+  A.init = async function () { if (this.provider !== 'supabase') return init0.apply(this, arguments); this.error = ''; if (!(SB.cfg.url && SB.cfg.anonKey)) throw new Error('supabase.url / supabase.anonKey vacíos'); if (/type=recovery/.test(location.hash)) SB.clear(); else SB.restore(); if (!SB.sess) SBLogin.show(); };
   const user0 = A.user; A.user = function () { if (this.provider !== 'supabase') return user0.apply(this, arguments); if (!SB.sess) return null; const e = SB.sess.email; return { name: e.split('@')[0].split(/[._-]/).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '), email: e }; };
   const gt0 = A.getToken; A.getToken = function (m) { return this.provider === 'supabase' ? SB.token() : gt0.apply(this, arguments); };
   const lg0 = A.login; A.login = async function () { if (this.provider !== 'supabase') return lg0.apply(this, arguments); SBLogin.show(); throw new Error('Ingresa tus datos en la ventana de acceso'); };
@@ -1735,18 +1735,21 @@ class SupabaseService extends SharePointService {
     const t = await res.text(); return { data: t ? JSON.parse(t) : null, res };
   }
   async listItems(ent) {
-    const l = encodeURIComponent(this.listName(ent)), key = await SB.key(), idc = this._idCol(ent), out = [], PAGE = 1000;
+    const l = encodeURIComponent(this.listName(ent)), key = await SB.key(), idc = this._idCol(ent), out = [], PAGE = 1000;   // key = null en sesiones sin llave: solo se leen filas 'p1.' (texto plano)
     for (let off = 0; ; off += PAGE) {
       const { data } = await this._rest('registros?select=id,datos&lista=eq.' + l + '&order=id&limit=' + PAGE + '&offset=' + off);
       for (const r of data || []) {
-        let txt; try { txt = await SBC.open(key, r.datos); } catch (e) { throw new Error('No se pudo descifrar «' + r.id + '»: la clave de equipo no corresponde a estos datos'); }
+        let txt;
+        if (String(r.datos).startsWith('p1.')) txt = r.datos.slice(3);
+        else if (!key) throw new Error('«' + r.id + '» aún está cifrado con la clave anterior: el administrador debe migrar los datos');
+        else { try { txt = await SBC.open(key, r.datos); } catch (e) { throw new Error('No se pudo descifrar «' + r.id + '»: la clave de equipo no corresponde a estos datos'); } }
         out.push({ spid: r.id, f: { [idc]: r.id, [DATOS_COL.n]: txt } });
       }
       if (!data || data.length < PAGE) break;
     }
     return out;
   }
-  async _row(ent, fields) { const idc = this._idCol(ent), id = String(fields[idc] || ''); if (!id) throw new Error('Registro sin identificador (' + ent + ')'); return { lista: this.listName(ent), id, datos: await SBC.seal(await SB.key(), fields[DATOS_COL.n] || '') }; }
+  async _row(ent, fields) { const idc = this._idCol(ent), id = String(fields[idc] || ''); if (!id) throw new Error('Registro sin identificador (' + ent + ')'); return { lista: this.listName(ent), id, datos: 'p1.' + (fields[DATOS_COL.n] || '') }; }   // texto plano; la protección es el RLS del servidor
   async _upsert(rows) { await this._rest('registros?on_conflict=lista,id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) }); }
   async createItem(ent, fields) { const r = await this._row(ent, fields); await this._upsert([r]); return r.id; }
   async updateItem(ent, spid, fields) { const r = await this._row(ent, fields); await this._upsert([r]); }
@@ -9118,6 +9121,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       const datos = await SBC.seal(await SBC.aesKey(wrapBytes), dekB64);
       await SB2.rest(token, 'registros?on_conflict=lista,id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ lista: 'APIH_Claves', id: email, datos }]) });
     },
+    async recover(email) {
+      const r = await fetch(SB.cfg.url + '/auth/v1/recover?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method: 'POST', headers: { apikey: SB.cfg.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(r.status === 429 ? 'Demasiados intentos; espera unos minutos e inténtalo de nuevo' : (j.msg || j.error_description || 'No se pudo enviar el correo (' + r.status + ')')); }
+    },
     async setPassword(token, auth) {
       const r = await fetch(SB.cfg.url + '/auth/v1/user', { method: 'PUT', headers: { apikey: SB.cfg.anonKey, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ password: auth }) });
       if (!r.ok) { const j = await r.json().catch(() => ({})); const e = new Error(j.msg || j.error_description || ('HTTP ' + r.status)); e.status = r.status; e.code = j.error_code; throw e; }
@@ -9142,8 +9149,12 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     email = String(email || '').trim().toLowerCase();
     if (!email || !pw) throw new Error('Ingresa tu correo y tu contraseña');
     const store = remember ? 'l' : 's', exp = j => Math.floor(Date.now() / 1000) + (j.expires_in || 3600);
-    /* 1) contraseña personal */
-    const k2 = await SB2.derive2(pw, email); let j = null;
+    /* 0) login normal: la contraseña va directo a Supabase Auth (recuperable por correo); sin llave de cifrado */
+    let j = null;
+    try { j = await SB._auth('password', { email, password: pw }); } catch (e) { if (![400, 401, 422].includes(e.status)) throw e; }
+    if (j) { SB.sess = { email, access: j.access_token, refresh: j.refresh_token, exp: exp(j), enc: null, _st: store }; SB._key = null; SB.persist(); return { legacy: false }; }
+    /* 1) (transición) contraseña personal anterior, con llave de cifrado */
+    const k2 = await SB2.derive2(pw, email);
     try { j = await SB._auth('password', { email, password: k2.auth }); } catch (e) { if (![400, 401, 422].includes(e.status)) throw e; }
     if (j) {
       let wrapped; try { wrapped = await SB2.getWrap(j.access_token, email); } catch (e) { throw new Error('No se pudo leer tu llave de cifrado (' + (e.status || 'sin conexión') + ')'); }
@@ -9167,9 +9178,15 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
         <label for="sb-mail">Correo corporativo</label><input id="sb-mail" type="email" autocomplete="username" required placeholder="nombre.apellido@aramark.cl">
         <label for="sb-key">Contraseña</label><input id="sb-key" type="password" autocomplete="current-password" required>
         <label class="sb-chk"><input id="sb-rem" type="checkbox"> Recordar en este dispositivo</label>
-        <button class="btn pri" id="sb-go" type="submit">Entrar</button><p id="sb-msg" role="alert">${msg ? String(msg).replace(/</g, '&lt;') : ''}</p>
-        <small>¿Primera vez o olvidaste tu contraseña? Entra con la clave inicial que te entregó el administrador y crea tu contraseña personal, o pídele que restablezca tu acceso.<br>Los datos se cifran en tu navegador antes de enviarse: el proveedor del servicio no puede leerlos.</small></form>`;
+        <button class="btn pri" id="sb-go" type="submit">Entrar</button><button type="button" class="sb-lnk" id="sb-forgot">¿Primera vez u olvidaste tu contraseña?</button><p id="sb-msg" role="alert">${msg ? String(msg).replace(/</g, '&lt;') : ''}</p>
+        <small>Escribe tu correo y presiona el enlace de arriba: te llegará un correo para crear o cambiar tu contraseña.</small></form>`;
       const f = d.querySelector('form'), m = d.querySelector('#sb-msg'), b = d.querySelector('#sb-go');
+      d.querySelector('#sb-forgot').addEventListener('click', async () => {
+        const em = d.querySelector('#sb-mail').value.trim().toLowerCase(); m.style.color = '#c0392b';
+        if (!em) { m.textContent = 'Escribe tu correo corporativo y vuelve a presionar el enlace'; return; }
+        m.style.color = ''; m.textContent = 'Enviando…';
+        try { await SB2.recover(em); m.textContent = 'Si el correo está autorizado, te llegará un enlace para crear tu contraseña.'; } catch (e) { m.style.color = '#c0392b'; m.textContent = e.message; }
+      });
       f.addEventListener('submit', async ev => {
         ev.preventDefault(); b.disabled = true; m.style.color = ''; m.textContent = 'Verificando…';
         try { const r = await SB.login(d.querySelector('#sb-mail').value, d.querySelector('#sb-key').value, d.querySelector('#sb-rem').checked); if (r.legacy) paso2(); else location.reload(); }
@@ -9194,7 +9211,30 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       });
       setTimeout(() => n1.focus(), 50);
     };
-    paso1();
+    /* llegada desde el correo de recuperación: #access_token=…&type=recovery */
+    const paso3 = () => {
+      const q = new URLSearchParams(location.hash.slice(1)), tk = q.get('access_token'), rf = q.get('refresh_token'); let em = '';
+      try { em = String(JSON.parse(atob(tk.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || '').toLowerCase(); } catch (e) { }
+      d.innerHTML = `<form class="sb-card" autocomplete="off"><h2>Crea tu contraseña</h2><p class="sb-note">${em ? esc(em) : ''}</p>
+        <label for="sb-n1">Contraseña nueva</label><input id="sb-n1" type="password" autocomplete="new-password" required><div class="sb-str"><i id="sb-bar"></i></div>
+        <label for="sb-n2">Repítela</label><input id="sb-n2" type="password" autocomplete="new-password" required>
+        <small>Mínimo 10 caracteres, con letras y números.</small><button class="btn pri" id="sb-go" type="submit">Guardar y entrar</button><p id="sb-msg" role="alert"></p></form>`;
+      const f = d.querySelector('form'), m = d.querySelector('#sb-msg'), b = d.querySelector('#sb-go'), n1 = d.querySelector('#sb-n1'), n2 = d.querySelector('#sb-n2'), bar = d.querySelector('#sb-bar');
+      n1.addEventListener('input', () => { const s = SB2.fuerza(n1.value); bar.style.width = s * 20 + '%'; bar.style.background = s < 3 ? '#c0392b' : s < 4 ? '#F2A100' : '#107C10'; });
+      f.addEventListener('submit', async ev => {
+        ev.preventDefault(); m.style.color = '#c0392b';
+        if (!tk || !em) { m.textContent = 'El enlace no es válido o expiró. Pide uno nuevo.'; return; }
+        const err = SB2.valida(n1.value, em); if (err) { m.textContent = err; return; } if (n1.value !== n2.value) { m.textContent = 'Las contraseñas no coinciden'; return; }
+        b.disabled = true; m.style.color = ''; m.textContent = 'Guardando…';
+        try {
+          await SB2.setPassword(tk, n1.value);
+          SB.sess = { email: em, access: tk, refresh: rf, exp: Math.floor(Date.now() / 1000) + (+q.get('expires_in') || 3600), enc: null, _st: 's' }; SB._key = null; SB.persist();
+          history.replaceState(null, '', location.pathname + location.search); location.reload();
+        } catch (e) { m.style.color = '#c0392b'; m.textContent = e.code === 'same_password' ? 'La contraseña nueva debe ser distinta a la anterior' : e.message; b.disabled = false; }
+      });
+      setTimeout(() => n1.focus(), 50);
+    };
+    if (/type=recovery/.test(location.hash)) paso3(); else paso1();
   };
   /* cambiar mi contraseña (o crearla, si aún uso la clave compartida) */
   Acts.pwchange = () => {
@@ -9214,6 +9254,27 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       if (!leg) { const k0 = await SB2.derive2(v('#pw0'), SB.sess.email); try { await SB._auth('password', { email: SB.sess.email, password: k0.auth }); } catch (e) { if ([400, 401, 422].includes(e.status)) throw new Error('La contraseña actual no es correcta'); throw e; } }
       await SB2.enroll(v('#pw1')); Modal.close(); toast('Contraseña actualizada'); render();
     } catch (e) { m.style.color = 'var(--red)'; m.textContent = e.message; b.disabled = false; }
+  };
+
+  /* Migración única (solo administrador, consola del navegador): SBMigrar('APIH_Notas') = prueba sin escribir · SBMigrar('APIH_Notas', true) = aplica · SBMigrar() / SBMigrar(null, true) = todas las listas.
+     Requiere haber entrado con el acceso anterior (el que tiene llave de cifrado). Descifra cada fila 'v1.' y la reescribe como 'p1.'. */
+  window.SBMigrar = async function (lista, aplicar) {
+    if (!esAdmin()) return console.warn('Solo el administrador puede migrar');
+    if (!(SB.sess && SB.sess.enc)) return console.warn('Entra con tu acceso anterior (con llave de cifrado) para poder descifrar');
+    const key = await SB.key(), tk = await SB.token(), out = { listas: {}, plano: 0, cifradas: 0, migradas: 0, errores: [] };
+    const filtro = lista ? '&lista=eq.' + encodeURIComponent(lista) : '&lista=neq.APIH_Claves';
+    for (let off = 0; ; off += 500) {
+      const rows = await SB2.rest(tk, 'registros?select=lista,id,datos&order=lista,id&limit=500&offset=' + off + filtro), up = [];
+      for (const r of rows || []) {
+        out.listas[r.lista] = (out.listas[r.lista] || 0) + 1;
+        if (String(r.datos).startsWith('p1.')) { out.plano++; continue; }
+        out.cifradas++;
+        try { up.push({ lista: r.lista, id: r.id, datos: 'p1.' + await SBC.open(key, r.datos) }); } catch (e) { out.errores.push(r.lista + '/' + r.id + ': no descifra'); }
+      }
+      if (aplicar && up.length) { try { await SB2.rest(tk, 'registros?on_conflict=lista,id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(up) }); out.migradas += up.length; } catch (e) { out.errores.push('escritura: HTTP ' + e.status); } }
+      if (!rows || rows.length < 500) break;
+    }
+    console.log(aplicar ? 'Migración aplicada' : 'Prueba (no se escribió nada)', out); return out;
   };
 
   /* ======================= Mi cocina: misión guiada ======================= */
