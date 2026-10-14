@@ -9257,11 +9257,14 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   };
 
   /* Migración única (solo administrador, consola del navegador): SBMigrar('APIH_Notas') = prueba sin escribir · SBMigrar('APIH_Notas', true) = aplica · SBMigrar() / SBMigrar(null, true) = todas las listas.
-     Requiere haber entrado con el acceso anterior (el que tiene llave de cifrado). Descifra cada fila 'v1.' y la reescribe como 'p1.'. */
-  window.SBMigrar = async function (lista, aplicar) {
+     Tercer parámetro = la clave de equipo anterior (se usa solo en memoria para descifrar). Descifra cada fila 'v1.' y la reescribe como 'p1.'. */
+  window.SBMigrar = async function (lista, aplicar, claveEquipo) {
     if (!esAdmin()) return console.warn('Solo el administrador puede migrar');
-    if (!(SB.sess && SB.sess.enc)) return console.warn('Entra con tu acceso anterior (con llave de cifrado) para poder descifrar');
-    const key = await SB.key(), tk = await SB.token(), out = { listas: {}, plano: 0, cifradas: 0, migradas: 0, errores: [] };
+    let key;
+    if (claveEquipo) { const k = await SBC.derive(claveEquipo); key = await SBC.aesKey(k.enc); }
+    else if (SB.sess && SB.sess.enc) key = await SB.key();
+    else return console.warn('Falta la llave: SBMigrar(lista, aplicar, "clave de equipo")');
+    const tk = await SB.token(), out = { listas: {}, plano: 0, cifradas: 0, migradas: 0, errores: [] };
     const filtro = lista ? '&lista=eq.' + encodeURIComponent(lista) : '&lista=neq.APIH_Claves';
     for (let off = 0; ; off += 500) {
       const rows = await SB2.rest(tk, 'registros?select=lista,id,datos&order=lista,id&limit=500&offset=' + off + filtro), up = [];
