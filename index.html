@@ -8815,18 +8815,18 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     return Object.keys(G).map(id => { const i = byId(id); return (i ? i.titulo : id) + ' (' + id + ') — notas internas no vistas:\n' + G[id].map(n => '- [' + fmtD(String(n.ts).slice(0, 10)) + '] ' + (n.autor || '—') + ': ' + n.texto).join('\n'); }).join('\n\n');
   }
   function intItem(n, conIni) {
-    const nv = !n.visto, i = byId(n.ini), pue = esMia(n) || esAdmin();
-    return `<div class="v22-n ${nv ? 'nv' : 'ab'}"><div class="n-h">${avatar(n.autor || '?', 22)}<b>${esc(n.autor || '—')}</b><span>${esc(fmtTS(n.ts))}${n.edit ? ' · editada' : ''}</span><span class="pill ${nv ? '' : 'soft'}" style="margin-left:auto">${nv ? 'Sin ver' : 'Vista'}</span></div>
+    const g = puedeGobernar(), nv = g && !n.visto, i = byId(n.ini), pue = g && (esMia(n) || esAdmin());
+    return `<div class="v22-n ${!g ? '' : nv ? 'nv' : 'ab'}"><div class="n-h">${avatar(n.autor || '?', 22)}<b>${esc(n.autor || '—')}</b><span>${esc(fmtTS(n.ts))}${n.edit ? ' · editada' : ''}</span>${g ? `<span class="pill ${nv ? '' : 'soft'}" style="margin-left:auto">${nv ? 'Sin ver' : 'Vista'}</span>` : ''}</div>
       ${conIni && i ? `<div class="n-r">${icon('pin', 12)}<span>${esc(i.titulo)} · ${esc(i.id)}</span></div>` : ''}<p>${esc(n.texto)}</p>
-      <div class="n-a">${nv ? `<button class="btn sm pri" data-act="intvisto" data-id="${esc(n.id)}" data-v="1">${icon('check', 13)}<span>Marcar visto</span></button>` : `<button class="btn sm" data-act="intvisto" data-id="${esc(n.id)}" data-v="0">Marcar como no vista</button><small>Visto por ${esc(n.vistoPor || '—')} · ${esc(fmtD(n.fVisto))}</small>`}
+      <div class="n-a">${!g ? '' : nv ? `<button class="btn sm pri" data-act="intvisto" data-id="${esc(n.id)}" data-v="1">${icon('check', 13)}<span>Marcar visto</span></button>` : `<button class="btn sm" data-act="intvisto" data-id="${esc(n.id)}" data-v="0">Marcar como no vista</button><small>Visto por ${esc(n.vistoPor || '—')} · ${esc(fmtD(n.fVisto))}</small>`}
       ${conIni ? `<button class="btn sm" data-act="intir" data-id="${esc(n.ini)}">Ir a la ficha</button>` : (pue ? `<button class="btn sm" data-act="intedit" data-id="${esc(n.id)}">Editar</button><button class="btn sm" data-act="intdel" data-id="${esc(n.id)}">Eliminar</button>` : '')}</div></div>`;
   }
   const intBar = (id, nv) => `<div class="v22-iv"><span class="pill ${nv ? '' : 'soft'}">${nv ? nv + ' sin ver' : 'Todo visto'}</span><label class="chk"><input type="checkbox" ${UI.fi.solo ? 'checked' : ''} data-chg="intsolo"> <span>Solo no vistas</span></label><span class="grow"></span>${nv ? `<button class="btn sm" data-act="intcopy" data-id="${esc(id)}">Copiar no vistas</button><button class="btn sm" data-act="intvistoall" data-id="${esc(id)}">Marcar todas como vistas</button>` : ''}</div>`;
   function secInt(i) {
-    const all = internas(i.id), nv = intNoVistas(i.id).length, L = UI.fi.solo ? all.filter(n => !n.visto) : all;
-    const ed = `<div class="v22-f"><textarea id="v22-int" data-key="intxt" placeholder="Nota interna del PMO: contexto, acuerdos, alertas… (no la ven el líder ni el equipo del proyecto)"></textarea><div style="margin-top:6px"><button class="btn pri sm" data-act="intadd" data-id="${esc(i.id)}">${icon('plus', 13)}<span>Guardar nota</span></button></div></div>`;
-    const lst = L.length ? `<div class="v22-nl" style="margin-top:10px;max-height:none">${L.map(n => intItem(n, false)).join('')}</div>` : `<p class="mut" style="margin:10px 0 0">${all.length ? 'No hay notas sin ver en esta iniciativa.' : 'Aún no hay notas. Lo que escribas queda guardado aquí, en orden, como historial interno de esta iniciativa.'}</p>`;
-    return [all.length, ed + (all.length ? intBar(i.id, nv) : '') + lst];
+    const g = puedeGobernar(), all = internas(i.id), nv = intNoVistas(i.id).length, L = g && UI.fi.solo ? all.filter(n => !n.visto) : all;
+    const ed = !g ? '' : `<div class="v22-f"><textarea id="v22-int" data-key="intxt" placeholder="Nota interna del PMO: contexto, acuerdos, alertas… (la ven todos los que acceden a esta iniciativa; solo el PMO escribe)"></textarea><div style="margin-top:6px"><button class="btn pri sm" data-act="intadd" data-id="${esc(i.id)}">${icon('plus', 13)}<span>Guardar nota</span></button></div></div>`;
+    const lst = L.length ? `<div class="v22-nl" style="margin-top:10px;max-height:none">${L.map(n => intItem(n, false)).join('')}</div>` : `<p class="mut" style="margin:10px 0 0">${all.length ? 'No hay notas sin ver en esta iniciativa.' : (g ? 'Aún no hay notas. Lo que escribas queda guardado aquí, en orden, como historial interno de esta iniciativa.' : 'El PMO aún no ha dejado notas.')}</p>`;
+    return [all.length, ed + (g && all.length ? intBar(i.id, nv) : '') + lst];
   }
   function intRefrescar() { render(); const b = sr('#v22-nbody'); if (b) b.innerHTML = notasListBody(); }
   Chg.intsolo = el => { UI.fi.solo = el.checked; intRefrescar(); };
@@ -8875,7 +8875,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     sec.rie = secRiesgos(i); sec.dec = secDec(i); sec.com = secCom(i); if (!PR) sec.cam = secCam(i);
     sec.act = [null, parsePanel(i, 'actividad').body.innerHTML];
     if (APIH_CONFIG.ia !== false) sec.ia = [null, parsePanel(i, 'ia').body.innerHTML];
-    if (puedeGobernar()) sec.int = secInt(i);
+    sec.int = secInt(i);
     sec.nota = secNota(i);
     const lista = SECS.filter(s => sec[s[0]] && (!s[4] || (s[4] === 'prj' && !PR)));
     const head = `<div class="fl-head"><div class="fl-k"><button class="btn sm" data-act="flback">${icon('chevl', 13)}<span>Volver</span></button><span>${R.kicker}</span></div><h1>${R.title}</h1><div class="fl-p">${R.pills}</div><div class="fl-a">${R.acts}</div></div>`;
@@ -8910,7 +8910,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   };
   /* la ficha usa toda la página: no se «encajan» sus bloques en cajas con scroll */
   const fitMain0 = fitMain;
-  fitMain = function () { if (UI.view === 'ficha') return; return fitMain0.apply(this, arguments); };
+  fitMain = function () { if (UI.view === 'ficha') return; const r = fitMain0.apply(this, arguments); const m = document.getElementById('v22-mis'); if (m) m.classList.remove('fit'); return r; };
 
   /* ======================= Acción principal por pantalla ======================= */
   const PRIM = {
@@ -9176,6 +9176,155 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       await SB2.enroll(v('#pw1')); Modal.close(); toast('Contraseña actualizada'); render();
     } catch (e) { m.style.color = 'var(--red)'; m.textContent = e.message; b.disabled = false; }
   };
+
+  /* ======================= Mi cocina: misión guiada ======================= */
+  const MIS_CSS = document.createElement('style');
+  MIS_CSS.textContent = `
+  .v22-mstrip{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;margin:0 0 10px;border-radius:12px;background:#FFF6DD;border:1px solid #F0D27A;color:#3a2f10}
+  .v22-mstrip.ok{background:#E4F3E5;border-color:#9ED29F;color:#13420f}.v22-mstrip b{font-weight:700}.v22-mstrip .grow{flex:1;min-width:220px;font-size:14px}.v22-mstrip .btn{flex:none}
+  .v22-mis .mis-obj{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 14px}
+  .v22-mis .mis-obj>div{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;background:var(--card);font-size:13px;line-height:1.4}.v22-mis .mis-obj em{display:block;font-style:normal;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+  .v22-mis .mis-p{border:1px solid var(--bd);border-radius:12px;margin:0 0 12px;overflow:hidden;background:var(--card)}
+  .v22-mis .mis-ph{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2,rgba(0,0,0,.035));border-bottom:1px solid var(--bd)}.v22-mis .mis-ph b{font-size:15px}.v22-mis .mis-ph small{color:var(--mut)}.v22-mis .mis-ph .pill{margin-left:auto}
+  .v22-mis .mis-t{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;padding:12px 14px;border-top:1px solid var(--bd);align-items:start}.v22-mis .mis-t:first-of-type{border-top:0}
+  .v22-mis .mis-t .mis-n{width:26px;height:26px;border-radius:50%;background:#FDEBEB;color:#B4232A;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .v22-mis .mis-t h4{margin:0 0 2px;font-size:14px}.v22-mis .mis-t p{margin:0 0 4px;font-size:13px;color:var(--fg2,inherit);line-height:1.45}.v22-mis .mis-t ul{margin:2px 0 0;padding-left:18px;font-size:13px}
+  .v22-mis .mis-how{font-size:12.5px;color:var(--mut)}.v22-mis .mis-how b{color:var(--fg,inherit)}
+  .v22-mis .mis-a{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:190px}
+  .v22-mis .mis-ok{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:#13420f;background:#F1FAF1;border-top:1px solid var(--bd)}
+  @media (max-width:900px){.v22-mis .mis-obj{grid-template-columns:1fr}.v22-mis .mis-t{grid-template-columns:auto minmax(0,1fr)}.v22-mis .mis-a{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}}`;
+  document.head.appendChild(MIS_CSS);
+
+  const diaPlural = n => n + (n === 1 ? ' día' : ' días');
+  function misionDe(i) {
+    const W = hoyW(), E = hoy(), out = [], st = starsOf(i, W), off = k => (st.find(x => x.k === k) || {}).s === 'off';
+    const bAct = (l, a, d, pri) => ({ l, a, d, pri });
+    if (off('dia')) {
+      const nc = actSemana(i, W) === 'nc';
+      out.push({ k: 'dia', t: 'Al día', por: nc ? 'Marcaste «sin novedades» dos semanas seguidas. Esta semana hace falta un avance real.' : (diasSinUpd(i) >= 999 ? 'Este proyecto nunca se ha actualizado.' : 'No lo actualizas desde el ' + fmtD(i.actualizada) + ' (hace ' + diaPlural(diasSinUpd(i)) + '). Esta semana aún no hay ninguna actualización.'),
+        como: 'Abre la actualización semanal, anota un logro o el próximo paso y ajusta el % de avance. Toma 1 minuto.', btn: [bAct('Actualizar ahora', 'wk', { id: i.id }, true)] });
+    }
+    if (off('hit')) {
+      const hv = vencidosA(hitosDe(i.id), 'fecha', E, (h, e) => h.completado && (h.fechaReal || '') <= e);
+      out.push({ k: 'hit', t: 'Hitos', por: 'Tienes ' + hv.length + ' hito' + (hv.length === 1 ? '' : 's') + ' vencido' + (hv.length === 1 ? '' : 's') + ' sin cerrar ni explicar:',
+        lista: hv.slice(0, 4).map(h => '«' + h.nombre + '» venció el ' + fmtD(h.fecha) + ' (hace ' + diaPlural(diffD(E, h.fecha)) + ')'),
+        como: '<b>Si ya se cumplió:</b> ábrelo y márcalo completado. <b>Si se atrasó:</b> pide el cambio de fecha en Control de cambios; el atraso queda explicado y el tenedor se enciende.',
+        btn: [bAct('Pedir cambio de fecha', 'chgnew', { id: i.id }, true), bAct('Ver hitos de la ficha', 'cocir', { id: i.id, k: 'hit' })] });
+    }
+    if (off('cmp')) {
+      const cv = St.compromisos.filter(c => c.ini === i.id && c.estado !== 'Cancelado' && c.limite && c.limite < E && c.estado !== 'Cumplido');
+      out.push({ k: 'cmp', t: 'Compromisos', por: 'Hay ' + cv.length + ' compromiso' + (cv.length === 1 ? '' : 's') + ' con fecha vencida:',
+        lista: cv.slice(0, 4).map(c => '«' + cut(c.texto, 60) + '» (' + (c.resp || 'sin responsable') + ', límite ' + fmtD(c.limite) + ')'),
+        como: 'Ábrelos desde la ficha y márcalos <b>Cumplido</b>, o cámbiales la fecha límite si se acordó otra.', btn: [bAct('Ir a los compromisos', 'cocir', { id: i.id, k: 'com' }, true)] });
+    }
+    if (off('rsk')) {
+      const um = cfgI(i, 'umbralCritico'), rs = riesgosDe(i.id).filter(riesgoAbierto).filter(r => (r.fRev && r.fRev < E) || (expo(r) >= um && !String(r.mit || '').trim()));
+      out.push({ k: 'rsk', t: 'Riesgos', por: rs.length + ' riesgo' + (rs.length === 1 ? '' : 's') + ' por atender:',
+        lista: rs.slice(0, 4).map(r => '«' + cut(r.desc, 60) + '» · ' + ((r.fRev && r.fRev < E) ? 'revisión vencida el ' + fmtD(r.fRev) : 'crítico (' + expo(r) + ') sin plan de mitigación')),
+        como: 'Abre el riesgo y <b>escribe el plan de mitigación</b> o <b>actualiza la fecha de próxima revisión</b>.', btn: [bAct('Abrir el primer riesgo', 'sel', { t: 'risk', id: rs[0] ? rs[0].id : '' }, true), bAct('Ver riesgos de la ficha', 'cocir', { id: i.id, k: 'rie' })] });
+    }
+    if (off('gob')) {
+      out.push({ k: 'gob', t: 'Gobierno', por: 'Se proyecta terminar el ' + fmtD(forecast(i)) + ', ' + diaPlural(desv(i)) + ' después de lo planificado (' + fmtD(i.finPlan) + '). Tu tolerancia es de ' + diaPlural(cfgI(i, 'tolDesv')) + ' y no hay ningún cambio registrado.',
+        como: 'Registra la solicitud de cambio de fecha <b>antes de avisar al comité</b>: así el atraso queda aprobado o explicado.', btn: [bAct('Registrar cambio de fecha', 'chgnew', { id: i.id }, true)] });
+    }
+    return out;
+  }
+  V.misionPend = me => proyActivos(me, hoyW()).map(i => ({ i, m: misionDe(i), st: starsOf(i, hoyW()) }));
+  function misionPanel(me) {
+    const P = cieloPersona(me), L = V.misionPend(me), pend = L.filter(x => x.m.length), n = P.off;
+    const d = (pD(hoy()).getDay() + 6) % 7, resta = 6 - d, nx = NIV.find(x => x[0] === P.nivel), sigN = (NIV[NIV.indexOf(nx) + 1] || [])[0], falt = nx[2] - P.total;
+    const premio = !L.length ? 'Cuando lideres un proyecto activo, aquí verás qué hacer cada semana.' : !n ? 'Esta semana ya cuenta como <b>semana perfecta</b>.' : 'Si enciendes todos antes del domingo ganas una <b>semana perfecta</b>' + (sigN && falt > 0 ? ': te ' + (falt - 1 === 0 ? 'dejaría listo para ser <b>' + sigN + '</b>' : 'acerca a <b>' + sigN + '</b> (faltarían ' + (falt - 1) + ')') : '') + '.';
+    const obj = `<div class="mis-obj"><div><em>1 · Objetivo</em>Encender los <b>5 tenedores</b> de cada proyecto que lideras. Cada tenedor es una buena práctica de gestión.</div><div><em>2 · Plazo</em>La semana cierra el <b>domingo</b> (${resta === 0 ? 'es hoy' : 'faltan ' + diaPlural(resta)}). Cada lunes los tenedores arrancan de nuevo.</div><div><em>3 · Premio</em>${premio} También suman insignias y estrellas Michelin.</div></div>`;
+    const bloques = pend.map(({ i, m, st }) => {
+      const tot = st.filter(y => y.s !== 'na').length, on = st.filter(y => y.s === 'on').length;
+      return `<div class="mis-p"><div class="mis-ph">${starsRow(st, 18)}<b>${esc(i.titulo)}</b><small>${esc(i.fase)}</small><span class="pill">${on} de ${tot} tenedores</span></div>${m.map((x, k) => `<div class="mis-t"><span class="mis-n">${k + 1}</span><div><h4>${esc(x.t)}: ${esc(x.por)}</h4>${x.lista ? `<ul>${x.lista.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}<p class="mis-how" style="margin-top:6px"><b>Qué hacer:</b> ${x.como}</p></div><div class="mis-a edit-only">${x.btn.map(b => btn(b.l, b.a, { d: b.d, cls: b.pri ? 'pri' : 'sm' })).join('')}</div></div>`).join('')}</div>`;
+    }).join('');
+    const listos = L.filter(x => !x.m.length);
+    const ok = listos.length && pend.length ? `<div class="mis-ok">${icon('check', 15)}<span>Ya tienen todo al día: ${listos.map(x => esc(cut(x.i.titulo, 28))).join(' · ')}</span></div>` : '';
+    const body = !L.length ? V.emptyRich({ ic: 'fork', title: 'No lideras proyectos activos esta semana', line: 'Los tenedores se miden por proyecto. Cuando lideres uno (en ejecución o planificación), aquí te diremos paso a paso qué hacer.' }, true) : pend.length ? bloques + ok : `<div class="mis-ok" style="border:1px solid #9ED29F;border-radius:10px">${icon('check', 16)}<span><b>¡Mesa perfecta!</b> No te falta nada esta semana. Sigue así: lo único que queda es mantenerlo hasta el domingo.</span></div>`;
+    return `<section class="card v22-mis" id="v22-mis"><header><h2>Tu misión esta semana</h2><small>${pend.length ? n + ' tenedor' + (n === 1 ? '' : 'es') + ' pendiente' + (n === 1 ? '' : 's') + ' en ' + pend.length + ' proyecto' + (pend.length === 1 ? '' : 's') : 'todo al día'}</small></header>${obj}${body}</section>`;
+  }
+  function misionStrip(me) {
+    const P = cieloPersona(me), L = V.misionPend(me), pend = L.filter(x => x.m.length), n = P.off, resta = 6 - ((pD(hoy()).getDay() + 6) % 7);
+    if (!L.length) return '';
+    const ok = !pend.length;
+    return `<div class="v22-mstrip ${ok ? 'ok' : ''}" id="v22-mstrip">${icon(ok ? 'check' : 'target', 20)}<div class="grow">${ok ? '<b>¡Mesa perfecta!</b> Todos tus proyectos tienen los 5 tenedores. Mantenlo hasta el domingo.' : `<b>Tu misión:</b> encender ${n} tenedor${n === 1 ? '' : 'es'} apagado${n === 1 ? '' : 's'} en ${pend.length} proyecto${pend.length === 1 ? '' : 's'} antes del domingo (${resta === 0 ? 'hoy cierra' : 'faltan ' + diaPlural(resta)}). Ganas la semana perfecta cuando no quede ninguno.`}</div>${ok ? '' : btn('Ver qué hacer', 'misir', { ic: 'chevd', cls: 'pri' })}${btn('Cómo se juega', 'cielotab', { d: { k: 'how' }, cls: 'sm' })}</div>`;
+  }
+  Acts.misir = () => { const el = sr('#v22-mis'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  Acts.cocir = d => { const s = (fh()[d.k] = fh()[d.k] || {}); s.c = false; s.h = false; fhSave(); Acts.ficha({ id: d.id }); setTimeout(() => { const el = sr('#fl-' + d.k); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); };
+
+  const cielo0 = Views.cielo.render;
+  Views.cielo.render = function () {
+    const out = cielo0.apply(this, arguments), f = F('cielo', { tab: 'sem' });
+    if ((f.tab || 'sem') !== 'sem' || !cieloOn()) return out;
+    const me = miUsuario(), mk = '<svg width="0" height="0" style="position:absolute"><defs>', k = out.indexOf(mk);
+    return (k >= 0 ? out.slice(0, k) + misionStrip(me) + out.slice(k) : out) + misionPanel(me);
+  };
+  const cocFit0 = cocFit;
+  cocFit = function () {
+    cocFit0.apply(this, arguments);
+    const o = document.getElementById('csout'), s = document.getElementById('v22-mstrip'); if (!o || !s) return;
+    const p = o.parentElement, cs = getComputedStyle(p), w = p.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) - 4, top = o.getBoundingClientRect().top, sc = Math.max(.34, Math.min(w / 1500, (innerHeight - top - 14) / 694));
+    o.style.width = (1500 * sc) + 'px'; o.style.height = (694 * sc) + 'px'; o.firstElementChild.style.transform = 'scale(' + sc + ')';
+  };
+
+  /* ======================= Misiones del mes (opcionales) ======================= */
+  const ymHoy = () => hoy().slice(0, 7);
+  const finMes = () => { const d = pD(hoy()); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()); };
+  const mkMes = k => '[Misión del mes · ' + k + '] ';
+  const bitMes = (i, k) => St.bitacora.find(b => b.ini === i.id && String(b.ts).slice(0, 7) === ymHoy() && String(b.texto || '').startsWith(mkMes(k)));
+  const MES_DEF = [
+    { k: 'Presupuesto', t: 'Presupuesto al día', d: 'Confirma cuánto se ha consumido del presupuesto de cada proyecto. Así el costo real queda actualizado para el comité del mes.',
+      aplica: i => i.presupuesto > 0,
+      hecho: i => { const b = bitMes(i, 'Presupuesto'); return b ? 'Registrado el ' + fmtD(String(b.ts).slice(0, 10)) : null; },
+      estado: i => 'Presupuesto ' + fmtM(i.presupuesto) + ' · consumido ' + fmtM(i.gastado || 0) + ' (' + Math.round((i.gastado || 0) / i.presupuesto * 100) + '%)',
+      btn: i => [{ l: 'Registrar consumo', a: 'misgasto', d: { id: i.id }, pri: true }, { l: 'Está al día, sin cambios', a: 'misgastook', d: { id: i.id } }] }
+  ];
+  function mesResumen(me) {
+    const P = proyActivos(me, hoyW()), out = MES_DEF.map(m => { const L = P.filter(m.aplica).map(i => ({ i, h: m.hecho(i) })); return { m, L }; });
+    return { out, done: out.reduce((s, x) => s + x.L.filter(y => y.h).length, 0), of: out.reduce((s, x) => s + x.L.length, 0) };
+  }
+  function misionesMes(me) {
+    const R = mesResumen(me), mes = MESES[pD(hoy()).getMonth()].toLowerCase();
+    const blocks = R.out.filter(x => x.L.length).map(({ m, L }) => {
+      const nd = L.filter(x => x.h).length;
+      return `<div class="mis-p"><div class="mis-ph">${icon('cal', 18)}<b>${esc(m.t)}</b><span class="pill ${nd === L.length ? '' : 'soft'}">${nd} de ${L.length} proyectos</span></div><div class="mis-t" style="grid-template-columns:minmax(0,1fr)"><p class="mis-how" style="margin:0"><b>Para qué:</b> ${esc(m.d)}</p></div>${L.map(({ i, h }) => `<div class="mis-t"><span class="mis-n" style="${h ? 'background:#E4F3E5;color:#107C10' : 'background:rgba(0,0,0,.07);color:var(--mut)'}">${h ? '✓' : '·'}</span><div><h4>${esc(i.titulo)}</h4><p>${h ? esc(h) : esc(m.estado(i))}</p></div><div class="mis-a edit-only">${h ? '' : m.btn(i).map(b => btn(b.l, b.a, { d: b.d, cls: b.pri ? 'pri' : 'sm' })).join('')}</div></div>`).join('')}</div>`;
+    }).join('');
+    const body = R.of ? blocks : V.emptyRich({ ic: 'cal', title: 'No hay misiones del mes para tus proyectos', line: 'Las misiones aparecen cuando lideras un proyecto activo con presupuesto.' }, true);
+    return `<section class="card v22-mis" id="v22-mes"><header><h2>Misiones del mes · ${esc(mes)}</h2><small>Opcionales: no afectan tus tenedores ni tu nivel</small></header>
+      <div class="mis-obj" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><em>Qué son</em>Un extra para dejar la gestión del mes completa. Puedes hacerlas o dejarlas.</div><div><em>Hasta cuándo</em>Se pueden completar hasta el <b>${esc(fmtD(finMes()))}</b>. El mes siguiente parten de cero.</div><div><em>Premio</em>${R.of ? `Llevas <b>${R.done} de ${R.of}</b>. Al completarlas todas ganas el sello <b>Mes completo</b>.` : 'El sello <b>Mes completo</b> se gana al completar todas.'}</div></div>${body}</section>`;
+  }
+  Acts.misgasto = d => {
+    const i = byId(d.id); if (!i) return;
+    if (soloLectura() || !puedeEditarIni(i)) return NO_PERM('Tu rol o el modo solo lectura no permiten editar');
+    openForm({ title: 'Presupuesto al día · ' + i.titulo, values: { gastado: i.gastado || 0, nota: '' }, saveLabel: 'Guardar',
+      fields: [{ k: 'gastado', l: 'Consumido a la fecha (' + (St.cfg.unidad || 'MM') + ')', t: 'number', min: 0, w: 3, hint: 'Presupuesto: ' + fmtM(i.presupuesto) + ' · lo último registrado: ' + fmtM(i.gastado || 0) + '. Si lo pasas, <a class="lnk" data-act="chgnew" data-id="' + i.id + '">registra un cambio de presupuesto</a>.' }, { k: 'nota', l: 'Comentario (opcional)', t: 'textarea', w: 3 }],
+      onSave(o) {
+        const a = i.gastado || 0, n = +o.gastado || 0; i.gastado = n;
+        log(a !== n ? 'Cambio' : 'Comentario', i.id, mkMes('Presupuesto') + 'Consumido ' + fmtN(a) + ' → ' + fmtN(n) + ' de ' + fmtN(i.presupuesto) + (o.nota ? '. ' + o.nota : ''));
+        toast('Presupuesto registrado'); refresh();
+      } });
+  };
+  Acts.misgastook = d => {
+    const i = byId(d.id); if (!i) return;
+    if (soloLectura() || !puedeEditarIni(i)) return NO_PERM('Tu rol o el modo solo lectura no permiten editar');
+    log('Comentario', i.id, mkMes('Presupuesto') + 'Consumo confirmado sin cambios (' + fmtN(i.gastado || 0) + ' de ' + fmtN(i.presupuesto) + ')');
+    toast('Confirmado: presupuesto al día'); refresh();
+  };
+  const insignias0 = insignias;
+  insignias = function (me) {
+    const B = insignias0.apply(this, arguments), R = mesResumen(me);
+    B.push({ k: 'mm', n: 'Mes completo', d: 'Completa todas las misiones del mes en tus proyectos. Son opcionales y se reinician cada mes.', ic: 'cal', c: '#038387', v: Math.min(R.done, R.of), of: Math.max(R.of, 1), ok: R.of > 0 && R.done >= R.of });
+    return B;
+  };
+  const cielo1 = Views.cielo.render;
+  Views.cielo.render = function () {
+    const out = cielo1.apply(this, arguments), f = F('cielo', { tab: 'sem' });
+    if ((f.tab || 'sem') !== 'sem' || !cieloOn()) return out;
+    return out + misionesMes(miUsuario());
+  };
+  const fitMain1 = fitMain;
+  fitMain = function () { const r = fitMain1.apply(this, arguments); const m = document.getElementById('v22-mes'); if (m) m.classList.remove('fit'); return r; };
 })();
 
 /* ============================================================ APIH V4 · Arranque ============================================================ */
