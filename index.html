@@ -535,6 +535,8 @@ body{font:13px/1.45 var(--font)}
 .prio.p-Baja{color:#17692F}:root[data-theme=dark] .prio.p-Alta{color:#FF8087}:root[data-theme=dark] .prio.p-Media{color:#F5B83D}:root[data-theme=dark] .prio.p-Baja{color:#5FD07A}:root[data-theme=dark] .seg .on,:root[data-theme=dark] .seg button.on{color:#06182B}.av{background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2))}
 /* ---------- V22.29: IA compacta ---------- */
 .agent>p,.agent>.a-r{display:none}.agent{padding:10px 14px;gap:8px}
+/* ---------- V22.30: filtros en una sola fila ---------- */
+@media (min-width:700px) and (max-width:1600px){.v22-row .tb-l{font-size:0;gap:0}.v22-row .tb-l svg{margin:0 2px}.v22-row .seg button{padding:5px 8px}.v22-row .flt select{width:92px!important;max-width:92px}.v22-row{gap:6px}}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -9114,7 +9116,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.29', b: '14-10-2026 21:00' };
+  const VER = { v: 'V22.30', b: '14-10-2026 22:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9427,8 +9429,8 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   const cocFit0 = cocFit;
   cocFit = function () {
     cocFit0.apply(this, arguments);
-    const o = document.getElementById('csout'), s = document.getElementById('v22-mstrip'); if (!o || !s) return;
-    const p = o.parentElement, cs = getComputedStyle(p), w = p.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) - 4, top = o.getBoundingClientRect().top, sc = Math.max(.34, Math.min(w / 1500, (innerHeight - top - 14) / 694));
+    const o = document.getElementById('csout'), s = document.getElementById('v22-mstrip'); if (!o) return;
+    const p = o.parentElement, cs = getComputedStyle(p), w = p.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) - 4, top = o.getBoundingClientRect().top, sc = Math.max(.34, w / 1500); if (s && o.nextElementSibling !== s) o.insertAdjacentElement('afterend', s);
     o.style.width = (1500 * sc) + 'px'; o.style.height = (694 * sc) + 'px'; o.firstElementChild.style.transform = 'scale(' + sc + ')';
   };
 
