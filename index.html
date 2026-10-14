@@ -522,6 +522,11 @@ body{font:13px/1.45 var(--font)}
 .tbl tbody tr:last-child td{border-bottom:0}.tbl td.mit{max-width:240px}
 .tbl td:last-child{max-width:none;overflow:visible}
 .tbl td label[title^=Incluir] span{display:none}.tbl th.inc-c{width:64px}.tbl td:has(label[title^=Incluir]){width:64px}
+/* ---------- V22.26: tarjetas ---------- */
+#main>.fit:is(.grid12,.agents,.card){flex:none;overflow:visible;min-height:0}
+.chips-row>.kpi.sm{min-height:0}.card.wk{padding:8px 14px}.wkb{height:44px}
+.fl-grid{display:block!important;column-count:2;column-gap:10px}.fl-grid>.fl-s{break-inside:avoid;margin-bottom:10px;display:block}.fl-grid>.fl-s.wide{column-span:all}.fl-grid>.fl-s.fl-hid{display:none}
+@media (max-width:900px){.fl-grid{column-count:1}}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -556,7 +561,7 @@ body{font:13px/1.45 var(--font)}
 .simple .rleg,.simple .legend-row,.simple .mini small{display:none}
 .simple .sxbtn{margin-left:8px}
 .simple:not(.sx) .side .nav{padding-top:9px;padding-bottom:9px}
-.chips-row{align-items:stretch}.chips-row>.kpi.sm{height:auto;min-height:0;align-self:stretch;justify-content:center}.card.wk{padding:10px 14px}.wkb{display:flex;align-items:flex-end;gap:6px;height:84px;margin-top:6px}.wkb>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}.wkb b{display:block;width:100%;max-width:22px;min-height:2px;background:var(--pri);border-radius:3px 3px 0 0}.wkb small{font-size:11px;color:var(--tx3)}.inc-c{white-space:nowrap;text-align:center;width:84px}.inc-c label{display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer}.inc-mini{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--tx2);cursor:pointer}th.inc-c{font-size:12px}.pres-c .xp{display:none}.xp-body .fgrid.one{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}.xp-body .fgrid.one .fld{grid-column:auto}.xp-body .fgrid.one .fld:has(.seg){grid-column:1/-1}
+.chips-row{align-items:stretch}.chips-row>.kpi.sm{height:auto;min-height:0;align-self:stretch;justify-content:center}.card.wk{padding:8px 14px}.wkb{display:flex;align-items:flex-end;gap:6px;height:44px;margin-top:4px}.wkb>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}.wkb b{display:block;width:100%;max-width:22px;min-height:2px;background:var(--pri);border-radius:3px 3px 0 0}.wkb small{font-size:11px;color:var(--tx3)}.inc-c{white-space:nowrap;text-align:center;width:84px}.inc-c label{display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer}.inc-mini{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--tx2);cursor:pointer}th.inc-c{font-size:12px}.pres-c .xp{display:none}.xp-body .fgrid.one{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}.xp-body .fgrid.one .fld{grid-column:auto}.xp-body .fgrid.one .fld:has(.seg){grid-column:1/-1}
 .pres-w{display:block!important}.pres-s{display:flex!important;flex-direction:column;gap:8px;min-width:0}
 .p2-bar{display:flex;align-items:flex-end;gap:8px 12px;flex-wrap:wrap;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;margin-bottom:8px}
 .p2-bar .fld{gap:2px;grid-column:auto;flex:0 0 auto}.p2-bar .fld>label{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.3px}
@@ -2982,7 +2987,7 @@ Views.proyectos = {
       : `<div class="cards">${rows.sort(by(i => -critScore(i))).map(card).join('') || empty('Sin proyectos')}</div>`;
     return pageHead('Proyectos', `${rows.length} proyectos · Planificación → Ejecución → Transición → Cierre, con compuertas de gobierno. Arrastra una tarjeta para cambiar de fase. Los proyectos nacen al aprobar una propuesta.`, `<span class="edit-only">${btn('Ir a Propuestas', 'go', { d: { v: 'propuestas' }, ic: 'bulb', cls: 'pri' })}${btn('Alta directa', 'new', { d: { t: 'prj' }, ic: 'plus' })}</span>`) + `
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="in-q" data-chg="flt" data-v="prj" data-f="q" type="search" placeholder="Buscar proyecto…" value="${esc(f.q)}"></div>
-      <select data-chg="flt" data-v="prj" data-f="resp">${selOpts(uniq(scope().map(i => i.lider)).sort(), f.resp, 'Todos los responsables')}</select>
+      
       <label class="chk tb-c"><input type="checkbox" ${f.hideDone ? 'checked' : ''} data-chg="flt" data-v="prj" data-f="hideDone" data-bool="1"> <span>Ocultar completados/cancelados</span></label>
       <div class="seg" style="margin-left:auto"><button class="${f.mode === 'board' ? 'on' : ''}" data-act="imode" data-m="board">${icon('board', 14)} Tablero</button><button class="${f.mode === 'cards' ? 'on' : ''}" data-act="imode" data-m="cards">${icon('list2', 14)} Tarjetas</button></div></div>${body}`;
   },
@@ -3170,7 +3175,7 @@ Views.hitos = {
       <div class="card wk"><header><h2>Hitos pendientes por semana</h2></header><div class="wkb">${wk.map(w => `<div title="${w.v} hitos · semana del ${w.l}"><b style="height:${w.v / mxw * 56}px"></b><small>${w.l.split(' ')[0]}</small></div>`).join('')}</div></div></div>
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="h-q" data-chg="flt" data-v="hitos" data-f="q" type="search" placeholder="Buscar hito…" value="${esc(f.q)}"></div>
       <select data-chg="flt" data-v="hitos" data-f="ini">${selOpts(uniq(all.map(h => h.ini)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todos los proyectos')}</select>
-      <select data-chg="flt" data-v="hitos" data-f="resp">${selOpts(uniq(all.map(h => h.resp).filter(Boolean)).sort(), f.resp, 'Todos los responsables')}</select>
+      
       ${f.est || f.ini || f.resp || f.q ? btn('Limpiar', 'hclear', { ic: 'x' }) : ''}</div>
     <div class="tbl-w"><table class="tbl"><thead><tr><th style="width:40px"></th><th>Proyecto</th><th style="min-width:240px">Hito</th><th>Fecha plan</th><th>Fecha real</th><th>Responsable</th><th>Estado</th></tr></thead><tbody>
     ${rows.map(h => { const e = hitoEstado(h); return `<tr data-act="sel" data-t="hito" data-id="${h.id}" class="${UI.sel && UI.sel.id === h.id ? 'sel' : ''}"><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado" data-nostop="1"></td><td>${iniLink(h.ini)}</td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b></td><td>${fmtD(h.fecha)}<small>${rel(h.fecha)}</small></td><td>${fmtD(h.fechaReal)}</td><td>${esc(h.resp || '—')}</td><td><span class="pill" style="--c:${e.c}">${e.t}</span></td></tr>`; }).join('') || `<tr><td colspan="7">${empty('Sin hitos', 'flag')}</td></tr>`}</tbody></table></div>`;
@@ -9101,7 +9106,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.25', b: '14-10-2026 17:00' };
+  const VER = { v: 'V22.26', b: '14-10-2026 18:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
