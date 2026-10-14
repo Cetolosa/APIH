@@ -547,6 +547,10 @@ body{font:13px/1.45 var(--font)}
 }
 .mc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
 @media (max-width:1100px){.mc-grid{grid-template-columns:1fr}}
+.menu-tabs{display:flex;gap:2px;margin:0 0 10px;border-bottom:1px solid var(--bd);overflow-x:auto}
+.menu-tabs a{padding:8px 14px;font-weight:600;color:var(--tx2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:6px}
+.menu-tabs a:hover{color:var(--tx)}.menu-tabs a.on{color:var(--pri);border-bottom-color:var(--pri)}
+.menu-tabs em{font-style:normal;font-size:11px;background:var(--red);color:#fff;border-radius:9px;padding:0 6px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -4174,9 +4178,18 @@ Views.miconfig = {
     const tp = !g && cfgUOf(me).ptema;
     return pageHead('Mi configuración', g ? 'Perfil Gasto: tus cambios valen para todo el portafolio · «Fijar» impide que los líderes cambien un parámetro' : 'Tus cambios valen solo para las ' + n + ' iniciativas que lideras', '') + `
     <div class="grid12"><section class="card c12 mc-card"><header><h2>Umbrales de alerta</h2><small>${g ? 'Reemplazan los valores personales de cada usuario' : 'El resto del portafolio sigue con los valores generales'}</small></header><div class="mc-grid">${rows}</div></section>
-    <section class="card c12"><header><h2>Presentaciones</h2></header><p class="desc">Tema: <b>${fijo('tema') ? 'fijado por Gasto' : g ? 'global' : tp ? 'personal' : 'general'}</b>. Las plantillas que guardes ${g ? 'son para todos' : 'son solo tuyas'}. ${g ? 'Los decks incluyen todo el portafolio.' : 'Tus decks incluyen solo las iniciativas que lideras.'}</p><div class="chips">${btn('Ir a Presentaciones', 'go', { d: { v: 'presentaciones' } })}${g ? btn(fijo('tema') ? 'Liberar tema' : 'Fijar tema', 'myfix', { d: { k: 'tema' } }) : ''}${tp && !fijo('tema') ? btn('Volver al tema general', 'myreset', { d: { k: '_tema' } }) : ''}</div></section></div>`;
+    <section class="card c12"><header><h2>Presentaciones</h2></header><p class="desc">Tema: <b>${fijo('tema') ? 'fijado por Gasto' : g ? 'global' : tp ? 'personal' : 'general'}</b>. Las plantillas que guardes ${g ? 'son para todos' : 'son solo tuyas'}. ${g ? 'Los decks incluyen todo el portafolio.' : 'Tus decks incluyen solo las iniciativas que lideras.'}</p><div class="chips">${btn('Ir a Presentaciones', 'go', { d: { v: 'presentaciones' } })}${g ? btn(fijo('tema') ? 'Liberar tema' : 'Fijar tema', 'myfix', { d: { k: 'tema' } }) : ''}${tp && !fijo('tema') ? btn('Volver al tema general', 'myreset', { d: { k: '_tema' } }) : ''}</div></section></div>` + (g && window.V22 && V22.MENU ? menuRolCard() : '');
   }
 };
+function menuRolCard() {
+  const roles = ['Gasto', 'Administrador', 'Colaborador', 'Invitado'], ent = V22.MENU, cur = St.cfg.menuRol || {};
+  const on = (r, k) => (cur[r] && cur[r].length ? cur[r] : V22.MENU_ROL[r]).includes(k);
+  return `<div class="grid12"><section class="card c12"><header><h2>Menú por rol</h2><small>Qué entradas del menú ve cada rol. Gasto siempre conserva las suyas para no quedar sin acceso.</small></header>
+    <div class="tbl-w"><table class="tbl"><thead><tr><th>Entrada</th>${roles.map(r => '<th class="n">' + r + '</th>').join('')}</tr></thead><tbody>${ent.map(e => `<tr><td>${esc(e.t)}</td>${roles.map(r => `<td class="n"><input type="checkbox" aria-label="${esc(e.t + ' para ' + r)}" data-chg="menurol" data-r="${r}" data-k="${e.k}" ${on(r, e.k) ? 'checked' : ''} ${r === 'Gasto' && ['admin', 'inicio'].includes(e.k) ? 'disabled' : ''}></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <div class="chips" style="margin-top:8px">${btn('Restablecer menús', 'menurolreset')}</div></section></div>`;
+}
+Chg.menurol = el => { if (!esGasto()) return; const r = el.dataset.r, k = el.dataset.k, cur = St.cfg.menuRol = St.cfg.menuRol || {}; const base = (cur[r] && cur[r].length ? cur[r] : V22.MENU_ROL[r]).slice(); const i = base.indexOf(k); if (el.checked && i < 0) base.push(k); if (!el.checked && i >= 0) base.splice(i, 1); cur[r] = V22.MENU.map(e => e.k).filter(x => base.includes(x)); save(); render(); };
+Acts.menurolreset = () => { if (!esGasto()) return; delete St.cfg.menuRol; save(); render(); toast('Menús restablecidos'); };
 Chg.mycfg = el => {
   if (FL.verComo) { toast('Sal de «Ver como» para editar', 'err'); refresh(); return; }
   const k = el.dataset.k, v = Math.min(+el.dataset.max || 9999, Math.max(+el.dataset.min || 0, +el.value || 0));
@@ -9150,7 +9163,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.34', b: '15-10-2026 01:00' };
+  const VER = { v: 'V22.35', b: '15-10-2026 02:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9174,6 +9187,51 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     }
     if (UI.view === 'ficha') $('#app').classList.toggle('nopanel', !UI.panel || !UI.sel);
   };
+
+  /* ======================= V22.35 · Menú por rol con pestañas ======================= */
+  const MENU = [
+    { k: 'inicio', t: 'Inicio', ic: 'dashboard', vs: [['dashboard', 'Dashboard'], ['cielo', 'Mi cocina']] },
+    { k: 'iniciativas', t: 'Iniciativas', ic: 'list', vs: [['portfolio', 'Tabla'], ['proyectos', 'Tablero'], ['propuestas', 'Propuestas']] },
+    { k: 'planificacion', t: 'Planificación', ic: 'gantt', vs: [['gantt', 'Gantt'], ['roadmap', 'Roadmap'], ['calendario', 'Calendario'], ['hitos', 'Hitos'], ['riesgos', 'Riesgos']] },
+    { k: 'gobierno', t: 'Gobierno', ic: 'gavel', vs: [['comite', 'Comité'], ['decisiones', 'Decisiones'], ['compromisos', 'Compromisos'], ['cambios', 'Cambios']] },
+    { k: 'pendientes', t: 'Mis pendientes', ic: 'check', vs: [['decisiones', 'Decisiones'], ['compromisos', 'Compromisos']] },
+    { k: 'presentaciones', t: 'Presentaciones', ic: 'slides', vs: [['presentaciones', 'Presentaciones']] },
+    { k: 'personas', t: 'Personas', ic: 'person', vs: [['personas', 'Personas']] },
+    { k: 'admin', t: 'Administración', ic: 'settings', vs: [['admin', 'Parámetros'], ['bitacora', 'Bitácora'], ['miconfig', 'Mi configuración'], ['ia', 'IA']] },
+    { k: 'ayuda', t: 'Ayuda', ic: 'help', vs: [['proposito', 'Para qué sirve']] }
+  ];
+  const MENU_ROL = {
+    Gasto: ['inicio', 'iniciativas', 'planificacion', 'gobierno', 'presentaciones', 'personas', 'admin', 'ayuda'],
+    Administrador: ['inicio', 'iniciativas', 'planificacion', 'gobierno', 'presentaciones', 'admin', 'ayuda'],
+    Colaborador: ['inicio', 'iniciativas', 'planificacion', 'pendientes', 'presentaciones', 'ayuda'],
+    Invitado: ['inicio', 'iniciativas', 'planificacion', 'ayuda']
+  };
+  V.MENU = MENU; V.MENU_ROL = MENU_ROL;
+  const menuKeys = () => { const r = rolActual(), c = St.cfg && St.cfg.menuRol && St.cfg.menuRol[r]; return (Array.isArray(c) && c.length ? c : MENU_ROL[r] || MENU_ROL.Invitado); };
+  const viewOk = v => v === 'admin' ? esAdmin() : v === 'ia' ? puedeUsarIA() : v === 'cielo' ? cieloOn() : v === 'personas' ? esGasto() : true;
+  const menuGroups = () => { const ks = menuKeys(); return MENU.filter(g => ks.includes(g.k)).map(g => Object.assign({}, g, { vs: g.vs.filter(x => viewOk(x[0])) })).filter(g => g.vs.length); };
+  const grupoDe = (v, gs) => { if (v === 'ficha') v = 'portfolio'; return gs.find(g => g.vs.some(x => x[0] === v)); };
+  const lastTabs = (() => { try { return JSON.parse(lsGet('apih_tabs') || '{}'); } catch (e) { return {}; } })();
+  const menuBadge = g => g.vs.reduce((a, x) => a + (+navBadge(x[0]) || 0), 0);
+  const side0 = renderChrome;
+  renderChrome = function () {
+    side0.apply(this, arguments);
+    const sd = sr('#side'); if (!sd) return;
+    const gs = menuGroups(), cur = grupoDe(UI.view, gs); if (cur) { lastTabs[cur.k] = UI.view === 'ficha' ? lastTabs[cur.k] : UI.view; }
+    const foot = sr('.side-f', sd), fh = foot ? foot.outerHTML : '';
+    sd.innerHTML = gs.map(g => { const tgt = (lastTabs[g.k] && g.vs.some(x => x[0] === lastTabs[g.k])) ? lastTabs[g.k] : g.vs[0][0], on = cur && cur.k === g.k, b = menuBadge(g);
+      return `<a class="nav ${on ? 'on' : ''}" data-act="go" data-v="${tgt}" href="#/${tgt}" title="${esc(g.t)}"${on ? ' aria-current="page"' : ''}>${icon(g.ic, 18)}<span>${esc(g.t)}</span>${b ? `<em class="red">${b}</em>` : ''}</a>`; }).join('') + fh;
+    const um = sr('#pop-usr'); if (um && !sr('[data-act="go"][data-v="miconfig"]', um) && !gs.some(g => g.vs.some(x => x[0] === 'miconfig'))) um.insertAdjacentHTML('beforeend', `<button data-act="go" data-v="miconfig">${icon('settings', 15)} Mi configuración</button>`);
+  };
+  function menuTabs() {
+    const m = sr('#main'); if (!m) return; const old = sr('.menu-tabs', m); if (old) old.remove();
+    const gs = menuGroups(), g = grupoDe(UI.view, gs); if (!g || g.vs.length < 2 || UI.view === 'ficha') return;
+    try { lsSet('apih_tabs', JSON.stringify(lastTabs)); } catch (e) { }
+    const h = `<div class="menu-tabs" role="tablist" aria-label="${esc(g.t)}">${g.vs.map(x => { const b = +navBadge(x[0]) || 0; return `<a role="tab" class="${UI.view === x[0] ? 'on' : ''}" data-act="go" data-v="${x[0]}" href="#/${x[0]}" aria-selected="${UI.view === x[0]}">${esc(x[1])}${b ? `<em>${b}</em>` : ''}</a>`; }).join('')}</div>`;
+    m.insertAdjacentHTML('afterbegin', h);
+  }
+  const go0 = go;
+  go = function (v) { if (rolActual() === 'Colaborador' && ['decisiones', 'compromisos'].includes(v) && !UI.pmSet) { UI.pmSet = 1; FL.mine = true; try { ppInval(); } catch (e) { } } return go0(v); };
   /* Encabezado compacto: acciones secundarias en «Más», y filtros + búsqueda en una sola fila */
   function compactar() {
     const m = sr('#main'); if (!m || innerWidth < 700) return;
@@ -9207,7 +9265,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     /* compactar() mueve los filtros a otra fila y eso quita el foco del campo que se está escribiendo: se restaura al final */
     const act = document.activeElement, key = act && act.dataset ? act.dataset.key : null, ss = act && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
     render0.apply(this, arguments);
-    try { primaria(); compactar(); contrasta(); } catch (e) { console.error(e); }
+    try { primaria(); compactar(); contrasta(); menuTabs(); } catch (e) { console.error(e); }
     if (key) { const el = $(`[data-key="${key}"]`); if (el && el !== document.activeElement) { el.focus(); if (ss && el.setSelectionRange) try { el.setSelectionRange(ss[0], ss[1]); } catch (e) { } } }
   };
   /* texto oscuro sobre fondos claros (celdas de la matriz y exposición) */
