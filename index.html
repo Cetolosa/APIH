@@ -635,6 +635,7 @@ const APIH_CONFIG = {
   commitmentsList: 'APIH_Compromisos',   // compromisos / acuerdos de reuniones
   changesList: 'APIH_Cambios',           // control de cambios (alcance, fecha, presupuesto)
   notesList: 'APIH_Notas',               // V22: comentarios de colaboradores por área
+  docsList: 'APIH_Documentos',           // V22: documentación de proyectos (enlaces a OneDrive/SharePoint)
   auditList: 'APIH_Bitacora',
   committeesList: 'APIH_Comites',     // extensión V4: actas de comité
   rolesList: 'APIH_Roles',            // roles y usuarios (solo el administrador puede editarla en SharePoint)
@@ -795,7 +796,7 @@ const METODO_DEF = () => {
 /* aplica la metodología a las listas de fases (se mutan en el lugar: todo el código las usa por referencia) */
 function syncFases() {
   if (St && St.cfg && Array.isArray(St.cfg.areas) && !St.cfg.areas.includes('Transversal')) St.cfg.areas.push('Transversal');   // área común: visible y editable por todos
-  if (St) { St.compromisos = St.compromisos || []; St.cambios = St.cambios || []; St.notas = St.notas || []; }
+  if (St) { St.compromisos = St.compromisos || []; St.cambios = St.cambios || []; St.notas = St.notas || []; St.documentos = St.documentos || []; }
   const m = St && St.cfg ? (St.cfg.metodo = St.cfg.metodo || METODO_DEF()) : METODO_DEF();
   const fp = (m.fasesProp && m.fasesProp.length ? m.fasesProp : METODO_DEF().fasesProp), fj = (m.fasesPrj && m.fasesPrj.length ? m.fasesPrj : METODO_DEF().fasesPrj);
   FASES_PROP.splice(0, FASES_PROP.length, ...fp); FASES_PRJ.splice(0, FASES_PRJ.length, ...fj);
@@ -821,7 +822,7 @@ const defaultCfg = () => ({
 });
 function seedState() {
   const s = clone(SEED);
-  return migrateV5({ v: 3, cfg: Object.assign(defaultCfg(), { comiteParts: s.comiteParts || [] }), ini: s.iniciativas, compromisos: s.compromisos || [], cambios: s.cambios || [], notas: [], hitos: s.hitos, riesgos: s.riesgos, decisiones: s.decisiones, comites: s.comites, bitacora: s.bitacora, ptpl: [], psnap: {}, pres: s.presentaciones, usuarios: s.usuarios, eventos: [], iaLog: [], seq: {} });
+  return migrateV5({ v: 3, cfg: Object.assign(defaultCfg(), { comiteParts: s.comiteParts || [] }), ini: s.iniciativas, compromisos: s.compromisos || [], cambios: s.cambios || [], notas: [], documentos: [], hitos: s.hitos, riesgos: s.riesgos, decisiones: s.decisiones, comites: s.comites, bitacora: s.bitacora, ptpl: [], psnap: {}, pres: s.presentaciones, usuarios: s.usuarios, eventos: [], iaLog: [], seq: {} });
 }
 /* V4: sin localStorage. El estado inicial lo entrega DataService.init() (SharePoint o demo en memoria). */
 function save() { ppInval(); DataService.commit(); }
@@ -1068,6 +1069,14 @@ const SP_SCHEMA = {
     ],
     tpl: () => ({ ini: null, area: 'Transversal', tipo: '', visto: '', vistoPor: '', fVisto: null, vista: '', ref: '', texto: '', autor: '', correo: '', ts: hoy() + 'T00:00', estado: 'Abierto', por: '', fAb: null })
   },
+  docs: {
+    label: 'Documentos', cfg: 'docsList', coll: 'documentos', key: 'Title', title: 'ID (Title)',
+    cols: [
+      C.txt('Title', 'id', { rw: false }), C.txt('ProyectoID', 'ini'), C.txt('Nombre', 'nombre'), C.txt('Tipo', 'tipo'), C.note('Enlace', 'url'), C.note('Nota', 'nota'),
+      C.txt('Autor', 'autor'), C.txt('Correo', 'correo'), C.txt('Fecha', 'ts')
+    ],
+    tpl: () => ({ ini: null, nombre: '', tipo: 'Otro', url: '', nota: '', autor: '', correo: '', ts: hoy() + 'T00:00' })
+  },
   audit: {
     label: 'Bitácora', cfg: 'auditList', coll: 'bitacora', key: 'Title', title: 'ID (Title)',
     cols: [
@@ -1126,7 +1135,7 @@ const SPMap = {
       if (v === '' || v == null) { if (!(o[c.k] == null || o[c.k] === '')) { if (typeof o[c.k] === 'string') o[c.k] = ''; } return; }
       if (!spEq(v, o[c.k])) o[c.k] = v;
     });
-    if (ent === 'risks' || ent === 'milestones' || ent === 'decisions' || ent === 'commitments' || ent === 'changes' || ent === 'notes') { if (o.ini === '') o.ini = null; }
+    if (ent === 'risks' || ent === 'milestones' || ent === 'decisions' || ent === 'commitments' || ent === 'changes' || ent === 'notes' || ent === 'docs') { if (o.ini === '') o.ini = null; }
     if (ent === 'projects') { o.deps = o.deps || []; o.est = o.est || []; o.hist = o.hist || []; }
     return o;
   }
@@ -1309,6 +1318,7 @@ class SharePointService {
   getCommitments() { return this._read('commitments'); }
   getChanges() { return this._read('changes'); }
   getNotes() { return this._read('notes'); }
+  getDocs() { return this._read('docs'); }
   getAudit() { return this._read('audit'); }
   getCommittees() { return this._read('committees'); }
   async getSettings() {
@@ -1463,13 +1473,13 @@ const DataService = {
     }
   },
   async loadRemote() {
-    const v = this.svc, [prjs, props, riesgos, hitos, decisiones, bitacora, comites, set, compromisos, cambios, notas] = await Promise.all([v.getProjects(), v.getProposals(), v.getRisks(), v.getMilestones(), v.getDecisions(), v.getAudit(), v.getCommittees(), v.getSettings(), v.getCommitments().catch(e => { if (e.status === 404) return []; throw e; }), v.getChanges().catch(e => { if (e.status === 404) return []; throw e; }), v.getNotes().catch(e => { if (e.status === 404 || e.status === 403) return []; throw e; })]);
+    const v = this.svc, [prjs, props, riesgos, hitos, decisiones, bitacora, comites, set, compromisos, cambios, notas, docs] = await Promise.all([v.getProjects(), v.getProposals(), v.getRisks(), v.getMilestones(), v.getDecisions(), v.getAudit(), v.getCommittees(), v.getSettings(), v.getCommitments().catch(e => { if (e.status === 404) return []; throw e; }), v.getChanges().catch(e => { if (e.status === 404) return []; throw e; }), v.getNotes().catch(e => { if (e.status === 404 || e.status === 403) return []; throw e; }), v.getDocs().catch(e => { if (e.status === 404 || e.status === 403) return []; throw e; })]);
     const seed = seedState(), cfg = Object.assign(defaultCfg(), set.cfg || {});
     LOCAL_CFG.forEach(k => { cfg[k] = (St && St.cfg && St.cfg[k]) || defaultCfg()[k]; });
     const u = AuthService.user(); if (u) { const m = (set.usuarios || seed.usuarios).find(x => x.n.toLowerCase() === (u.name || '').toLowerCase() || (x.correo && u.email && x.correo.toLowerCase() === u.email.toLowerCase())); cfg.usuario = m ? m.n : u.name; }
     bitacora.sort((a, b) => a.ts < b.ts ? 1 : -1);
     const ini = [...prjs, ...props];
-    let S = { v: 3, cfg, ini, hitos, riesgos, decisiones, comites, bitacora, compromisos: compromisos || [], cambios: cambios || [], notas: notas || [], pres: set.pres || [], ptpl: set.ptpl || [], ptema: set.ptema || {}, psnap: Object.fromEntries(Object.keys(set).filter(k => k.startsWith('psnap:')).map(k => [k.slice(6), set[k]])), usuarios: set.usuarios || seed.usuarios, eventos: set.eventos || [], cfgU: set.cfgU || {}, iaLog: [], seq: set.seq || {} };
+    let S = { v: 3, cfg, ini, hitos, riesgos, decisiones, comites, bitacora, compromisos: compromisos || [], cambios: cambios || [], notas: notas || [], documentos: docs || [], pres: set.pres || [], ptpl: set.ptpl || [], ptema: set.ptema || {}, psnap: Object.fromEntries(Object.keys(set).filter(k => k.startsWith('psnap:')).map(k => [k.slice(6), set[k]])), usuarios: set.usuarios || seed.usuarios, eventos: set.eventos || [], cfgU: set.cfgU || {}, iaLog: [], seq: set.seq || {} };
     S.empty = !ini.length && !hitos.length && !riesgos.length;
     if (ini.some(i => !i.tipo)) { const raw = JSON.parse(JSON.stringify(S)); S = migrateV5(S); S._raw = raw; }   // datos de versiones anteriores
     return S;
@@ -8766,9 +8776,9 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   const SECS = [
     ['res', 'Resumen', 'list', true], ['cif', 'Cifras, fechas y responsables', 'money'], ['sal', 'Salud y recomendación', 'target'], ['dep', 'Dependencias', 'link'], ['log', 'Logros y próximos pasos', 'check'], ['cal', 'Calidad de datos', 'shield'],
-    ['hit', 'Hitos', 'flag', true, 'prj'], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Actividad', 'book', true], ['ia', 'IA', 'spark'], ['int', 'Notas internas del PMO', 'lock', true], ['nota', 'Comentarios del área', 'comment', true]
+    ['hit', 'Hitos', 'flag', true, 'prj'], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Actividad', 'book', true], ['ia', 'IA', 'spark'], ['doc', 'Documentación', 'book'], ['int', 'Notas internas del PMO', 'lock', true], ['nota', 'Comentarios del área', 'comment', true]
   ];
-  const SIMPLE_OPEN = ['res', 'cif', 'hit', 'rie', 'int'];
+  const SIMPLE_OPEN = ['res', 'cif', 'hit', 'rie', 'doc', 'int'];
   const fh = () => (UI.fh = UI.fh || (() => { try { return JSON.parse(lsGet('apih_fh') || '{}'); } catch (e) { return {}; } })());
   const fhSave = () => lsSet('apih_fh', JSON.stringify(fh()));
   const fOculta = k => !!(fh()[k] && fh()[k].h);
@@ -8785,6 +8795,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     if (k === 'dec') return e(btn('Nueva decisión', 'new', { d: { t: 'dec', ini: i.id }, ic: 'plus', cls: 'sm' }));
     if (k === 'com') return e(btn('Nuevo compromiso', 'acunew', { d: { id: i.id }, ic: 'plus', cls: 'sm' }));
     if (k === 'cam') return e(btn('Nueva solicitud', 'chgnew', { d: { id: i.id }, ic: 'plus', cls: 'sm' }));
+    if (k === 'doc') return !docPuedeAgregar(i) ? '' : e(btn('Agregar documento', 'docnew', { d: { id: i.id }, ic: 'plus', cls: 'sm' }));
     if (k === 'nota') return btn('Comentar', 'notanew', { ic: 'comment', cls: 'sm' });
     return '';
   };
@@ -8884,6 +8895,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     sec.rie = secRiesgos(i); sec.dec = secDec(i); sec.com = secCom(i); if (!PR) sec.cam = secCam(i);
     sec.act = [null, parsePanel(i, 'actividad').body.innerHTML];
     if (APIH_CONFIG.ia !== false) sec.ia = [null, parsePanel(i, 'ia').body.innerHTML];
+    sec.doc = secDoc(i);
     sec.int = secInt(i);
     sec.nota = secNota(i);
     const lista = SECS.filter(s => sec[s[0]] && (!s[4] || (s[4] === 'prj' && !PR)));
@@ -8971,7 +8983,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.5', b: '14-10-2026 00:12' };
+  const VER = { v: 'V22.6', b: '14-10-2026 00:43' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9341,6 +9353,51 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   };
   const fitMain1 = fitMain;
   fitMain = function () { const r = fitMain1.apply(this, arguments); const m = document.getElementById('v22-mes'); if (m) m.classList.remove('fit'); return r; };
+
+  /* ======================= Documentación del proyecto (enlaces a OneDrive / SharePoint) ======================= */
+  const DOC_TIPOS = ['Acta', 'Contrato', 'RFP', 'Especificación', 'Informe', 'Presupuesto', 'Otro'];
+  const docUrlOk = u => { try { const x = new URL(String(u || '').trim()); return x.protocol === 'https:' && /(^|\.)(sharepoint\.com|1drv\.ms|onedrive\.live\.com|office\.com|microsoft\.com)$/i.test(x.hostname); } catch (e) { return false; } };
+  const docsDe = id => (St.documentos || []).filter(d => d.ini === id).sort((a, b) => (a.ts < b.ts ? 1 : -1));
+  const docPuedeAgregar = i => !soloLectura() && (puedeEditarIni(i) || puedeGobernar());
+  const docPuedeEditar = (d, i) => !soloLectura() && (esMia(d) || puedeGobernar() || esAdmin());
+  function secDoc(i) {
+    const L = docsDe(i.id);
+    if (!L.length) return [0, V.emptyRich({ ic: 'book', title: 'Aún no hay documentación', line: 'Sube el archivo a OneDrive o SharePoint, copia el vínculo con «Compartir» y pégalo acá. Así toda la documentación del proyecto queda en un solo lugar.', p: ['Agregar documento', 'docnew', { id: i.id }, 'plus'] })];
+    return [L.length, `<div class="v22-docs">${L.map(d => `<div class="v22-doc"><span class="v22-doc-i">${icon('book', 18)}</span><div class="v22-doc-m"><b>${esc(d.nombre)}</b><small>${esc(d.tipo || 'Otro')} · ${esc(d.autor || '—')} · ${esc(fmtD(String(d.ts).slice(0, 10)))}${d.nota ? ' · ' + esc(cut(d.nota, 90)) : ''}</small></div><span class="v22-doc-a">${docUrlOk(d.url) ? `<a class="btn sm pri" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${icon('link', 13)}<span>Abrir</span></a>` : '<span class="pill soft" title="El enlace no es de OneDrive o SharePoint">Enlace no válido</span>'}${docPuedeEditar(d, i) ? `<span class="edit-only"><button class="btn sm" data-act="docedit" data-id="${esc(d.id)}">Editar</button><button class="btn sm" data-act="docdel" data-id="${esc(d.id)}">Quitar</button></span>` : ''}</span></div>`).join('')}</div>`];
+  }
+  const DOC_CSS = document.createElement('style');
+  DOC_CSS.textContent = `.v22-docs{display:flex;flex-direction:column;gap:6px}.v22-doc{display:flex;align-items:center;gap:10px;border:1px solid var(--bd);border-radius:10px;padding:8px 10px;background:var(--card)}
+  .v22-doc-i{flex:none;width:32px;height:32px;border-radius:8px;background:rgba(13,68,106,.1);color:var(--pri);display:flex;align-items:center;justify-content:center}.v22-doc-m{flex:1;min-width:0;display:flex;flex-direction:column}.v22-doc-m b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v22-doc-m small{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .v22-doc-a{flex:none;display:flex;gap:6px;align-items:center}.v22-doc-a .edit-only{display:inline-flex;gap:6px}`;
+  document.head.appendChild(DOC_CSS);
+  function docForm(i, d) {
+    const nw = !d;
+    openForm({ title: (nw ? 'Agregar documento · ' : 'Editar documento · ') + i.titulo, saveLabel: nw ? 'Agregar' : 'Guardar',
+      values: { nombre: nw ? '' : d.nombre, tipo: nw ? 'Otro' : d.tipo, url: nw ? '' : d.url, nota: nw ? '' : (d.nota || '') },
+      fields: [
+        { k: 'nombre', l: 'Nombre del documento', req: true, w: 3 },
+        { k: 'tipo', l: 'Tipo', t: 'select', opts: DOC_TIPOS, w: 1 },
+        { k: 'url', l: 'Vínculo de OneDrive o SharePoint', req: true, w: 3, hint: 'Sube el archivo a OneDrive o SharePoint, pulsa <b>Compartir → Copiar vínculo</b> (que lo pueda abrir el equipo del proyecto) y pégalo acá.' },
+        { k: 'nota', l: 'Nota (opcional)', t: 'textarea', w: 3 }],
+      onSave(o) {
+        const u = String(o.url || '').trim(), nm = String(o.nombre || '').trim();
+        if (!nm) { toast('Ponle un nombre al documento', 'err'); return false; }
+        if (!docUrlOk(u)) { toast('El vínculo debe ser de OneDrive o SharePoint (https://…sharepoint.com, 1drv.ms)', 'err'); return false; }
+        if (nw) {
+          const hh = new Date().toTimeString().slice(0, 5); St.documentos = St.documentos || [];
+          St.documentos.unshift({ id: 'DOC-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase(), ini: i.id, nombre: nm, tipo: o.tipo || 'Otro', url: u, nota: String(o.nota || '').trim(), autor: miUsuario(), correo: emailYo(), ts: hoy() + 'T' + hh });
+          log('Cambio', i.id, 'Documento agregado: ' + nm + ' (' + (o.tipo || 'Otro') + ')');
+        } else { Object.assign(d, { nombre: nm, tipo: o.tipo || 'Otro', url: u, nota: String(o.nota || '').trim() }); log('Cambio', i.id, 'Documento actualizado: ' + nm); }
+        toast(nw ? 'Documento agregado' : 'Documento actualizado'); refresh();
+      } });
+  }
+  Acts.docnew = d => { const i = byId(d.id); if (!i) return; if (!docPuedeAgregar(i)) return NO_PERM('Tu rol o el modo solo lectura no permiten agregar documentos'); docForm(i, null); };
+  Acts.docedit = d => { const x = (St.documentos || []).find(n => n.id === d.id), i = x && byId(x.ini); if (!x || !i) return; if (!docPuedeEditar(x, i)) return NO_PERM('Solo quien lo agregó o el PMO puede editarlo'); docForm(i, x); };
+  Acts.docdel = d => {
+    const x = (St.documentos || []).find(n => n.id === d.id), i = x && byId(x.ini); if (!x || !i) return;
+    if (!docPuedeEditar(x, i)) return NO_PERM('Solo quien lo agregó o el PMO puede quitarlo');
+    confirmBox('¿Quitar «' + esc(x.nombre) + '» de la documentación? El archivo en OneDrive/SharePoint no se borra.', () => { St.documentos = St.documentos.filter(n => n.id !== x.id); log('Cambio', i.id, 'Documento quitado: ' + x.nombre); toast('Documento quitado'); refresh(); }, 'Quitar', true);
+  };
 })();
 
 /* ============================================================ APIH V4 · Arranque ============================================================ */
