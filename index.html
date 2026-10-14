@@ -1535,7 +1535,7 @@ const DataService = {
   settingValue(S, k) { if (k.startsWith('psnap:')) return S.psnap[k.slice(6)]; if (k === 'cfg') { const c = Object.assign({}, S.cfg); LOCAL_CFG.forEach(x => delete c[x]); return c; } return S[k]; },
   /* llamado por save(): programa un envío diferido */
   commit() {
-    this.dirty = true;
+    this.dirty = true; this.gen = (this.gen || 0) + 1;
     if (!this.svc || !this.snap) { if (typeof updateSyncUI === 'function') updateSyncUI(); return; }
     clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 500);
   },
@@ -1543,7 +1543,7 @@ const DataService = {
     const ops = []; const S = St;
     COLLS.forEach(ent => {
       const arr = (S[SP_SCHEMA[ent].coll] || []).filter(SP_SCHEMA[ent].filter || (() => true)), prev = this.snap[ent], seen = new Set();
-      arr.forEach(o => { seen.add(o.id); const sig = JSON.stringify(SPMap.fieldsOf(ent, o)); if (!prev.has(o.id)) ops.push({ t: 'c', ent, o, sig }); else if (prev.get(o.id) !== sig) ops.push({ t: 'u', ent, o, sig }); });
+      arr.forEach(o => { seen.add(o.id); const sig = JSON.stringify(SPMap.fieldsOf(ent, o)); if (this.bad && this.bad.has(ent + ':' + o.id + ':' + sig)) return; if (!prev.has(o.id)) ops.push({ t: 'c', ent, o, sig }); else if (prev.get(o.id) !== sig) ops.push({ t: 'u', ent, o, sig }); });
       prev.forEach((sig, id) => { if (!seen.has(id)) ops.push({ t: 'd', ent, id }); });
     });
     settingKeys(S).forEach(k => { const sig = JSON.stringify(this.settingValue(S, k)); if (this.snap.settings.get(k) !== sig) ops.push({ t: 's', k, v: this.settingValue(S, k), sig }); });
@@ -1574,7 +1574,7 @@ const DataService = {
         try {
           const rs = await v.batchOps(ch);
           ch.forEach((op, i) => {
-            if (!rs[i].ok) { fail = fail || new Error(rs[i].err); return; }
+            if (!rs[i].ok) { if (rs[i].perm && op.t !== 'd') { (this.bad = this.bad || new Set()).add(op.ent + ':' + op.o.id + ':' + op.sig); (this.badMsg = this.badMsg || []).push(op.ent + ' ' + op.o.id + ': ' + rs[i].err); return; } fail = fail || new Error(rs[i].err); return; }
             if (op.t === 'd') this.snap[op.ent].delete(op.id); else this.snap[op.ent].set(op.o.id, op.sig);
             done++;
           });
@@ -1586,6 +1586,7 @@ const DataService = {
     await Promise.all(workers);
     this.setStatus({ msSave: Math.round(performance.now() - t0) });
     this.busy = false;
+    if (this.badMsg && this.badMsg.length) { const n = this.badMsg.length; console.warn('APIH: registros rechazados por el servidor', this.badMsg); this.badMsg = []; if (typeof toast === 'function') toast(n + ' registro(s) fueron rechazados por el servidor y no se guardaron (revisa tus datos o recarga la página). El resto sí se guardó.', 'err'); }
     if (fail) {
       this.tries++; this.setStatus({ state: 'error', msg: 'Error de sincronización', err: fail.message, pending: this.diff().length });
       if (this.tries === 1 && typeof toast === 'function') toast('No se pudo guardar en ' + backendName() + ': ' + fail.message, 'err');
@@ -1607,8 +1608,10 @@ const DataService = {
         if (st && st === this.stampV && Date.now() - (this.fullAt || 0) < 600000) { this.setStatus({ state: 'ok', msg: backendLabel(), last: new Date(), err: '' }); return; }
         this._nextStamp = st;
       }
-      const t0 = performance.now();
+      const t0 = performance.now(), gen0 = this.gen || 0;
       const S = await this.loadRemote(); if (S._raw) return; const snap = this.snapshot(S);
+      /* si el usuario editó mientras se leía, no se pisa su trabajo con la lectura (salvo force) */
+      if (!force && (this.dirty || this.busy || (this.gen || 0) !== gen0 || (typeof Modal !== 'undefined' && Modal.cur))) return;
       this.setStatus({ msLoad: Math.round(performance.now() - t0) }); this.fullAt = Date.now(); if (this.svc.stamp) { try { this.stampV = this._nextStamp || await this.svc.stamp(); } catch (e) { } this._nextStamp = null; }
       const same = COLLS.every(e => { const a = snap[e], b = this.snap[e]; return a.size === b.size && [...a].every(([k, s]) => b.get(k) === s); }) && settingKeys(S).every(k => snap.settings.get(k) === this.snap.settings.get(k));
       this.setStatus({ state: 'ok', msg: backendLabel(), last: new Date(), err: '' });
@@ -1661,11 +1664,18 @@ const SB = {
   },
   async token() {
     if (!SB.sess) throw new Error('Sesión no iniciada');
-    if (SB.sess.exp - 60 < Date.now() / 1000) {
-      try { const j = await SB._auth('refresh_token', { refresh_token: SB.sess.refresh }); SB.sess.access = j.access_token; SB.sess.refresh = j.refresh_token || SB.sess.refresh; SB.sess.exp = Math.floor(Date.now() / 1000) + (j.expires_in || 3600); SB.persist(); }
-      catch (e) { SB.clear(); SBLogin.show('Tu sesión expiró. Ingresa nuevamente.'); throw new Error('Sesión expirada'); }
-    }
+    if (SB.sess.exp - 60 < Date.now() / 1000) await SB.refrescar();
     return SB.sess.access;
+  },
+  /* una sola renovación a la vez: el refresh token rota y dos llamadas simultáneas invalidarían la sesión */
+  refrescar() {
+    if (SB._rp) return SB._rp;
+    SB._rp = (async () => {
+      try { const j = await SB._auth('refresh_token', { refresh_token: SB.sess.refresh }); SB.sess.access = j.access_token; SB.sess.refresh = j.refresh_token || SB.sess.refresh; SB.sess.exp = Math.floor(Date.now() / 1000) + (j.expires_in || 3600); SB.persist(); }
+      catch (e) { if (e.status === 400 || e.status === 401 || e.status === 403) { SB.clear(); SBLogin.show('Tu sesión expiró. Ingresa nuevamente.'); throw new Error('Sesión expirada'); } throw new Error('Sin conexión para renovar la sesión'); }
+      finally { SB._rp = null; }
+    })();
+    return SB._rp;
   },
   logout() { SB.clear(); }
 };
@@ -1689,11 +1699,15 @@ class SupabaseService extends SharePointService {
   get sb() { return this.cfg.supabase; }
   _idCol(ent) { return ent === 'settings' || ent === 'roles' ? 'Title' : SP_SCHEMA[ent].key; }
   async _rest(path, opt = {}, tries = 3) {
-    const h = Object.assign({ apikey: this.sb.anonKey, Authorization: 'Bearer ' + await SB.token(), 'Content-Type': 'application/json' }, opt.headers || {});
-    let res;
+    const mk = async () => Object.assign({ apikey: this.sb.anonKey, Authorization: 'Bearer ' + await SB.token(), 'Content-Type': 'application/json' }, opt.headers || {});
+    let h = await mk(), res, ref = false;
     for (let n = 0; n < tries; n++) {
-      res = await fetch(this.sb.url + '/rest/v1/' + path, { method: opt.method || 'GET', headers: h, body: opt.body });
-      if (res.status === 429 || res.status === 503) { await new Promise(r => setTimeout(r, 800 * (n + 1))); continue; }
+      const ac = new AbortController(), to = setTimeout(() => ac.abort(), 30000);
+      try { res = await fetch(this.sb.url + '/rest/v1/' + path, { method: opt.method || 'GET', headers: h, body: opt.body, signal: ac.signal }); }
+      catch (e) { clearTimeout(to); if (n < tries - 1) { await new Promise(r => setTimeout(r, 800 * (n + 1))); continue; } throw new Error(e.name === 'AbortError' ? 'El servidor tardó demasiado en responder' : 'Sin conexión con el servidor'); }
+      clearTimeout(to);
+      if (res.status === 401 && !ref) { ref = true; try { await SB.refrescar(); h = await mk(); n--; continue; } catch (e) { throw e; } }
+      if ([429, 502, 503, 504].includes(res.status)) { await new Promise(r => setTimeout(r, 800 * (n + 1))); continue; }
       break;
     }
     if (!res.ok) { let m = ''; try { const j = await res.json(); m = j.message || j.hint || ''; } catch (e) { } const err = new Error('HTTP ' + res.status + (m ? ' · ' + m : '')); err.status = res.status; if (res.status === 401 || res.status === 403) err.message = 'Sin permiso para esta acción en el servidor (' + res.status + ')'; throw err; }
@@ -1726,7 +1740,15 @@ class SupabaseService extends SharePointService {
       if (op.t === 'd') { (del[op.ent] = del[op.ent] || []).push([i, op.id]); }
       else { up.push(await this._row(op.ent, SPMap.fieldsOf(op.ent, op.o))); upI.push(i); }
     }
-    if (up.length) { try { await this._upsert(up); upI.forEach(i => { this.ids[ops[i].ent][ops[i].o.id] = ops[i].o.id; }); } catch (e) { upI.forEach(i => { out[i] = { ok: false, err: e.message }; }); } }
+    if (up.length) {
+      try { await this._upsert(up); upI.forEach(i => { this.ids[ops[i].ent][ops[i].o.id] = ops[i].o.id; }); }
+      catch (e) {
+        if (e.status >= 400 && e.status < 500 && ![401, 403, 408, 429].includes(e.status) && up.length > 1) {
+          /* un registro inválido no debe bloquear al resto: se reintenta fila por fila */
+          for (let k = 0; k < up.length; k++) { const i = upI[k]; try { await this._upsert([up[k]]); this.ids[ops[i].ent][ops[i].o.id] = ops[i].o.id; } catch (e2) { out[i] = { ok: false, err: e2.message, perm: e2.status >= 400 && e2.status < 500 && ![401, 403, 408, 429].includes(e2.status) }; } }
+        } else upI.forEach(i => { out[i] = { ok: false, err: e.message, perm: e.status >= 400 && e.status < 500 && ![401, 403, 408, 429].includes(e.status) && up.length === 1 }; });
+      }
+    }
     for (const ent of Object.keys(del)) {
       const ids = del[ent].map(x => '"' + String(x[1]).replace(/"/g, '') + '"').join(',');
       try { await this._rest('registros?lista=eq.' + encodeURIComponent(this.listName(ent)) + '&id=in.(' + encodeURIComponent(ids) + ')', { method: 'DELETE', headers: { Prefer: 'return=minimal' } }); del[ent].forEach(x => { delete this.ids[ent][x[1]]; }); }
@@ -8992,7 +9014,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.11', b: '14-10-2026 10:56' };
+  const VER = { v: 'V22.12', b: '14-10-2026 11:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
