@@ -8706,7 +8706,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   .fl2-top .fl-ph{margin:0 0 0 6px;flex:none}.fl2-top .fl-ph .flow{width:110px}.fl2-top .fl-ph .lnk{font-size:13px}
   .lk-s{display:none}.fl-s .fl-sa{margin-left:auto}
   @media(max-width:2000px){.fl-phl{display:none}.fl2-top .fl-ph .flow{width:80px}.fl2-top .fl-ph{gap:8px}}
-  @media(max-width:1950px){.fl2-a .btn:not(.pri) span{display:none}.fl2-a .btn:not(.pri){padding:0 10px}.fl-phl{display:none}.lk-l{display:none}.lk-s{display:inline}}
+  @media(max-width:1950px){.fl2-a>.btn:not(.pri) span{display:none}.fl2-a .btn:not(.pri){padding:0 10px}.fl-phl{display:none}.lk-l{display:none}.lk-s{display:inline}}
   @media(max-width:1250px){.fl2-top{flex-wrap:wrap}}
   @media(max-width:900px){.fl2-bar{flex-wrap:wrap}.fl2{position:static}.fl2-top{flex-wrap:wrap}.fl2-sp{flex-basis:100%;height:0}.fl2-top h1{white-space:normal}}
   .fl-s[data-k=res] .fl-t{flex:0 1 auto}.fl-ph{display:flex;align-items:center;gap:10px;margin-left:auto;margin-right:10px;min-width:0}.fl-phl{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--tx2);white-space:nowrap}.fl-ph .flow{width:170px;flex:none}.fl-ph .flow span{height:5px}.fl-ph .lnk{white-space:nowrap;font-weight:600}
@@ -9067,7 +9067,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.19', b: '14-10-2026 14:00' };
+  const VER = { v: 'V22.20', b: '14-10-2026 14:15' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
