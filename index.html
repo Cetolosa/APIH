@@ -527,6 +527,12 @@ body{font:13px/1.45 var(--font)}
 .chips-row>.kpi.sm{min-height:0}.card.wk{padding:8px 14px}.wkb{height:44px}
 .fl-grid{display:block!important;column-count:2;column-gap:10px}.fl-grid>.fl-s{break-inside:avoid;margin-bottom:10px;display:block}.fl-grid>.fl-s.wide{column-span:all}.fl-grid>.fl-s.fl-hid{display:none}
 @media (max-width:900px){.fl-grid{column-count:1}}
+/* ---------- V22.27: sistema visual ---------- */
+:root{--tx3:#5F6160}
+:root[data-theme=dark]{--tx3:#9AA5B1;--bd:#3A4552}
+.pill{color:color-mix(in srgb,var(--c,var(--tx2)) 62%,#000)}
+:root[data-theme=dark] .pill{color:color-mix(in srgb,var(--c,var(--tx2)) 70%,#fff)}
+.prio.p-Baja{color:#17692F}:root[data-theme=dark] .prio.p-Alta{color:#FF8087}:root[data-theme=dark] .prio.p-Media{color:#F5B83D}:root[data-theme=dark] .prio.p-Baja{color:#5FD07A}:root[data-theme=dark] .seg .on,:root[data-theme=dark] .seg button.on{color:#06182B}.av{background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2))}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -9106,7 +9112,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.26', b: '14-10-2026 18:00' };
+  const VER = { v: 'V22.27', b: '14-10-2026 19:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9163,9 +9169,18 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     /* compactar() mueve los filtros a otra fila y eso quita el foco del campo que se está escribiendo: se restaura al final */
     const act = document.activeElement, key = act && act.dataset ? act.dataset.key : null, ss = act && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
     render0.apply(this, arguments);
-    try { primaria(); compactar(); } catch (e) { console.error(e); }
+    try { primaria(); compactar(); contrasta(); } catch (e) { console.error(e); }
     if (key) { const el = $(`[data-key="${key}"]`); if (el && el !== document.activeElement) { el.focus(); if (ss && el.setSelectionRange) try { el.setSelectionRange(ss[0], ss[1]); } catch (e) { } } }
   };
+  /* texto oscuro sobre fondos claros (celdas de la matriz y exposición) */
+  function contrasta() {
+    document.querySelectorAll('.expo,.h-c').forEach(e => {
+      const m = (e.style.background || e.style.backgroundColor || '').match(/#([0-9a-f]{6})|rgb\((\d+),\s*(\d+),\s*(\d+)/i); if (!m) return;
+      const c = m[1] ? [0, 2, 4].map(k => parseInt(m[1].substr(k, 2), 16)) : [+m[2], +m[3], +m[4]];
+      const L = .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+      if (L > 140) { e.style.color = '#1A1A1A'; e.querySelectorAll('small').forEach(x => x.style.color = 'rgba(0,0,0,.7)'); }
+    });
+  }
   const banner0 = banner;
   banner = function () {
     let h = banner0.apply(this, arguments);
