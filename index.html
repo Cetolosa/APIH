@@ -8661,6 +8661,13 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     #main>.ph .ph-act{flex:none;flex-wrap:nowrap;gap:6px;margin-left:auto;align-items:center}
     #main>.ph .ph-act .btn{height:32px;white-space:nowrap}
     #main>.ph .ph-act .popw{position:relative}
+    /* V22.23: título + filtros (+ pestañas) forman una sola tarjeta de 2-3 líneas; acciones siempre en el mismo orden: ver todo · más · principal */
+    #main>.ph{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:8px 14px;margin:0 0 10px;box-shadow:var(--sh)}
+    #main>.ph:has(+.v22-row),#main>.ph:has(+.tabs){border-radius:14px 14px 0 0;margin-bottom:0;box-shadow:none}
+    #main>.ph+.v22-row{background:var(--card);border:1px solid var(--bd);border-top:1px solid var(--bd2);border-radius:0 0 14px 14px;padding:6px 14px;margin:0 0 10px;box-shadow:var(--sh)}
+    #main>.ph+.tabs{background:var(--card);border:1px solid var(--bd);border-top:1px solid var(--bd2);border-radius:0 0 14px 14px;padding:0 10px;margin:0 0 10px;box-shadow:var(--sh)}
+    #main>.ph .ph-act>*{order:0}#main>.ph .ph-act>.sxbtn{order:1}#main>.ph .ph-act>.v22-more{order:2}#main>.ph .ph-act>.v22-main,#main>.ph .ph-act>.btn.pri,#main>.ph .ph-act>:has(.pri,.v22-main){order:3}
+    #main>.ph .ph-act .sxbtn{background:none;border-color:transparent;color:var(--tx2);font-weight:600}#main>.ph .ph-act .sxbtn:hover{color:var(--pri);background:var(--bg2)}
   }
   .v22-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;padding:0}
   .v22-row .tb-l{font-weight:700;color:var(--tx)}.v22-row .flt{flex-direction:row;align-items:center;gap:6px}.v22-row .flt small{margin:0}
@@ -9081,7 +9088,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.22', b: '14-10-2026 15:00' };
+  const VER = { v: 'V22.23', b: '14-10-2026 15:20' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
