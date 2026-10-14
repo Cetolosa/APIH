@@ -8595,6 +8595,15 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   #v22-tour .tr-ar.t{top:-9px;border-right:0;border-bottom:0}#v22-tour .tr-ar.b{bottom:-9px;border-left:0;border-top:0}#v22-tour .tr-ar.l{left:-9px;border-top:0;border-right:0}
   .v22-seg{border-color:rgba(255,255,255,.45)!important;background:rgba(255,255,255,.12)!important}.v22-seg button{color:#fff!important;font-weight:600}.v22-seg button.on{background:#fff!important;color:var(--pri)!important}
   @media (max-width:900px){.v22-seg{display:none}}
+  /* barra superior ordenada */
+  .top .brand{min-width:0;flex:none}.top .b-t{white-space:nowrap}.top .b-t small{white-space:nowrap}
+  .top .gsearch{flex:1 1 260px;min-width:190px;max-width:520px}.top .gsearch input{text-overflow:ellipsis}
+  .top-r{flex:none}.top-r>*{flex:none}
+  .v22-seg button{height:28px;padding:0 11px;font-size:12px}
+  .v22-usr{display:flex;align-items:center;gap:8px;background:none;border:0;color:#fff;cursor:pointer;padding:3px 6px;border-radius:8px;text-align:left;font:inherit;line-height:1.15}.v22-usr:hover,.v22-usr[aria-expanded=true]{background:rgba(255,255,255,.14)}.v22-usr b{font-size:12px;display:block;white-space:nowrap}.v22-usr small{color:#BCBCBC;font-size:11px;white-space:nowrap}.v22-usr .chv{opacity:.7;display:inline-flex}
+  .v22-pop.usr-m{width:250px}.usr-m .pop-h b{display:block;font-size:13px}.usr-m button{display:flex;align-items:center;gap:8px;width:100%}
+  @media (max-width:1560px){.top .b-t.app small{display:none}.v22-help span{display:none}.v22-help{padding:0 8px}.v22-usr small{display:none}}
+  @media (max-width:1240px){.top .gsearch input::placeholder{font-size:12px}.v22-seg button{padding:0 8px}}
   #v22-tour{position:fixed;z-index:99991;width:min(340px,92vw);background:var(--card);color:var(--tx);border:1px solid var(--bd);border-top:4px solid var(--pri);border-radius:12px;padding:14px 16px;box-shadow:0 12px 36px rgba(0,0,0,.35)}
   #v22-tour h3{margin:0 0 4px;font-size:16px}#v22-tour .tr-n{display:inline-block;background:#FFC72C;color:#1a1a1a;font-weight:700;font-size:11px;border-radius:10px;padding:1px 8px;margin-bottom:6px}#v22-tour p{margin:0 0 12px;font-size:13px;line-height:1.45;color:var(--tx2)}#v22-tour .tr-f{display:flex;align-items:center;gap:8px}#v22-tour .tr-f small{margin-right:auto}
   /* comentarios */
@@ -8888,8 +8897,13 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const pc = sr('#pop-cmt'); if (pc) pc.innerHTML = cmtPopHTML();
     const nb = sr('#v22-cmtN'); if (nb) { const n = notasAbiertas().length; nb.textContent = n > 99 ? '99+' : n || ''; nb.style.display = n ? '' : 'none'; }
     const fn = sr('#side a[data-v="ficha"]'); if (fn) fn.remove();
+    const u0 = sr('.top-r .usr');
+    if (u0 && !u0.classList.contains('v22-usrw') && AuthService.provider === 'supabase' && AuthService.user()) {
+      const nm = St.cfg.usuario, em = AuthService.user().email;
+      u0.outerHTML = `<div class="popw v22-usrw"><button class="v22-usr" data-act="pop" data-id="pop-usr" aria-haspopup="menu" aria-label="Mi cuenta">${avatar(nm, 30)}<span><b>${esc(nm)}</b><small>${esc((St.cfg.cargo || '').split('·')[0])}</small></span><span class="chv">${icon('chevd', 13)}</span></button>
+        <div class="pop v22-pop usr-m" id="pop-usr" style="right:0"><div class="pop-h"><b>${esc(nm)}</b><small>${esc(em)}</small></div><button data-act="pwchange">${icon('lock', 15)} Cambiar mi contraseña</button><button data-act="sbout">${icon('user', 15)} Cerrar sesión</button></div></div>`;
+    }
     /* sesión con clave de equipo (sin contraseña personal) o con sesión Supabase: botón «Clave» */
-    const u = sr('.top-r .usr'); if (u && AuthService.provider === 'supabase' && AuthService.user() && !sr('[data-act="pwchange"]', u)) u.insertAdjacentHTML('beforeend', `<button class="btn sm" data-act="pwchange" title="Cambiar mi contraseña">Clave</button>`);
     if (UI.view === 'ficha') $('#app').classList.toggle('nopanel', !UI.panel || !UI.sel);
   };
   const render0 = render;
