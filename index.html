@@ -8595,6 +8595,21 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   #v22-tour .tr-ar.t{top:-9px;border-right:0;border-bottom:0}#v22-tour .tr-ar.b{bottom:-9px;border-left:0;border-top:0}#v22-tour .tr-ar.l{left:-9px;border-top:0;border-right:0}
   .v22-seg{border-color:rgba(255,255,255,.45)!important;background:rgba(255,255,255,.12)!important}.v22-seg button{color:#fff!important;font-weight:600}.v22-seg button.on{background:#fff!important;color:var(--pri)!important}
   @media (max-width:900px){.v22-seg{display:none}}
+  /* encabezado de pantalla compacto: título + descripción en una línea, acciones a la derecha, filtros + búsqueda + vista en una sola fila */
+  @media (min-width:700px){
+    #main>.ph{margin:0 0 6px;gap:12px;align-items:center;flex-wrap:nowrap}
+    #main>.ph>div:first-child{flex:1 1 auto;min-width:0;display:flex;align-items:baseline;gap:12px}
+    #main>.ph h1{flex:none;margin:0;font-size:18px;white-space:nowrap}
+    #main>.ph p{margin:0;min-width:0;flex:1 1 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+    #main>.ph .ph-act{flex:none;flex-wrap:nowrap;gap:6px;margin-left:auto;align-items:center}
+    #main>.ph .ph-act .btn{height:32px;white-space:nowrap}
+    #main>.ph .ph-act .popw{position:relative}
+  }
+  .v22-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;padding:0}
+  .v22-row .tb-l{font-weight:700;color:var(--tx)}.v22-row .flt{flex-direction:row;align-items:center;gap:6px}.v22-row .flt small{margin:0}
+  .v22-row .search{flex:0 1 300px;min-width:170px}.v22-row .flt-guia{margin-left:auto}.v22-row>.seg{margin-left:auto}
+  .v22-row .flt-note{font-size:12px}
+  .v22-more .pop{min-width:200px}.v22-more .pop button{display:flex;align-items:center;gap:8px;width:100%;text-align:left}
   /* barra superior ordenada */
   .top .brand{min-width:0;flex:none}.top .b-t{white-space:nowrap}.top .b-t small{white-space:nowrap}
   .top .gsearch{flex:1 1 260px;min-width:190px;max-width:520px}.top .gsearch input{text-overflow:ellipsis}
@@ -8906,8 +8921,33 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     /* sesión con clave de equipo (sin contraseña personal) o con sesión Supabase: botón «Clave» */
     if (UI.view === 'ficha') $('#app').classList.toggle('nopanel', !UI.panel || !UI.sel);
   };
+  /* Encabezado compacto: acciones secundarias en «Más», y filtros + búsqueda en una sola fila */
+  function compactar() {
+    const m = sr('#main'); if (!m || innerWidth < 700) return;
+    const ph = sr(':scope>.ph', m); if (!ph) return;
+    const p = sr('p', ph); if (p) p.title = p.textContent;
+    const act = sr('.ph-act', ph);
+    if (act && !sr('.v22-more', act)) {
+      const keep = b => b.classList.contains('v22-main') || b.classList.contains('sxbtn') || b.closest('.v22-more');
+      const sec = sra('.btn', act).filter(b => !keep(b));
+      if (sec.length >= 2) {
+        const w = document.createElement('span'); w.className = 'popw v22-more'; const id = 'pop-ph-more';
+        w.innerHTML = `<button class="btn" data-act="pop" data-id="${id}" aria-haspopup="menu">${icon('dots', 15)}<span>Más</span></button><div class="pop v22-pop" id="${id}" style="right:0"></div>`;
+        const box = sr('.pop', w);
+        sec.forEach(b => { if (b.closest('.edit-only')) b.classList.add('edit-only'); b.classList.remove('pri', 'sm'); box.appendChild(b); });
+        sra('.edit-only', act).forEach(e => { if (!e.children.length && !e.textContent.trim()) e.remove(); });
+        let ref = sr('.v22-main', act); while (ref && ref.parentNode !== act) ref = ref.parentNode; act.insertBefore(w, ref || null);
+      }
+    }
+    const fb = sr(':scope>.flt-bar', m), tb = sr(':scope>.toolbar', m);
+    if (fb || tb) {
+      const row = document.createElement('div'); row.className = 'v22-row'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Filtros y búsqueda');
+      [fb, tb].forEach(c => { if (c) { [...c.childNodes].forEach(n => row.appendChild(n)); c.remove(); } });
+      ph.insertAdjacentElement('afterend', row);
+    }
+  }
   const render0 = render;
-  render = function () { render0.apply(this, arguments); try { primaria(); } catch (e) { console.error(e); } };
+  render = function () { render0.apply(this, arguments); try { primaria(); compactar(); } catch (e) { console.error(e); } };
   const banner0 = banner;
   banner = function () {
     let h = banner0.apply(this, arguments);
