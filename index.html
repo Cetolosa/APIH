@@ -8696,6 +8696,13 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   .fl-head{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}.fl-head .fl-k{display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--tx2)}.fl-head h1{font-size:20px;margin:0}.fl-head .fl-p{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.fl-head .fl-a{display:flex;gap:6px;flex-wrap:wrap}
   .fl-bar{position:sticky;top:-10px;z-index:5;background:var(--bg);display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0;margin-bottom:8px;border-bottom:1px solid var(--bd2)}.fl-bar>span{font-size:12px;font-weight:600;color:var(--tx2);margin-right:2px}
   .fl-chip{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:13px;border:1px solid var(--bd);background:var(--card);font-size:12px;font-weight:600;color:var(--tx);cursor:pointer}.fl-chip.off{color:var(--tx3);background:transparent;border-style:dashed}.fl-bar .fl-sp{margin-left:auto;display:flex;gap:6px}
+  .fl2{position:sticky;top:-10px;z-index:6;background:var(--card);border:1px solid var(--bd);border-radius:14px;margin-bottom:12px;box-shadow:var(--sh)}
+  .fl2-top{display:flex;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap}.fl2-top h1{font-size:18px;margin:0;font-weight:700}.fl2-k{font-size:12px;color:var(--tx2);text-transform:uppercase;letter-spacing:.3px}.fl2-sep{width:1px;height:22px;background:var(--bd)}.fl2-p{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.fl2-sp{flex:1}
+  .fl2-a{display:flex;gap:8px;align-items:center;margin-left:auto}.fl2-seg{display:flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}.fl2-seg .btn{border:0;border-radius:0;box-shadow:none;background:var(--card)}.fl2-seg .btn+.btn{border-left:1px solid var(--bd)}
+  .fl2-bar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 12px;background:var(--bg2);border-top:1px solid var(--bd2);border-radius:0 0 14px 14px}.fl2-l{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--tx2);margin-right:6px}
+  .fl2-tab{height:30px;padding:0 12px;border:1px solid transparent;border-radius:8px;background:none;font:inherit;font-size:13px;color:var(--tx2);cursor:pointer}.fl2-tab:hover{color:var(--tx);background:var(--card)}.fl2-tab.on{background:var(--card);border-color:var(--bd);color:var(--tx);font-weight:700;box-shadow:var(--sh)}.fl2-tab.off{opacity:.55;text-decoration:line-through}
+  .fl2-lk{background:none;border:0;font:inherit;font-size:13px;color:var(--tx2);cursor:pointer;padding:4px 6px}.fl2-lk:hover{color:var(--pri);text-decoration:underline}#pop-flsec .off{opacity:.6}
+  @media(max-width:900px){.fl2{position:static}.fl2-sp{flex-basis:100%;height:0}}
   .fl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}.fl-s{background:var(--card);border:1px solid var(--bd);border-radius:12px;min-width:0}.fl-s.wide{grid-column:1/-1}
   .fl-h{display:flex;align-items:center;gap:6px;padding:6px 8px 6px 4px}.fl-t{display:flex;align-items:center;gap:7px;flex:1;min-width:0;background:none;border:0;padding:6px 8px;font:inherit;font-weight:600;color:var(--tx);cursor:pointer;text-align:left}.fl-t em{font-style:normal;font-size:11px;background:var(--bd2);color:var(--tx2);border-radius:8px;padding:0 7px}.fl-t .chv{transition:transform .15s;display:inline-flex}.fl-s.col .fl-t .chv{transform:rotate(-90deg)}
   .fl-h .fl-sa{display:flex;gap:6px}.fl-b{padding:2px 14px 12px}.fl-s.col .fl-b{display:none}
@@ -8946,8 +8953,18 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     sec.int = secInt(i);
     sec.nota = secNota(i);
     const lista = SECS.filter(s => sec[s[0]] && (!s[4] || (s[4] === 'prj' && !PR)));
-    const head = `<div class="fl-head"><div class="fl-k"><button class="btn sm" data-act="flback">${icon('chevl', 13)}<span>Volver</span></button><span>${R.kicker}</span></div><h1>${R.title}</h1><div class="fl-p">${R.pills}</div><div class="fl-a">${R.acts}</div></div>`;
-    const bar = `<div class="fl-bar" role="toolbar" aria-label="Secciones de la ficha"><span>Secciones</span>${lista.map(s => `<button class="fl-chip ${fOculta(s[0]) ? 'off' : ''}" data-act="fleye" data-k="${s[0]}" aria-pressed="${!fOculta(s[0])}" title="${fOculta(s[0]) ? 'Mostrar' : 'Ocultar'} «${esc(s[1])}»">${icon(fOculta(s[0]) ? 'eyeoff' : 'eye', 13)}${esc(s[1])}</button>`).join('')}<span class="fl-sp"><button class="btn sm" data-act="flall" data-m="open">${icon('expand', 13)}<span>Expandir todo</span></button><button class="btn sm" data-act="flall" data-m="close"><span>Contraer todo</span></button></span></div>`;
+    /* encabezado compacto: una fila de identidad + acciones, y debajo la barra de secciones */
+    const tpl = h => { const t = document.createElement('template'); t.innerHTML = h; return t.content; };
+    const pf = tpl(R.pills); pf.querySelectorAll('.pill.tp,.pill.soft').forEach(x => x.remove());
+    const af = tpl(R.acts), main = [], seg = [], more = [];
+    af.querySelectorAll('button').forEach(b => { const t = b.textContent.trim(); b.classList.remove('sm'); if (/^Actualizar/.test(t)) main.push(b.outerHTML.replace('class="btn', 'class="btn')); else if (/^(Informe|Editar|Gantt|Presentar)/.test(t)) seg.push(b.outerHTML); else more.push(b.outerHTML); });
+    const kick = R.kicker.replace(/\s*<button[\s\S]*?<\/button>/g, '');
+    const acts = `<div class="fl2-a">${main.join('')}<div class="fl2-seg">${seg.join('')}</div>${more.length ? `<div class="popw"><button class="btn" data-act="pop" data-id="pop-flmore" aria-label="Más acciones" title="Fase, estado y más">${icon('dots', 16)}</button><div class="pop" id="pop-flmore" style="right:0">${more.join('')}</div></div>` : ''}</div>`;
+    const PRIM = ['res', 'cif', 'sal', 'log', 'hit', 'rie'], prim = lista.filter(x => PRIM.includes(x[0])), rest = lista.filter(x => !PRIM.includes(x[0]));
+    const act0 = UI.flTab && lista.some(x => x[0] === UI.flTab) ? UI.flTab : (prim[0] || lista[0] || [])[0];
+    const tab = x => `<button class="fl2-tab ${x[0] === act0 ? 'on' : ''} ${fOculta(x[0]) ? 'off' : ''}" data-act="fltab" data-k="${x[0]}" ${x[0] === act0 ? 'aria-current="true"' : ''}>${esc(x[1])}</button>`;
+    const head = `<div class="fl2"><div class="fl2-top"><button class="btn" data-act="flback">${icon('chevl', 13)}<span>Volver</span></button><span class="fl2-k">${kick}</span><span class="fl2-sep"></span><h1>${R.title}</h1><div class="fl2-p">${pf.firstElementChild ? [...pf.childNodes].map(n => n.outerHTML || n.textContent).join('') : ''}</div><span class="fl2-sp"></span>${acts}</div>`;
+    const bar = `<div class="fl2-bar" role="toolbar" aria-label="Secciones de la ficha"><span class="fl2-l">Secciones:</span>${prim.map(tab).join('')}${rest.length ? `<div class="popw"><button class="fl2-tab ${rest.some(x => x[0] === act0) ? 'on' : ''}" data-act="pop" data-id="pop-flsec">${rest.some(x => x[0] === act0) ? esc(rest.find(x => x[0] === act0)[1]) + ' ▾' : 'Más (' + rest.length + ')'}</button><div class="pop" id="pop-flsec">${rest.map(x => `<button data-act="fltab" data-k="${x[0]}" class="${fOculta(x[0]) ? 'off' : ''}">${icon(x[2], 15)} ${esc(x[1])}${fOculta(x[0]) ? ' <small>(oculta)</small>' : ''}</button>`).join('')}</div></div>` : ''}<span class="fl2-sp"></span><button class="fl2-lk" data-act="flall" data-m="open">Expandir todo</button><span aria-hidden="true">·</span><button class="fl2-lk" data-act="flall" data-m="close">Contraer todo</button></div></div>`;
     const grid = lista.map(([k, t, ic, wide]) => {
       const [n, html] = sec[k], ab = fAbierta(k), oc = fOculta(k);
       return `<section class="fl-s ${wide ? 'wide' : ''} ${ab ? '' : 'col'} ${oc ? 'fl-hid' : ''}" data-k="${k}" id="fl-${k}"><header class="fl-h"><button class="fl-t" data-act="flcol" data-k="${k}" aria-expanded="${ab}"><span class="chv">${icon('chevd', 14)}</span>${icon(ic, 16)}<span>${esc(t)}</span>${n != null ? `<em>${n}</em>` : ''}</button><span class="fl-sa">${secAct(k, i)}</span><button class="icon-btn sm" data-act="fleye" data-k="${k}" title="Ocultar esta sección" aria-label="Ocultar ${esc(t)}">${icon('eye', 15)}</button></header><div class="fl-b">${html}</div></section>`;
@@ -8966,6 +8983,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   Acts.flback = () => { const v = UI.fichaFrom && Views[UI.fichaFrom] ? UI.fichaFrom : (byId(UI.fichaId) && esProp(byId(UI.fichaId)) ? 'propuestas' : 'proyectos'); go(v); };
   Acts.fleye = d => { const s = (fh()[d.k] = fh()[d.k] || {}); s.h = !s.h; fhSave(); render(); };
   Acts.flcol = d => { const s = (fh()[d.k] = fh()[d.k] || {}); s.c = fAbierta(d.k); fhSave(); render(); };
+  Acts.fltab = d => {
+    const o = (fh()[d.k] = fh()[d.k] || {}); o.h = false; o.c = false; fhSave(); UI.flTab = d.k; closePops(); render();
+    const el = document.getElementById('fl-' + d.k); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+  };
   Acts.flall = d => { SECS.forEach(s => { const o = (fh()[s[0]] = fh()[s[0]] || {}); o.c = d.m !== 'open'; if (d.m === 'open') o.h = false; }); fhSave(); render(); };
   document.addEventListener('dblclick', e => { const el = e.target.closest('[data-act="sel"][data-t="ini"]'); if (el && !e.target.closest('input,button:not([data-act="sel"]),select,textarea')) Acts.ficha({ id: el.dataset.id }); });
 
@@ -9030,7 +9051,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.14', b: '14-10-2026 12:10' };
+  const VER = { v: 'V22.15', b: '14-10-2026 12:40' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
