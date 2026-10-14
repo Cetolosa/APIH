@@ -545,6 +545,8 @@ body{font:13px/1.45 var(--font)}
 #main .pres-s>.thumbs{grid-area:th;flex-direction:column;overflow-y:auto;overflow-x:hidden;height:0;min-height:100%;align-self:stretch;padding:0 4px 0 0;justify-content:flex-start!important}
 #main .pres-s .thumbs .th{width:100%}
 }
+.mc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+@media (max-width:1100px){.mc-grid{grid-template-columns:1fr}}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -4146,9 +4148,9 @@ Views.miconfig = {
       const act = g ? btn(fx ? 'Liberar' : 'Fijar', 'myfix', { cls: 'sm', d: { k } }) : pers ? btn('Restablecer', 'myreset', { cls: 'sm', d: { k } }) : '';
       return `<div class="mc-row"><div><b>${l}</b><br><small>${h}</small></div><input type="number" min="${mn}" max="${mx}" value="${v}" data-chg="mycfg" data-k="${k}" data-min="${mn}" data-max="${mx}" ${dis ? 'disabled' : ''}><div>${tag}</div><div>${act}</div></div>`; }).join('');
     const tp = !g && cfgUOf(me).ptema;
-    return `<div class="ph"><h1>Mi configuración</h1><small>${g ? 'Perfil Gasto: tus cambios valen para todo el portafolio · «Fijar» impide que los líderes cambien un parámetro' : 'Tus cambios valen solo para las ' + n + ' iniciativas que lideras'}</small></div>
-    <div class="grid12"><section class="card c7"><header><h2>Umbrales de alerta</h2><small>${g ? 'Reemplazan los valores personales de cada usuario' : 'El resto del portafolio sigue con los valores generales'}</small></header>${rows}</section>
-    <section class="card c5"><header><h2>Presentaciones</h2></header><p class="desc">Tema: <b>${fijo('tema') ? 'fijado por Gasto' : g ? 'global' : tp ? 'personal' : 'general'}</b>. Las plantillas que guardes ${g ? 'son para todos' : 'son solo tuyas'}. ${g ? 'Los decks incluyen todo el portafolio.' : 'Tus decks incluyen solo las iniciativas que lideras.'}</p><div class="chips">${btn('Ir a Presentaciones', 'go', { d: { v: 'presentaciones' } })}${g ? btn(fijo('tema') ? 'Liberar tema' : 'Fijar tema', 'myfix', { d: { k: 'tema' } }) : ''}${tp && !fijo('tema') ? btn('Volver al tema general', 'myreset', { d: { k: '_tema' } }) : ''}</div></section></div>`;
+    return pageHead('Mi configuración', g ? 'Perfil Gasto: tus cambios valen para todo el portafolio · «Fijar» impide que los líderes cambien un parámetro' : 'Tus cambios valen solo para las ' + n + ' iniciativas que lideras', '') + `
+    <div class="grid12"><section class="card c12 mc-card"><header><h2>Umbrales de alerta</h2><small>${g ? 'Reemplazan los valores personales de cada usuario' : 'El resto del portafolio sigue con los valores generales'}</small></header><div class="mc-grid">${rows}</div></section>
+    <section class="card c12"><header><h2>Presentaciones</h2></header><p class="desc">Tema: <b>${fijo('tema') ? 'fijado por Gasto' : g ? 'global' : tp ? 'personal' : 'general'}</b>. Las plantillas que guardes ${g ? 'son para todos' : 'son solo tuyas'}. ${g ? 'Los decks incluyen todo el portafolio.' : 'Tus decks incluyen solo las iniciativas que lideras.'}</p><div class="chips">${btn('Ir a Presentaciones', 'go', { d: { v: 'presentaciones' } })}${g ? btn(fijo('tema') ? 'Liberar tema' : 'Fijar tema', 'myfix', { d: { k: 'tema' } }) : ''}${tp && !fijo('tema') ? btn('Volver al tema general', 'myreset', { d: { k: '_tema' } }) : ''}</div></section></div>`;
   }
 };
 Chg.mycfg = el => {
@@ -9124,7 +9126,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.32', b: '14-10-2026 23:30' };
+  const VER = { v: 'V22.33', b: '15-10-2026 00:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
