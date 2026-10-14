@@ -53,3 +53,21 @@ end $$;
 -- drop policy if exists claves_insertar on public.registros;
 -- drop policy if exists claves_cambiar  on public.registros;
 -- delete from public.registros where lista = 'APIH_Claves';
+
+-- ---------------------------------------------------------------------------
+-- D) DETECCIÓN DE CONFLICTOS ENTRE USUARIOS (V22.34) — ejecutar una vez; se puede repetir
+-- ---------------------------------------------------------------------------
+-- La app solo guarda un cambio si el registro sigue con la versión (columna actualizado) que leyó.
+-- Para que esa versión cambie en cada modificación, el servidor la sella con la hora de cada escritura.
+alter table public.registros add column if not exists actualizado timestamptz default now();
+
+create or replace function public.apih_version() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  new.actualizado := clock_timestamp();
+  return new;
+end $$;
+
+drop trigger if exists apih_version on public.registros;
+create trigger apih_version before insert or update on public.registros
+  for each row execute function public.apih_version();

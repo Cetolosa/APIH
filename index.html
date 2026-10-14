@@ -1608,6 +1608,7 @@ const DataService = {
         try {
           const rs = await v.batchOps(ch);
           ch.forEach((op, i) => {
+            if (!rs[i].ok && rs[i].conflict) { (this.conf = this.conf || []).push({ ent: op.ent, id: op.o.id, datos: JSON.parse(JSON.stringify(op.o)) }); return; }
             if (!rs[i].ok) { if (rs[i].perm && op.t !== 'd') { (this.bad = this.bad || new Set()).add(op.ent + ':' + op.o.id + ':' + op.sig); (this.badMsg = this.badMsg || []).push(op.ent + ' ' + op.o.id + ': ' + rs[i].err); return; } fail = fail || new Error(rs[i].err); return; }
             if (op.t === 'd') this.snap[op.ent].delete(op.id); else this.snap[op.ent].set(op.o.id, op.sig);
             done++;
@@ -1620,6 +1621,13 @@ const DataService = {
     await Promise.all(workers);
     this.setStatus({ msSave: Math.round(performance.now() - t0) });
     this.busy = false;
+    if (this.conf && this.conf.length) {
+      const L = this.conf; this.conf = []; this.busy = false; this.dirty = false;
+      const ids = L.map(x => x.id).join(', ');
+      const bajar = confirm('Otra persona modificó mientras tanto: ' + ids + '.\n\nTus cambios en esos registros NO se guardaron para no pisar los suyos. Se cargarán los datos actuales.\n\n¿Descargar tus cambios no guardados (archivo JSON) para volver a aplicarlos?');
+      if (bajar) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(L, null, 1)], { type: 'application/json' })); a.download = 'apih_cambios_no_guardados_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '') + '.json'; document.body.appendChild(a); a.click(); a.remove(); }
+      await this.refresh(false, true); return;
+    }
     if (this.badMsg && this.badMsg.length) { const n = this.badMsg.length; console.warn('APIH: registros rechazados por el servidor', this.badMsg); this.badMsg = []; if (typeof toast === 'function') toast(n + ' registro(s) fueron rechazados por el servidor y no se guardaron (revisa tus datos o recarga la página). El resto sí se guardó.', 'err'); }
     if (fail) {
       this.tries++; this.setStatus({ state: 'error', msg: 'Error de sincronización', err: fail.message, pending: this.diff().length });
@@ -1751,11 +1759,12 @@ class SupabaseService extends SharePointService {
   async listItems(ent) {
     const l = encodeURIComponent(this.listName(ent)), idc = this._idCol(ent), out = [], PAGE = 1000;
     for (let off = 0; ; off += PAGE) {
-      const { data } = await this._rest('registros?select=id,datos&lista=eq.' + l + '&order=id&limit=' + PAGE + '&offset=' + off);
+      const { data } = await this._rest('registros?select=id,datos,actualizado&lista=eq.' + l + '&order=id&limit=' + PAGE + '&offset=' + off);
       for (const r of data || []) {
         let txt;
         if (String(r.datos).startsWith('p1.')) txt = r.datos.slice(3);
         else throw new Error('«' + r.id + '» tiene un formato antiguo (cifrado) y no se puede leer. Avisa al administrador.');
+        (this.ver = this.ver || {})[ent + ':' + r.id] = r.actualizado || null;
         out.push({ spid: r.id, f: { [idc]: r.id, [DATOS_COL.n]: txt } });
       }
       if (!data || data.length < PAGE) break;
@@ -1768,12 +1777,27 @@ class SupabaseService extends SharePointService {
   async updateItem(ent, spid, fields) { const r = await this._row(ent, fields); await this._upsert([r]); }
   async deleteItem(ent, spid) { await this._rest('registros?lista=eq.' + encodeURIComponent(this.listName(ent)) + '&id=eq.' + encodeURIComponent(spid), { method: 'DELETE', headers: { Prefer: 'return=minimal' } }); }
   async batchOps(ops) {
-    const out = ops.map(() => ({ ok: true, err: '' })), up = [], upI = [], del = {};
+    const out = ops.map(() => ({ ok: true, err: '' })), up = [], upI = [], del = {}, cond = [], alt = [];
     for (let i = 0; i < ops.length; i++) {
       const op = ops[i];
       if (op.t === 'd') { (del[op.ent] = del[op.ent] || []).push([i, op.id]); }
+      else if (op.t === 'u' && this.ver && this.ver[op.ent + ':' + op.o.id]) { cond.push(i); }
+      else if (op.t === 'c') { alt.push(i); }
       else { up.push(await this._row(op.ent, SPMap.fieldsOf(op.ent, op.o))); upI.push(i); }
     }
+    /* V22.34: detección de conflictos. Una actualización solo se aplica si el registro sigue con la versión que se leyó; un alta no pisa un id ya usado. */
+    const unoAUno = async (lst, fn) => { const q = lst.slice(); await Promise.all(Array.from({ length: Math.min(4, q.length) }, async () => { while (q.length) { const i = q.shift(); try { await fn(i); } catch (e) { out[i] = e.conflict ? { ok: false, conflict: true, err: e.message } : { ok: false, err: e.message, perm: e.status >= 400 && e.status < 500 && ![401, 403, 408, 429].includes(e.status) }; } } })); };
+    await unoAUno(cond, async i => {
+      const op = ops[i], k = op.ent + ':' + op.o.id, row = await this._row(op.ent, SPMap.fieldsOf(op.ent, op.o));
+      const { data } = await this._rest('registros?lista=eq.' + encodeURIComponent(row.lista) + '&id=eq.' + encodeURIComponent(row.id) + '&actualizado=eq.' + encodeURIComponent(this.ver[k]), { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ datos: row.datos }) });
+      if (!data || !data.length) { const e = new Error('«' + op.o.id + '» fue modificado por otra persona'); e.conflict = true; throw e; }
+      this.ver[k] = data[0].actualizado || null; this.ids[op.ent][op.o.id] = op.o.id;
+    });
+    await unoAUno(alt, async i => {
+      const op = ops[i], k = op.ent + ':' + op.o.id, row = await this._row(op.ent, SPMap.fieldsOf(op.ent, op.o));
+      try { const { data } = await this._rest('registros', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify([row]) }); this.ver = this.ver || {}; this.ver[k] = (data && data[0] && data[0].actualizado) || null; this.ids[op.ent][op.o.id] = op.o.id; }
+      catch (e) { if (e.status === 409) { const c = new Error('El id «' + op.o.id + '» ya fue usado por otra persona'); c.conflict = true; throw c; } throw e; }
+    });
     if (up.length) {
       try { await this._upsert(up); upI.forEach(i => { this.ids[ops[i].ent][ops[i].o.id] = ops[i].o.id; }); }
       catch (e) {
@@ -9126,7 +9150,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.33', b: '15-10-2026 00:00' };
+  const VER = { v: 'V22.34', b: '15-10-2026 01:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
