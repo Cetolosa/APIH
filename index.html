@@ -1815,13 +1815,25 @@ function toast(msg, type = 'ok') {
 /* ---------- modal + formularios ---------- */
 const Modal = {
   open(o) {
-    this.close();
+    const ret = $('#modal') ? this._ret : document.activeElement; this.close(); this._ret = ret;
     const m = document.createElement('div'); m.className = 'modal-bg'; m.id = 'modal';
     m.innerHTML = `<div class="modal ${o.wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(o.title)}"><div class="m-h"><h2>${esc(o.title)}</h2><button class="icon-btn" data-act="mclose" aria-label="Cerrar">${icon('x')}</button></div><div class="m-b">${o.body}</div><div class="m-f">${o.footer || ''}</div></div>`;
     m.addEventListener('mousedown', e => { if (e.target === m) Modal.close(); });
     document.body.appendChild(m); Modal.cur = o; const f = m.querySelector('input,select,textarea'); if (f) setTimeout(() => f.focus(), 30);
+    /* el resto de la app queda inerte mientras el diálogo está abierto (foco y lectores de pantalla) */
+    ['app'].forEach(id => { const e = document.getElementById(id); if (e && e !== m) e.setAttribute('inert', ''); });
+    m.addEventListener('keydown', e => {
+      if (e.key !== 'Tab') return;
+      const fs = [...m.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent !== null);
+      if (!fs.length) return; const a = fs[0], z = fs[fs.length - 1];
+      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+    });
   },
-  close() { const m = $('#modal'); if (m) m.remove(); Modal.cur = null; }
+  close() {
+    const m = $('#modal'); if (m) m.remove(); Modal.cur = null;
+    const app = document.getElementById('app'); if (app) app.removeAttribute('inert');
+    const r = this._ret; this._ret = null; if (r && r.isConnected && typeof r.focus === 'function') { try { r.focus(); } catch (e) { } }
+  }
 };
 function fieldHTML(f, v) {
   const id = 'f_' + f.k, req = f.req ? ' <b class="req">*</b>' : '', cls = 'fld' + (f.w === 2 ? ' w2' : f.w === 3 ? ' w3' : '');
@@ -2077,6 +2089,7 @@ document.addEventListener('input', e => { const el = e.target.closest('[data-chg
 document.addEventListener('change', e => { const el = e.target.closest('[data-chg]'); if (!el) return; if (['text', 'search'].includes(el.type) || el.tagName === 'TEXTAREA') return; const f = Chg[el.dataset.chg]; if (f) f(el, e); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if ($('#modal')) Modal.close(); else closePops(); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('article.icard[data-act],[role=button][data-act]:not(button)') && e.target === document.activeElement) { e.preventDefault(); e.target.click(); }
   if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && !$('#modal')) { e.preventDefault(); $('#gs').focus(); }
   if (e.key === 'Enter' && $('#modal') && e.target.tagName === 'INPUT' && Modal.cur && Modal.cur.form) { e.preventDefault(); Acts.msave(); }
 });
@@ -2948,7 +2961,7 @@ Views.proyectos = {
   render() {
     const f = F('prj', { q: '', mode: 'board', resp: '', hideDone: true });
     let rows = scope(); if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.id).toLowerCase().includes(q)); } if (f.resp) rows = rows.filter(i => i.lider === f.resp); if (f.hideDone) rows = rows.filter(isLive);
-    const card = i => { const hs = hitosDe(i.id), hd = hs.filter(h => h.completado).length, nh = nextHito(i); return `<article class="icard ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini">
+    const card = i => { const hs = hitosDe(i.id), hd = hs.filter(h => h.completado).length, nh = nextHito(i); return `<article tabindex="0" role="button" class="icard ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini">
       <div class="ic-t"><span class="mono">${i.id}</span>${i.estado !== 'En curso' ? estPill(i.estado) : ''}${ragPill(i.rag)}</div><h3>${esc(i.titulo)}</h3>${(g => g ? `<div class="ic-g">${g}</div>` : '')(starsMini(i))}
       ${f.mode === 'cards' ? `<p class="ic-d">${esc((i.resumen || i.desc || '').slice(0, 150))}</p>` : ''}
       <div class="ic-m" title="${esc(avFaseTip(i))}"><small style="width:46px">Fase</small>${prog(avFase(i).v, i.rag, 5)}<b>${avFase(i).v}%</b></div><div class="ic-m"><small style="width:46px">Total</small>${prog(i.avance, i.rag, 3)}<b>${pct(i.avance)}</b></div>
@@ -2980,7 +2993,7 @@ Views.propuestas = {
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.sponsor).toLowerCase().includes(q)); }
     const total = { n: rows.length, p: sumM(rows, i => i.presupuesto), b: sumM(rows, i => i.beneficio), esp: rows.filter(i => i.estado === 'En espera').length };
     const card = i => { const nx = FASES_PROP[FASES_PROP.indexOf(i.fase) + 1], g = i.fase === 'Aprobación' ? gatesAprobar(i) : gates(i, nx), ok = g.filter(x => x.ok).length, sf = semFase(i);
-      return `<article class="icard prop ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini"><div class="ic-t"><span class="mono">${i.id}</span>${i.estado === 'En espera' ? estPill('En espera') : ''}<span class="pill" style="--c:${sf.c}" title="Días en la fase actual">${sf.d} d</span></div><h3>${esc(i.titulo)}</h3>
+      return `<article tabindex="0" role="button" class="icard prop ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini"><div class="ic-t"><span class="mono">${i.id}</span>${i.estado === 'En espera' ? estPill('En espera') : ''}<span class="pill" style="--c:${sf.c}" title="Días en la fase actual">${sf.d} d</span></div><h3>${esc(i.titulo)}</h3>
       <div class="ic-sc"><span title="Índice de priorización"><b>${i.score ? priorScore(i) : '—'}</b><small>score</small></span><span class="sbar">${prog(ok / Math.max(1, g.length) * 100, ok === g.length ? 'Verde' : 'Ámbar', 5)}<small>${ok}/${g.length} ${i.fase === 'Aprobación' ? 'para aprobar' : 'compuertas'}</small></span></div>
       <div class="ic-f"><span class="pp">${avatar(i.sponsor || i.lider, 20)}<small>${esc((i.sponsor || i.lider).split(' ')[0])}</small></span>${prioPill(i.prioridad)}<small class="mut">${fmtMon(i.presupuesto, monOf(i))}</small></div></article>`; };
     // matriz valor / esfuerzo
@@ -9017,7 +9030,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.13', b: '14-10-2026 11:50' };
+  const VER = { v: 'V22.14', b: '14-10-2026 12:10' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
