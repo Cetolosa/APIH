@@ -708,6 +708,16 @@ const nf = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
 const fmtN = n => nf.format(Math.round(n || 0));
 const fmtM = n => fmtN(n) + ' ' + (St ? St.cfg.unidad.replace('MM ', 'MM ') : 'MM');   // ej. 433 MM CLP
 const fmtMs = n => fmtN(n) + ' MM';
+const MONEDAS = { CLP: { u: 'MM CLP', big: 'MM', n: 'CLP · millones' }, USD: { u: 'K USD', big: 'K USD', n: 'USD · miles' }, UF: { u: 'UF', big: 'UF', n: 'UF · unidades' } };
+const monOf = i => (i && MONEDAS[i.moneda]) ? i.moneda : 'CLP';
+const fmtMon = (n, m) => fmtN(n) + ' ' + MONEDAS[m || 'CLP'].u;
+const sumM = (L, f) => { const o = {}; L.forEach(i => { const v = +f(i) || 0; if (!v) return; const m = monOf(i); o[m] = (o[m] || 0) + v; }); return o; };
+const monKeys = o => ['CLP', 'USD', 'UF'].filter(k => o && o[k]);
+const monMain = o => monKeys(o)[0] || 'CLP';
+const fmtTot = (o, sep) => monKeys(o).map(k => fmtMon(o[k], k)).join(sep || ' · ') || fmtMon(0, 'CLP');
+const fmtBig = o => { const m = monMain(o); return fmtN((o && o[m]) || 0) + ' ' + MONEDAS[m].big; };
+const restTxt = o => monKeys(o).length > 1 ? '+ ' + monKeys(o).slice(1).map(k => fmtMon(o[k], k)).join(' + ') + ' · ' : '';
+const pctMon = (g, p) => { const m = monMain(p); return p && p[m] ? Math.round(((g && g[m]) || 0) / p[m] * 100) : 0; };
 const pct = n => Math.round(n || 0) + '%';
 const initials = n => (n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
 const COLORS = ['#2a78d6', '#6250d6', '#0f7b8a', '#8a5cc2', '#4a6fa5', '#7a4f9a', '#2b8a9e', '#5a6b7d'];
@@ -918,13 +928,13 @@ function critScore(i) {   // ranking de proyectos críticos
 }
 function kpis() {
   const L = scope(), live = L.filter(isLive), act = L.filter(isActive), P = scopeP(), pl = P.filter(isLive);
-  const pres = sum(L.filter(i => i.estado !== 'Cancelado'), i => i.presupuesto);
-  const gas = sum(L, i => i.gastado);
+  const M = { pres: sumM(L.filter(i => i.estado !== 'Cancelado'), i => i.presupuesto), gas: sumM(L, i => i.gastado), presPipe: sumM(pl, i => i.presupuesto), valorPipe: sumM(pl, i => i.beneficio), beneficio: sumM(live, i => i.beneficio) };
+  const pres = M.pres.CLP || 0, gas = M.gas.CLP || 0;   // escalares = solo CLP (no se mezclan monedas)
   const ontrack = act.filter(i => i.rag === 'Verde' && !atrasado(i)).length;
   return {
-    total: L.length, activos: act.length, atrasados: live.filter(atrasado).length, riesgosCrit: riesgosCriticos().length, pres, gas,
-    presPipe: sum(pl, i => i.presupuesto), valorPipe: sum(pl, i => i.beneficio),
-    beneficio: sum(live, i => i.beneficio), ontrack, ontrackPct: act.length ? ontrack / act.length * 100 : 0, live: live.length,
+    total: L.length, activos: act.length, atrasados: live.filter(atrasado).length, riesgosCrit: riesgosCriticos().length, pres, gas, M,
+    presPipe: M.presPipe.CLP || 0, valorPipe: M.valorPipe.CLP || 0,
+    beneficio: M.beneficio.CLP || 0, ontrack, ontrackPct: act.length ? ontrack / act.length * 100 : 0, live: live.length,
     pipe: pl.length, propAprob: pl.filter(i => i.fase === 'Aprobación' && i.estado === 'Vigente').length, propEspera: pl.filter(i => i.estado === 'En espera').length,
     cerradas: L.filter(i => i.estado === 'Completado').length
   };
@@ -994,14 +1004,14 @@ const SP_SCHEMA = {
       C.txt('Title', 'titulo'), C.txt('Codigo', 'id', { rw: false, idCol: true }), C.txt('Sponsor', 'sponsor'), C.txt('Responsable', 'lider'), C.txt('Area', 'area'),
       C.ch('Estado', 'estado', ESTADOS_PRJ), C.ch('Prioridad', 'prioridad', ['Alta', 'Media', 'Baja']), C.ch('RAG', 'rag', RAGS),
       C.date('InicioPlan', 'inicioPlan'), C.date('FinPlan', 'finPlan'), C.date('InicioReal', 'inicioReal'), C.date('FinReal', 'finReal'),
-      C.num('Avance', 'avance'), C.num('Presupuesto', 'presupuesto'), C.num('Beneficio', 'beneficio'),
+      C.num('Avance', 'avance'), C.txt('Moneda', 'moneda'), C.num('Presupuesto', 'presupuesto'), C.num('Beneficio', 'beneficio'),
       C.der('ROI', 'Number', i => { const r = roi(i); return r == null ? null : Math.round(r * 10) / 10; }),
       C.txt('Dependencias', 'deps', { get: i => (i.deps || []).join(';'), set: (o, v) => { o.deps = v ? String(v).split(/[;,\s]+/).filter(Boolean) : []; } }),
       C.der('ProximoHito', 'Text', i => { const h = nextOpenHito(i); return h ? h.nombre + ' (' + h.fecha + ')' : ''; }),
       C.txt('Fase', 'fase'), C.txt('TipoIniciativa', 'tipoIni'), C.txt('PropuestaOrigen', 'propuestaOrigen'), C.note('MotivoEstado', 'estadoMotivo'), C.date('FechaRevision', 'estadoRev')
     ],
     filter: i => !esProp(i),
-    tpl: () => ({ tipo: 'Proyecto', desc: '', bc: '', beneficio: 0, sponsor: '', lider: '', negocio: '', area: 'BISE', categoria: '', clasif: 'Táctico', gasto: 'OPEX', proveedor: '', contrato: '', fase: 'Planificación', estado: 'En curso', rag: 'Verde', prioridad: 'Media', presupuesto: 0, gastado: 0, ahorroReal: 0, avance: 0, inicioPlan: null, finPlan: null, inicioReal: null, finReal: null, finEst: null, deps: [], resumen: '', logros: '', proximos: '', issue: '', riesgoTxt: '', creada: hoy(), actualizada: hoy(), origen: 'usuario', est: [], hist: [], tags: [], rec: null, propuestaOrigen: null, estadoMotivo: '', estadoRev: null })
+    tpl: () => ({ tipo: 'Proyecto', moneda: 'CLP', desc: '', bc: '', beneficio: 0, sponsor: '', lider: '', negocio: '', area: 'BISE', categoria: '', clasif: 'Táctico', gasto: 'OPEX', proveedor: '', contrato: '', fase: 'Planificación', estado: 'En curso', rag: 'Verde', prioridad: 'Media', presupuesto: 0, gastado: 0, ahorroReal: 0, avance: 0, inicioPlan: null, finPlan: null, inicioReal: null, finReal: null, finEst: null, deps: [], resumen: '', logros: '', proximos: '', issue: '', riesgoTxt: '', creada: hoy(), actualizada: hoy(), origen: 'usuario', est: [], hist: [], tags: [], rec: null, propuestaOrigen: null, estadoMotivo: '', estadoRev: null })
   },
   proposals: {
     label: 'Propuestas', cfg: 'proposalsList', coll: 'ini', key: 'Codigo', title: 'Titulo (Title)', filter: esProp,
@@ -1009,11 +1019,11 @@ const SP_SCHEMA = {
       C.txt('Title', 'titulo'), C.txt('Codigo', 'id', { rw: false }), C.txt('Solicitante', 'solicitante'), C.txt('Sponsor', 'sponsor'), C.txt('Responsable', 'lider'), C.txt('Area', 'area'),
       C.txt('Fase', 'fase'), C.txt('TipoIniciativa', 'tipoIni'), C.ch('Estado', 'estado', ESTADOS_PROP), C.ch('Prioridad', 'prioridad', ['Alta', 'Media', 'Baja']),
       ...[['Estrategia', 'estrategia'], ['Valor', 'valor'], ['Esfuerzo', 'esfuerzo'], ['Riesgo', 'riesgo']].map(([n, k]) => C.num('Score' + n, null, { get: o => o.score ? o.score[k] : null, set: (o, v) => { if (v == null || v === '') return; o.score = o.score || {}; o.score[k] = +v; } })),
-      C.num('BeneficioEstimado', 'beneficio'), C.num('CostoEstimado', 'presupuesto'), C.date('FechaSolicitud', 'creada'), C.date('FechaObjetivo', 'finPlan'),
+      C.num('BeneficioEstimado', 'beneficio'), C.txt('Moneda', 'moneda'), C.num('CostoEstimado', 'presupuesto'), C.date('FechaSolicitud', 'creada'), C.date('FechaObjetivo', 'finPlan'),
       C.txt('Dependencias', 'deps', { get: i => (i.deps || []).join(';'), set: (o, v) => { o.deps = v ? String(v).split(/[;,\s]+/).filter(Boolean) : []; } }),
       C.der('DiasEnFase', 'Number', i => diasEnFase(i)), C.txt('ProyectoGenerado', 'proyecto'), C.note('MotivoEstado', 'estadoMotivo'), C.date('FechaRevision', 'estadoRev')
     ],
-    tpl: () => ({ tipo: 'Propuesta', desc: '', bc: '', beneficio: 0, sponsor: '', lider: '', solicitante: '', negocio: '', area: 'BISE', categoria: '', clasif: 'Táctico', gasto: 'OPEX', proveedor: '', contrato: '', fase: 'Recepción', estado: 'Vigente', rag: 'Verde', prioridad: 'Media', presupuesto: 0, gastado: 0, ahorroReal: 0, avance: 0, inicioPlan: null, finPlan: null, inicioReal: null, finReal: null, finEst: null, deps: [], resumen: '', logros: '', proximos: '', issue: '', riesgoTxt: '', creada: hoy(), actualizada: hoy(), faseDesde: hoy(), origen: 'usuario', est: [], hist: [], tags: [], rec: null, score: { estrategia: 3, valor: 3, esfuerzo: 3, riesgo: 2 }, proyecto: null, estadoMotivo: '', estadoRev: null })
+    tpl: () => ({ tipo: 'Propuesta', moneda: 'CLP', desc: '', bc: '', beneficio: 0, sponsor: '', lider: '', solicitante: '', negocio: '', area: 'BISE', categoria: '', clasif: 'Táctico', gasto: 'OPEX', proveedor: '', contrato: '', fase: 'Recepción', estado: 'Vigente', rag: 'Verde', prioridad: 'Media', presupuesto: 0, gastado: 0, ahorroReal: 0, avance: 0, inicioPlan: null, finPlan: null, inicioReal: null, finReal: null, finEst: null, deps: [], resumen: '', logros: '', proximos: '', issue: '', riesgoTxt: '', creada: hoy(), actualizada: hoy(), faseDesde: hoy(), origen: 'usuario', est: [], hist: [], tags: [], rec: null, score: { estrategia: 3, valor: 3, esfuerzo: 3, riesgo: 2 }, proyecto: null, estadoMotivo: '', estadoRev: null })
   },
   risks: {
     label: 'Riesgos', cfg: 'risksList', coll: 'riesgos', key: 'Title', title: 'ID (Title)',
@@ -2008,7 +2018,7 @@ function panelIni(i) {
     const idx = FASES_PRJ.indexOf(i.fase), nxt = FASES_PRJ[idx + 1];
     b = `${i.propuestaOrigen ? `<div class="pn-sec"><div class="note">${icon('bulb', 14)}<span>Nació de la propuesta ${iniLink(i.propuestaOrigen, i.propuestaOrigen + ' · ' + nameOf(i.propuestaOrigen))}</span></div></div>` : ''}${i.estadoMotivo ? `<div class="pn-sec"><div class="note warn">${icon('warn', 14)}<span><b>${esc(i.estado)}:</b> ${esc(i.estadoMotivo)}${i.estadoRev ? ' · revisión ' + fmtD(i.estadoRev) : ''}</span></div></div>` : ''}<div class="pn-sec"><div class="flow">${FASES_PRJ.map((x, k) => `<span class="${k < idx ? 'done' : k === idx ? 'cur' : ''}" title="${x}"></span>`).join('')}</div><div class="flow-l"><span>${i.fase}</span>${nxt && !isDone(i) ? `<a class="lnk" data-act="advance" data-id="${i.id}">Avanzar a ${nxt} →</a>` : ''}</div></div>
     <div class="pn-sec"><p class="desc">${esc(i.resumen || i.desc || 'Sin descripción.')}</p>${i.issue ? `<div class="note warn">${icon('warn', 14)} <span><b>Issue:</b> ${esc(i.issue)}</span></div>` : ''}</div>
-    <div class="pn-sec"><div class="kvs">${kv('Avance', pct(i.avance) + ' ' + prog(i.avance, i.rag, 5))}${kv('Esperado', FASES_ACT.includes(i.fase) ? pct(esperado(i)) : '—')}${kv('Presupuesto', fmtM(i.presupuesto) + estTag(i, 'presupuesto'))}${kv('Consumido', fmtM(i.gastado) + ' (' + (i.presupuesto ? Math.round(i.gastado / i.presupuesto * 100) : 0) + '%)')}${kv('Beneficio esperado', fmtM(i.beneficio) + estTag(i, 'beneficio'))}${kv('ROI', r == null ? '—' : Math.round(r) + '%')}${kv('Inicio plan', fmtD(i.inicioPlan))}${kv('Fin plan', fmtD(i.finPlan))}${kv('Fin proyectado', fmtD(f))}${kv('Desviación', d ? `<span style="color:var(--red)">+${d} d</span>` : '0 d')}${kv('Cambios aprobados', (St.cambios || []).filter(c => c.ini === i.id && c.estado === 'Aprobado').length)}</div></div>
+    <div class="pn-sec"><div class="kvs">${kv('Avance', pct(i.avance) + ' ' + prog(i.avance, i.rag, 5))}${kv('Esperado', FASES_ACT.includes(i.fase) ? pct(esperado(i)) : '—')}${kv('Presupuesto', fmtMon(i.presupuesto, monOf(i)) + estTag(i, 'presupuesto'))}${kv('Consumido', fmtMon(i.gastado, monOf(i)) + ' (' + (i.presupuesto ? Math.round(i.gastado / i.presupuesto * 100) : 0) + '%)')}${kv('Beneficio esperado', fmtMon(i.beneficio, monOf(i)) + estTag(i, 'beneficio'))}${kv('ROI', r == null ? '—' : Math.round(r) + '%')}${kv('Inicio plan', fmtD(i.inicioPlan))}${kv('Fin plan', fmtD(i.finPlan))}${kv('Fin proyectado', fmtD(f))}${kv('Desviación', d ? `<span style="color:var(--red)">+${d} d</span>` : '0 d')}${kv('Cambios aprobados', (St.cambios || []).filter(c => c.ini === i.id && c.estado === 'Aprobado').length)}</div></div>
     ${controlHTML(i)}<div class="pn-sec"><div class="kvs">${i.tipoIni ? kv('Tipo', esc(i.tipoIni)) : ''}${kv('Sponsor', esc(i.sponsor || '—') + estTag(i, 'sponsor'))}${kv('Líder', esc(i.lider || '—'))}${kv('Resp. negocio', esc(i.negocio || '—'))}${kv('Área', esc(i.area))}${kv('Categoría', esc(i.categoria))}${kv('Clasificación', esc(i.clasif) + ' · ' + esc(i.gasto))}${kv('Proveedor', esc(i.proveedor || '—'))}${kv('Origen', i.origen === 'real' ? 'Gene (real)' : i.origen === 'propuesta' ? 'Gene (propuesta)' : 'Demo / contexto')}</div></div>
     <div class="pn-sec"><h4>Salud (RAG)</h4><div class="rag-cmp">${ragPill(i.rag)} <span class="mut">actual</span> ${icon('chev', 13)} ${ragPill(sug.rag)} <span class="mut">sugerido</span></div>${sug.why.length ? `<small class="mut">Por: ${esc(sug.why.join(', '))}</small>` : '<small class="mut">Sin señales de alerta.</small>'}${sug.rag !== i.rag ? `<div style="margin-top:6px">${btn('Aplicar RAG sugerido', 'applyrag', { d: { id: i.id, rag: sug.rag }, cls: 'sm' })}</div>` : ''}</div>
     ${i.deps.length ? `<div class="pn-sec"><h4>Dependencias</h4>${i.deps.map(d => { const x = byId(d); return x ? `<button class="al" data-act="sel" data-t="ini" data-id="${x.id}">${ragPill(x.rag)}<span><b>${esc(x.titulo)}</b><small>${x.fase} · fin ${fmtD(forecast(x))}</small></span></button>` : ''; }).join('')}</div>` : ''}
@@ -2449,7 +2459,7 @@ function hasCycle(id, deps) {   // ¿agregar deps a id crea ciclo?
 /* ---------- Propuesta / Proyecto ---------- */
 function iniForm(i, isPropArg) {
   const nw = !i, PR = nw ? !!isPropArg : esProp(i), T = PR ? 'Propuesta' : 'Proyecto';
-  const v = i ? clone(i) : { tipo: T, fase: PR ? 'Recepción' : 'Planificación', estado: PR ? 'Vigente' : 'En curso', rag: 'Verde', prioridad: 'Media', area: ['BISE'], categoria: St.cfg.categorias[0], clasif: 'Táctico', gasto: 'OPEX', avance: 0, lider: St.cfg.usuario, solicitante: St.cfg.usuario, presupuesto: 0, gastado: 0, beneficio: 0, deps: [], inicioPlan: hoy(), finPlan: addD(hoy(), 120), origen: 'usuario', est: [], hist: [], score: { estrategia: 3, valor: 3, esfuerzo: 3, riesgo: 2 } };
+  const v = i ? clone(i) : { tipo: T, fase: PR ? 'Recepción' : 'Planificación', estado: PR ? 'Vigente' : 'En curso', rag: 'Verde', prioridad: 'Media', moneda: 'CLP', area: ['BISE'], categoria: St.cfg.categorias[0], clasif: 'Táctico', gasto: 'OPEX', avance: 0, lider: St.cfg.usuario, solicitante: St.cfg.usuario, presupuesto: 0, gastado: 0, beneficio: 0, deps: [], inicioPlan: hoy(), finPlan: addD(hoy(), 120), origen: 'usuario', est: [], hist: [], score: { estrategia: 3, valor: 3, esfuerzo: 3, riesgo: 2 } };
   const areas = typeof v.area === 'string' ? v.area.split(',').map(x => x.trim()) : v.area;
   v.areaArr = areas; v.score = v.score || { estrategia: 3, valor: 3, esfuerzo: 3, riesgo: 2 };
   v.sE = v.score.estrategia; v.sV = v.score.valor; v.sF = v.score.esfuerzo; v.sR = v.score.riesgo;
@@ -2466,7 +2476,7 @@ function iniForm(i, isPropArg) {
     { sec: PR ? 'Fase' : 'Fase y salud' },
     { k: 'fase', l: 'Fase del workflow', t: 'select', opts: fasesDe(v) },
     ...(PR ? [] : [{ k: 'rag', l: 'Salud (RAG)', t: 'select', opts: RAGS }, { k: 'avance', l: 'Avance', t: 'range', suf: '%' }, { k: 'avanceFase', l: 'Avance de la fase activa (manual, 0 = automático)', t: 'number', min: 0, max: 100, hint: 'Automático: hitos cerrados de la fase actual; si no hay, el avance general' }]),
-    { sec: PR ? 'Finanzas estimadas (' + St.cfg.unidad + ')' : 'Finanzas (' + St.cfg.unidad + ')' },
+    { sec: PR ? 'Finanzas estimadas' : 'Finanzas' }, { k: 'moneda', l: 'Moneda', t: 'select', opts: ['CLP', 'USD', 'UF'], w: 1, hint: 'Los montos se ingresan en: CLP en millones (MM) · USD en miles (K) · UF en unidades' },
     { k: 'presupuesto', l: PR ? 'Costo estimado' : 'Presupuesto', t: 'number', min: 0 }, ...(PR ? [] : [{ k: 'gastado', l: 'Consumido', t: 'number', min: 0 }]), { k: 'beneficio', l: PR ? 'Beneficio estimado' : 'Beneficio esperado', t: 'number', min: 0 }, ...(PR ? [] : [{ k: 'ahorroReal', l: 'Beneficio real (acumulado)', t: 'number', min: 0 }, { k: 'resultadoNota', l: 'Resultado alcanzado (obligatorio para la 3ª estrella si no hay beneficio medible)', w: 3 }]),
     { sec: 'Fechas' },
     ...(PR ? [{ k: 'inicioPlan', l: 'Inicio estimado', t: 'date' }, { k: 'finPlan', l: 'Fecha objetivo de término', t: 'date' }]
@@ -2744,7 +2754,7 @@ function propResumen(i) {
   return `${i.proyecto ? `<div class="pn-sec"><div class="note">${icon('play', 14)}<span>Aprobada · proyecto generado ${iniLink(i.proyecto, i.proyecto + ' · ' + nameOf(i.proyecto))}</span></div></div>` : ''}${i.estadoMotivo && !i.proyecto ? `<div class="pn-sec"><div class="note warn">${icon('warn', 14)}<span><b>${esc(i.estado)}:</b> ${esc(i.estadoMotivo)}${i.estadoRev ? ' · revisión ' + fmtD(i.estadoRev) : ''}</span></div></div>` : ''}
   <div class="pn-sec"><div class="flow">${F_.map((x, k) => `<span class="${k < idx ? 'done' : k === idx ? 'cur' : ''}" title="${x}"></span>`).join('')}</div><div class="flow-l"><span>${i.fase}</span>${link}</div></div>
   <div class="pn-sec"><p class="desc">${esc(i.problema || i.resumen || i.desc || 'Sin descripción.')}</p>${i.objetivos ? `<p class="mut" style="margin:6px 0 0"><b>Objetivos:</b> ${esc(i.objetivos)}</p>` : ''}</div>
-  <div class="pn-sec"><div class="kvs">${kv('Puntaje', i.score ? `<b>${priorScore(i)}</b> / 100` : '<span class="mut">sin evaluar</span>')}${kv('Días en la fase', `<span style="color:${sf.c};font-weight:700">${sf.d} d</span>`)}${kv('Costo estimado', fmtM(i.presupuesto) + estTag(i, 'presupuesto'))}${kv('Beneficio estimado', fmtM(i.beneficio) + estTag(i, 'beneficio'))}${kv('ROI estimado', r == null ? '—' : Math.round(r) + '%')}${kv('Fecha objetivo', fmtD(i.finPlan))}</div></div>
+  <div class="pn-sec"><div class="kvs">${kv('Puntaje', i.score ? `<b>${priorScore(i)}</b> / 100` : '<span class="mut">sin evaluar</span>')}${kv('Días en la fase', `<span style="color:${sf.c};font-weight:700">${sf.d} d</span>`)}${kv('Costo estimado', fmtMon(i.presupuesto, monOf(i)) + estTag(i, 'presupuesto'))}${kv('Beneficio estimado', fmtMon(i.beneficio, monOf(i)) + estTag(i, 'beneficio'))}${kv('ROI estimado', r == null ? '—' : Math.round(r) + '%')}${kv('Fecha objetivo', fmtD(i.finPlan))}</div></div>
   <div class="pn-sec"><h4>Priorización</h4><div class="kvs">${bar('Estrategia', sc.estrategia, true)}${bar('Valor', sc.valor, true)}${bar('Esfuerzo', sc.esfuerzo, false)}${bar('Riesgo', sc.riesgo, false)}</div></div>
   ${fin ? '' : `<div class="pn-sec"><h4>${last ? 'Compuertas para aprobar' : 'Compuertas para ' + F_[idx + 1]}</h4><div class="gates">${g.map(x => `<div class="${x.ok ? 'ok' : 'no'}">${icon(x.ok ? 'check' : 'x', 14)}<span>${esc(x.t)}</span></div>`).join('')}</div></div>`}
   <div class="pn-sec"><div class="kvs">${kv('Solicitante', esc(i.solicitante || i.propuestoPor || i.lider || '—'))}${kv('Sponsor', esc(i.sponsor || '—') + estTag(i, 'sponsor'))}${kv('Responsable', esc(i.lider || '—'))}${kv('Resp. negocio', esc(i.negocio || '—'))}${kv('Área', esc(i.area))}${kv('Categoría', esc(i.categoria))}${kv('Clasificación', esc(i.clasif) + ' · ' + esc(i.gasto))}${kv('Solicitada', fmtD(i.creada))}</div></div>
@@ -2792,10 +2802,10 @@ Views.dashboard = {
       ${kp(K.ontrackPct >= 60 ? 'good' : K.ontrackPct >= 35 ? 'warn' : 'bad', 'check', '% On Track', pct(K.ontrackPct), `${K.ontrack} de ${K.activos} activos en verde y a tiempo`, prog(K.ontrackPct, K.ontrackPct >= 60 ? 'Verde' : K.ontrackPct >= 35 ? 'Ámbar' : 'Rojo', 6), 'portfolio')}
     </section>
     <section class="kpis kpis2" aria-label="Indicadores secundarios">
-      ${kp('prop', 'bulb', 'Propuestas en Pipeline', K.pipe, `${K.propAprob} listas para aprobación · valor ${fmtN(K.valorPipe)} MM`, stackBar(FASES_PROP.map(f => ({ l: f, v: scopeP().filter(i => i.fase === f && isLive(i)).length, c: FASE_COLOR[f] })), 6), 'propuestas')}
-      ${kp('', 'money', 'Presupuesto Total', fmtMs(K.pres), `${St.cfg.unidad} · proyectos (pipeline aparte: ${fmtN(K.presPipe)} MM)`, '', 'portfolio')}
-      ${kp('', 'trend', 'Presupuesto Consumido', fmtMs(K.gas), `${K.pres ? Math.round(K.gas / K.pres * 100) : 0}% del presupuesto`, prog(K.pres ? K.gas / K.pres * 100 : 0, K.gas > K.pres ? 'Rojo' : 'Verde', 6), 'portfolio')}
-      ${kp(K.beneficio ? 'good' : '', 'target', 'Beneficio Esperado', K.beneficio ? fmtMs(K.beneficio) : '<span class="nd">Sin dato</span>', K.beneficio ? `ROI de proyectos ${roiG}% <sup class="est">est.</sup>` : 'Ningún proyecto declara beneficio', '', 'portfolio')}
+      ${kp('prop', 'bulb', 'Propuestas en Pipeline', K.pipe, `${K.propAprob} listas para aprobación · valor ${fmtTot(K.M.valorPipe)}`, stackBar(FASES_PROP.map(f => ({ l: f, v: scopeP().filter(i => i.fase === f && isLive(i)).length, c: FASE_COLOR[f] })), 6), 'propuestas')}
+      ${kp('', 'money', 'Presupuesto Total', fmtBig(K.M.pres), `${restTxt(K.M.pres)}proyectos · pipeline aparte: ${fmtTot(K.M.presPipe)}`, '', 'portfolio')}
+      ${kp('', 'trend', 'Presupuesto Consumido', fmtBig(K.M.gas), `${restTxt(K.M.gas)}${pctMon(K.M.gas, K.M.pres)}% del presupuesto${monKeys(K.M.pres).length > 1 ? ' en ' + monMain(K.M.pres) : ''}`, prog(pctMon(K.M.gas, K.M.pres), pctMon(K.M.gas, K.M.pres) > 100 ? 'Rojo' : 'Verde', 6), 'portfolio')}
+      ${kp(monKeys(K.M.beneficio).length ? 'good' : '', 'target', 'Beneficio Esperado', monKeys(K.M.beneficio).length ? fmtBig(K.M.beneficio) : '<span class="nd">Sin dato</span>', monKeys(K.M.beneficio).length ? `${restTxt(K.M.beneficio)}ROI de proyectos ${roiG}%${monKeys(K.M.pres).length > 1 ? ' (solo CLP)' : ''} <sup class="est">est.</sup>` : 'Ningún proyecto declara beneficio', '', 'portfolio')}
     </section>
     ${al.length ? `<div class="strip" role="status">${icon('spark', 16)}<span><b>${al.filter(a => a.sev === 3).length} alertas críticas</b> (${al.length} hallazgos de los agentes IA): ${al.slice(0, 2).map(a => esc(a.titulo)).join(' · ')}…</span><a class="lnk" data-act="go" data-v="ia">Revisar →</a></div>` : ''}
     <div class="dgrid fit dfill">
@@ -2853,8 +2863,8 @@ const PCOLS = [
   { k: 'estado', h: 'Estado', w: 100, f: i => i.estado, s: i => ESTADOS.indexOf(i.estado), r: i => estPill(i.estado) },
   { k: 'rag', h: 'RAG', w: 82, t: 'j', f: i => i.rag, s: i => RAGS.indexOf(i.rag), r: i => ragPill(i.rag) },
   { k: 'prioridad', h: 'Prioridad', w: 88, f: i => i.prioridad, s: i => PRIOS.indexOf(i.prioridad), r: i => prioPill(i.prioridad) },
-  { k: 'presupuesto', h: 'Presupuesto / Costo est.', w: 120, num: 1, f: i => i.presupuesto, s: i => i.presupuesto, r: i => fmtN(i.presupuesto) + estTag(i, 'presupuesto') },
-  { k: 'beneficio', h: 'Beneficio', w: 96, num: 1, f: i => i.beneficio, s: i => i.beneficio, r: i => fmtN(i.beneficio) },
+  { k: 'presupuesto', h: 'Presupuesto / Costo est.', w: 120, num: 1, f: i => i.presupuesto, s: i => i.presupuesto, r: i => fmtMon(i.presupuesto, monOf(i)) + estTag(i, 'presupuesto') },
+  { k: 'beneficio', h: 'Beneficio', w: 96, num: 1, f: i => i.beneficio, s: i => i.beneficio, r: i => fmtMon(i.beneficio, monOf(i)) },
   { k: 'score', h: 'Puntaje', w: 80, t: 'p', f: i => priorScore(i), s: i => priorScore(i), r: i => i.score ? `<b>${priorScore(i)}</b>` : '<span class="mut">—</span>' },
   { k: 'dfase', h: 'Días en fase', w: 100, t: 'p', num: 1, f: i => diasEnFase(i), s: i => diasEnFase(i), r: i => `<span style="color:${semFase(i).c};font-weight:600">${diasEnFase(i)} d</span>` },
   { k: 'avance', h: 'Avance', w: 120, t: 'j', f: i => Math.round(i.avance), s: i => i.avance, r: i => `<span class="avc">${prog(i.avance, i.rag, 6)}<b>${pct(i.avance)}</b></span>` },
@@ -2888,13 +2898,13 @@ Views.portfolio = {
     else {
       const gs = uniq(rows.map(i => grp === 'area' ? i.area : i[grp])).sort(); gs.forEach(g => {
         const gr = rows.filter(i => (grp === 'area' ? i.area : i[grp]) === g), cl = f.col[g];
-        body += `<tr class="grp" data-act="pgrp" data-g="${esc(g)}"><td colspan="${cols.length}"><span class="gcar ${cl ? '' : 'o'}">${icon('chev', 12)}</span><b>${esc(g || '—')}</b><small>${gr.length} registros · ${fmtN(sum(gr, i => i.presupuesto))} MM · avance prom. ${pct(avg(gr, i => i.avance))}</small></td></tr>`;
+        body += `<tr class="grp" data-act="pgrp" data-g="${esc(g)}"><td colspan="${cols.length}"><span class="gcar ${cl ? '' : 'o'}">${icon('chev', 12)}</span><b>${esc(g || '—')}</b><small>${gr.length} registros · ${fmtTot(sumM(gr, i => i.presupuesto))} · avance prom. ${pct(avg(gr, i => i.avance))}</small></td></tr>`;
         if (!cl) body += gr.map(rowH).join('');
       });
     }
     const resp = uniq(all.map(i => i.lider)).sort();
-    const tot = { p: sum(rows, i => i.presupuesto), g: sum(rows.filter(i => !esProp(i)), i => i.gastado) };
-    return pageHead('Portfolio', `Vista PMO · ${rows.length} de ${all.length} ${f.tipo === 'Propuesta' ? 'propuestas' : f.tipo === 'Todo' ? 'registros (proyectos y propuestas)' : 'proyectos'} · ${f.tipo === 'Propuesta' ? 'Costo estimado' : 'Presupuesto'} ${fmtN(tot.p)} ${St.cfg.unidad}`, `<span class="edit-only">${btn('Nueva propuesta', 'new', { d: { t: 'prop' }, ic: 'plus', cls: 'pri' })}</span>${btn('Excel', 'pxlsx', { ic: 'down', cls: 'pri' })}${btn('JSON', 'pjson', { ic: 'down' })}${btn('CSV', 'pcsv', { ic: 'down' })}`) + `
+    const tot = { p: sumM(rows, i => i.presupuesto), g: sumM(rows.filter(i => !esProp(i)), i => i.gastado) };
+    return pageHead('Portfolio', `Vista PMO · ${rows.length} de ${all.length} ${f.tipo === 'Propuesta' ? 'propuestas' : f.tipo === 'Todo' ? 'registros (proyectos y propuestas)' : 'proyectos'} · ${f.tipo === 'Propuesta' ? 'Costo estimado' : 'Presupuesto'} ${fmtTot(tot.p)}`, `<span class="edit-only">${btn('Nueva propuesta', 'new', { d: { t: 'prop' }, ic: 'plus', cls: 'pri' })}</span>${btn('Excel', 'pxlsx', { ic: 'down', cls: 'pri' })}${btn('JSON', 'pjson', { ic: 'down' })}${btn('CSV', 'pcsv', { ic: 'down' })}`) + `
     <div class="toolbar"><div class="seg">${[['Proyecto', 'Proyectos', nPrj], ['Propuesta', 'Propuestas', nProp], ['Todo', 'Todo', nPrj + nProp]].map(([k, l, n]) => `<button class="${f.tipo === k ? 'on' : ''}" data-act="ptipo" data-k="${k}">${l} <small style="display:inline;color:inherit;opacity:.75">${n}</small></button>`).join('')}</div></div>
     <div class="toolbar">
       <div class="search"><span>${icon('search', 14)}</span><input data-key="pf-q" data-chg="flt" data-v="portfolio" data-f="q" type="search" placeholder="Buscar en el portfolio…" value="${esc(f.q)}"></div>
@@ -2911,8 +2921,8 @@ Views.portfolio = {
     </div>
     <div class="tbl-w" data-keep="pf"><table class="tbl ${f.dens === 'c' ? 'dense' : ''}"><thead><tr>${cols.map(c => `<th class="${c.num ? 'n' : ''} c-${c.k}" style="min-width:${c.w}px"><button data-act="psort" data-k="${c.k}" aria-label="Ordenar por ${c.h}">${c.h}${f.sort === c.k ? `<span class="sorti">${f.dir > 0 ? '▲' : '▼'}</span>` : ''}</button></th>`).join('')}</tr></thead>
     <tbody>${body || `<tr><td colspan="${cols.length}">${empty('Sin resultados con los filtros actuales')}</td></tr>`}</tbody>
-    <tfoot><tr>${cols.map(c => `<td class="${c.num ? 'n' : ''}">${c.k === 'titulo' ? `<b>Total (${rows.length})</b>` : c.k === 'presupuesto' ? `<b>${fmtN(tot.p)}</b>` : c.k === 'beneficio' ? `<b>${fmtN(sum(rows, i => i.beneficio))}</b>` : c.k === 'avance' ? `<b>${pct(avg(rows.filter(i => !esProp(i)), i => i.avance))}</b>` : c.k === 'desv' ? `<b>${rows.filter(i => !esProp(i) && atrasado(i)).length} atras.</b>` : ''}</td>`).join('')}</tr></tfoot></table></div>
-    <div class="tbl-note"><span class="mut">Consumido: ${fmtN(tot.g)} ${St.cfg.unidad} (${tot.p ? Math.round(tot.g / tot.p * 100) : 0}%). Clic en una fila abre el panel contextual. <button class="lnk" data-act="pdens">${f.dens === 'c' ? 'Densidad normal' : 'Densidad compacta'}</button></span></div>`;
+    <tfoot><tr>${cols.map(c => `<td class="${c.num ? 'n' : ''}">${c.k === 'titulo' ? `<b>Total (${rows.length})</b>` : c.k === 'presupuesto' ? `<b>${fmtTot(tot.p, '<br>')}</b>` : c.k === 'beneficio' ? `<b>${fmtTot(sumM(rows, i => i.beneficio), '<br>')}</b>` : c.k === 'avance' ? `<b>${pct(avg(rows.filter(i => !esProp(i)), i => i.avance))}</b>` : c.k === 'desv' ? `<b>${rows.filter(i => !esProp(i) && atrasado(i)).length} atras.</b>` : ''}</td>`).join('')}</tr></tfoot></table></div>
+    <div class="tbl-note"><span class="mut">Consumido: ${fmtTot(tot.g)} (${pctMon(tot.g, tot.p)}%${monKeys(tot.p).length > 1 ? ' en ' + monMain(tot.p) : ''}). Clic en una fila abre el panel contextual. <button class="lnk" data-act="pdens">${f.dens === 'c' ? 'Densidad normal' : 'Densidad compacta'}</button></span></div>`;
   }
 };
 Chg.flt = el => { const f = F(el.dataset.v, {}); f[el.dataset.f] = el.dataset.bool ? el.checked : el.value; render(); };
@@ -2934,7 +2944,7 @@ Views.proyectos = {
       ${f.mode === 'cards' ? `<p class="ic-d">${esc((i.resumen || i.desc || '').slice(0, 150))}</p>` : ''}
       <div class="ic-m" title="${esc(avFaseTip(i))}"><small style="width:46px">Fase</small>${prog(avFase(i).v, i.rag, 5)}<b>${avFase(i).v}%</b></div><div class="ic-m"><small style="width:46px">Total</small>${prog(i.avance, i.rag, 3)}<b>${pct(i.avance)}</b></div>
       <div class="ic-f"><span class="pp">${avatar(i.lider, 20)}<small>${esc(i.lider.split(' ')[0])}</small></span>${prioPill(i.prioridad)}${desv(i) > cfgI(i,'tolDesv') ? `<span class="pill bad">+${desv(i)} d</span>` : ''}</div>
-      ${f.mode === 'cards' ? `<div class="ic-x"><span>${icon('flag', 13)} ${hd}/${hs.length} hitos</span><span>${icon('shield', 13)} ${riesgosDe(i.id).filter(riesgoAbierto).length}</span><span>${icon('money', 13)} ${fmtN(i.presupuesto)}</span><span>${icon('cal', 13)} ${fmtD(forecast(i))}</span></div>${nh ? `<small class="mut">Próx. hito: ${esc(nh.nombre)} · ${fmtD(nh.fecha)}</small>` : ''}` : ''}</article>`; };
+      ${f.mode === 'cards' ? `<div class="ic-x"><span>${icon('flag', 13)} ${hd}/${hs.length} hitos</span><span>${icon('shield', 13)} ${riesgosDe(i.id).filter(riesgoAbierto).length}</span><span>${icon('money', 13)} ${fmtMon(i.presupuesto, monOf(i))}</span><span>${icon('cal', 13)} ${fmtD(forecast(i))}</span></div>${nh ? `<small class="mut">Próx. hito: ${esc(nh.nombre)} · ${fmtD(nh.fecha)}</small>` : ''}` : ''}</article>`; };
     const body = f.mode === 'board'
       ? `<div class="kanban k4c" data-keep="kb" style="grid-template-columns:repeat(${FASES_PRJ.length},minmax(200px,1fr))">${FASES_PRJ.map(fs => { const it = rows.filter(i => i.fase === fs); return `<div class="kcol" data-fase="${fs}"><div class="k-h"><i style="background:${FASE_COLOR[fs]}"></i><b>${fs}</b><em>${it.length}</em>${it.length ? `<small class="mut" style="margin-left:auto" title="Promedio de avance de la fase activa">fase ${Math.round(it.reduce((s, x) => s + avFase(x).v, 0) / it.length)}%</small>` : ''}</div><div class="k-b">${it.map(card).join('') || '<div class="k-e">Arrastra aquí</div>'}</div></div>`; }).join('')}</div>`
       : `<div class="cards">${rows.sort(by(i => -critScore(i))).map(card).join('') || empty('Sin proyectos')}</div>`;
@@ -2959,11 +2969,11 @@ Views.propuestas = {
     const f = F('prop', { q: '', showEnd: false });
     const allP = scopeP(); let rows = allP.filter(isLive);
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.sponsor).toLowerCase().includes(q)); }
-    const total = { n: rows.length, p: sum(rows, i => i.presupuesto), b: sum(rows, i => i.beneficio), esp: rows.filter(i => i.estado === 'En espera').length };
+    const total = { n: rows.length, p: sumM(rows, i => i.presupuesto), b: sumM(rows, i => i.beneficio), esp: rows.filter(i => i.estado === 'En espera').length };
     const card = i => { const nx = FASES_PROP[FASES_PROP.indexOf(i.fase) + 1], g = i.fase === 'Aprobación' ? gatesAprobar(i) : gates(i, nx), ok = g.filter(x => x.ok).length, sf = semFase(i);
       return `<article class="icard prop ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini"><div class="ic-t"><span class="mono">${i.id}</span>${i.estado === 'En espera' ? estPill('En espera') : ''}<span class="pill" style="--c:${sf.c}" title="Días en la fase actual">${sf.d} d</span></div><h3>${esc(i.titulo)}</h3>
       <div class="ic-sc"><span title="Índice de priorización"><b>${i.score ? priorScore(i) : '—'}</b><small>score</small></span><span class="sbar">${prog(ok / Math.max(1, g.length) * 100, ok === g.length ? 'Verde' : 'Ámbar', 5)}<small>${ok}/${g.length} ${i.fase === 'Aprobación' ? 'para aprobar' : 'compuertas'}</small></span></div>
-      <div class="ic-f"><span class="pp">${avatar(i.sponsor || i.lider, 20)}<small>${esc((i.sponsor || i.lider).split(' ')[0])}</small></span>${prioPill(i.prioridad)}<small class="mut">${fmtN(i.presupuesto)} MM</small></div></article>`; };
+      <div class="ic-f"><span class="pp">${avatar(i.sponsor || i.lider, 20)}<small>${esc((i.sponsor || i.lider).split(' ')[0])}</small></span>${prioPill(i.prioridad)}<small class="mut">${fmtMon(i.presupuesto, monOf(i))}</small></div></article>`; };
     // matriz valor / esfuerzo
     const W = 560, H = 330, P = 40;
     const dots = rows.map(i => { const s = i.score || { valor: 3, esfuerzo: 3 }; const x = P + (s.esfuerzo - 1) / 4 * (W - 2 * P), y = H - P - (s.valor - 1) / 4 * (H - 2 * P); const jx = ((parseInt(i.id.slice(5), 10) * 37) % 26) - 13, jy = ((parseInt(i.id.slice(5), 10) * 53) % 26) - 13; return { i, x: x + jx, y: y + jy, r: 7 + Math.sqrt(i.presupuesto) * .45 }; });
@@ -2974,7 +2984,7 @@ Views.propuestas = {
     const rank = rows.slice().sort(by(i => -priorScore(i))).slice(0, 8);
     return pageHead('Propuestas · Pipeline de innovación', 'Del problema al caso de negocio y la aprobación. Al aprobar una propuesta se crea un proyecto. Cada fase exige compuertas de gobierno antes de avanzar.', `<span class="edit-only">${btn('Nueva propuesta', 'new', { d: { t: 'prop' }, ic: 'plus', cls: 'pri' })}</span>`) + `
     <section class="kpis k4"><div class="kpi"><div class="k-top"><span class="k-ic">${icon('bulb', 16)}</span><span class="k-l">En pipeline</span></div><div class="k-v">${total.n}</div><div class="k-s">${total.esp} en espera · ${rows.filter(i => i.fase === 'Aprobación' && i.estado === 'Vigente').length} listas para aprobar</div></div>
-      <div class="kpi"><div class="k-top"><span class="k-ic">${icon('money', 16)}</span><span class="k-l">Costo estimado</span></div><div class="k-v">${fmtMs(total.p)}</div><div class="k-s">${St.cfg.unidad} <sup class="est">est.</sup></div></div>
+      <div class="kpi"><div class="k-top"><span class="k-ic">${icon('money', 16)}</span><span class="k-l">Costo estimado</span></div><div class="k-v">${fmtBig(total.p)}</div><div class="k-s">${restTxt(total.p)}<sup class="est">est.</sup></div></div>
       <div class="kpi good"><div class="k-top"><span class="k-ic">${icon('target', 16)}</span><span class="k-l">Valor potencial</span></div><div class="k-v">${fmtMs(total.b)}</div><div class="k-s">Beneficio esperado <sup class="est">est.</sup></div></div>
       <div class="kpi"><div class="k-top"><span class="k-ic">${icon('trend', 16)}</span><span class="k-l">ROI potencial</span></div><div class="k-v">${total.p ? Math.round((total.b - total.p) / total.p * 100) : 0}%</div><div class="k-s">(beneficio − costo) / costo</div></div></section>
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="pp-q" data-chg="flt" data-v="prop" data-f="q" type="search" placeholder="Buscar propuesta…" value="${esc(f.q)}"></div><label class="chk tb-c"><input type="checkbox" ${f.showEnd ? 'checked' : ''} data-chg="flt" data-v="prop" data-f="showEnd" data-bool="1"> <span>Mostrar finalizadas (${allP.filter(isDone).length})</span></label></div>
@@ -3007,7 +3017,7 @@ Views.roadmap = {
     const card = i => { const eq = endN(i), pq = planN(i), slip = eq != null && pq != null && eq > pq; return `<button class="rcard ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" data-act="sel" data-t="ini" data-id="${i.id}" style="--c:${RAG_C[i.rag]}"><div class="rc-t"><b>${esc(i.titulo)}</b></div><div class="rc-s">${fasePill(i.fase)}${i.estado !== 'En curso' ? estPill(i.estado) : ''}</div><div class="qspan">${W.map(w => `<i class="${inQ(i, w) ? 'on' : ''}">Q${w.q}</i>`).join('')}</div><div class="rc-m">${prog(i.avance, i.rag, 4)}<small>${pct(i.avance)} · fin ${fmtD(forecast(i))}${slip ? ` <b class="neg" title="Pronóstico posterior a la línea base">⚠ +${eq - pq} trim.</b>` : ''}</small></div></button>`; };
     const grid = lanes.map(l => {
       const li = f.lane ? rows.filter(i => (f.lane === 'area' ? i.area : i[f.lane]) === l) : rows;
-      return `<div class="r-lane"><div class="r-lh"><b>${esc(l)}</b><small>${li.length} · ${fmtN(sum(li, i => i.presupuesto))} MM</small></div>${W.map(w => { const it = li.filter(i => endN(i) === w.n).sort(by(i => -critScore(i))); return `<div class="r-cell ${w.n === curN ? 'cur' : ''}">${it.map(card).join('')}</div>`; }).join('')}</div>`;
+      return `<div class="r-lane"><div class="r-lh"><b>${esc(l)}</b><small>${li.length} · ${fmtTot(sumM(li, i => i.presupuesto))}</small></div>${W.map(w => { const it = li.filter(i => endN(i) === w.n).sort(by(i => -critScore(i))); return `<div class="r-cell ${w.n === curN ? 'cur' : ''}">${it.map(card).join('')}</div>`; }).join('')}</div>`;
     }).join('');
     const before = rows.filter(i => endN(i) != null && endN(i) < W[0].n).length, after = rows.filter(i => endN(i) != null && endN(i) > W[3].n).length;
     return pageHead('Roadmap ejecutivo', 'Entregas por trimestre según fecha de fin proyectada (ventana móvil de 4 trimestres). Las barras Q muestran el periodo que abarca cada proyecto.', btn('Exportar CSV', 'roadcsv', { ic: 'down' })) + `
@@ -3545,7 +3555,7 @@ function informeTxt(i) {
   const f = forecast(i), hs = hitosDe(i.id), prox = hs.filter(h => !h.completado).sort(by('fecha')).slice(0, 5), cr = riesgosDe(i.id).filter(r => riesgoAbierto(r)).sort(by(r => -expo(r))).slice(0, 3);
   const ac = St.compromisos.filter(a => a.ini === i.id && a.estado === 'Abierto'), cp = St.cambios.filter(c => c.ini === i.id && c.estado === 'Solicitado'), ca = St.cambios.filter(c => c.ini === i.id && c.estado === 'Aprobado');
   const L = [`INFORME DE ESTADO · ${i.titulo} (${i.id})`, `Fecha: ${fmtD(hoy())} · Líder: ${i.lider || '—'} · Sponsor: ${i.sponsor || '—'} · Fase: ${i.fase} · Salud: ${i.rag || '—'}`, ''];
-  if (!esProp(i)) L.push(`Avance: ${i.avance}% (esperado ${Math.round(esperado(i))}%) · Fin plan ${fmtD(i.finPlan)} → proyectado ${fmtD(f)}${desv(i) ? ' (+' + desv(i) + ' d)' : ''} · Presupuesto ${fmtN(i.presupuesto)} ${St.cfg.unidad}, consumido ${fmtN(i.gastado)}`, '');
+  if (!esProp(i)) L.push(`Avance: ${i.avance}% (esperado ${Math.round(esperado(i))}%) · Fin plan ${fmtD(i.finPlan)} → proyectado ${fmtD(f)}${desv(i) ? ' (+' + desv(i) + ' d)' : ''} · Presupuesto ${fmtMon(i.presupuesto, monOf(i))}, consumido ${fmtMon(i.gastado, monOf(i))}`, '');
   L.push('LOGROS', i.logros || '—', '', 'PRÓXIMOS PASOS', i.proximos || '—', '');
   if (i.issue) L.push('ISSUE / BLOQUEO', i.issue, '');
   L.push('PRÓXIMOS HITOS', ...(prox.length ? prox.map(h => `- ${h.nombre} · ${fmtD(h.fecha)}${h.fecha < hoy() ? ' (VENCIDO)' : ''}${h.resp ? ' · ' + h.resp : ''}`) : ['—']), '');
@@ -3661,7 +3671,7 @@ Acts.resmail = d => { const t = $('#txtcopy').value; location.href = 'mailto:' +
    4) CONTROL DE CAMBIOS
    ------------------------------------------------------------------ */
 const CHG_TIPOS = ['Alcance', 'Fecha', 'Presupuesto', 'Recursos', 'Otro'], CHG_C = { Solicitado: '#CA5010', Aprobado: '#107C10', Rechazado: '#D13438' };
-const chgEfecto = c => { const p = []; if (c.fNue) p.push(`Fin plan ${fmtD(c.fAnt)} → ${fmtD(c.fNue)}${c.fAnt ? ' (' + (diffD(c.fNue, c.fAnt) >= 0 ? '+' : '') + diffD(c.fNue, c.fAnt) + ' d)' : ''}`); if (+c.pNue > 0) p.push(`Presupuesto ${fmtN(c.pAnt)} → ${fmtN(c.pNue)} ${St.cfg.unidad}`); return p.join(' · ') || 'Sin efecto en fecha ni presupuesto'; };
+const chgEfecto = c => { const p = []; if (c.fNue) p.push(`Fin plan ${fmtD(c.fAnt)} → ${fmtD(c.fNue)}${c.fAnt ? ' (' + (diffD(c.fNue, c.fAnt) >= 0 ? '+' : '') + diffD(c.fNue, c.fAnt) + ' d)' : ''}`); if (+c.pNue > 0) p.push(`Presupuesto ${fmtN(c.pAnt)} → ${fmtMon(c.pNue, monOf(byId(c.ini)))}`); return p.join(' · ') || 'Sin efecto en fecha ni presupuesto'; };
 function chgForm(c, pre) {
   const nw = !c, me = miUsuario();
   const v = c ? clone(c) : Object.assign({ ini: '', tipo: 'Fecha', desc: '', motivo: '', impacto: '', fNue: '', pNue: 0 }, pre || {});
@@ -3671,7 +3681,7 @@ function chgForm(c, pre) {
     fields: [
       { k: 'ini', l: 'Proyecto', t: 'select', opts: iniOpts(), req: true, w: 2 }, { k: 'tipo', l: 'Tipo de cambio', t: 'select', opts: CHG_TIPOS },
       { k: 'desc', l: 'Qué cambia', t: 'textarea', req: true, w: 3 }, { k: 'motivo', l: 'Por qué (motivo)', t: 'textarea', req: true, w: 3 }, { k: 'impacto', l: 'Impacto en alcance, costo, calidad o equipo', t: 'textarea', w: 3 },
-      { k: 'fNue', l: 'Nueva fecha de fin plan', t: 'date', hint: 'Déjala vacía si no cambia la fecha' }, { k: 'pNue', l: 'Nuevo presupuesto (' + St.cfg.unidad + ')', t: 'number', min: 0, hint: '0 = sin cambio' }
+      { k: 'fNue', l: 'Nueva fecha de fin plan', t: 'date', hint: 'Déjala vacía si no cambia la fecha' }, { k: 'pNue', l: 'Nuevo presupuesto (en la moneda del proyecto)', t: 'number', min: 0, hint: '0 = sin cambio · CLP en MM, USD en miles, UF en unidades' }
     ],
     onDanger: () => confirmBox('¿Eliminar esta solicitud de cambio?', () => { St.cambios = St.cambios.filter(x => x.id !== c.id); log('Cambio', c.ini, 'Solicitud de cambio eliminada: ' + c.id); toast('Solicitud eliminada'); refresh(); }, 'Eliminar', true),
     onSave(o) {
@@ -4099,7 +4109,7 @@ const riesgoSinMit = (i, r) => riesgoAbierto(r) && expo(r) >= cfgI(i, 'umbralCri
 function congelarBase(i, rebase) {
   if (i.base && rebase) { i.baseHist = (i.baseHist || []).concat([i.base]); }
   i.base = { fecha: hoy(), inicio: i.inicioPlan || null, fin: i.finPlan || null, pres: i.presupuesto || 0, por: St.cfg.usuario, hitos: hitosDe(i.id).map(h => ({ id: h.id, nombre: h.nombre, fecha: h.fecha })) };
-  log('Cambio', i.id, (rebase ? 'Línea base reemplazada' : 'Línea base congelada') + ` · fin ${fmtD(i.base.fin)} · presupuesto ${fmtN(i.base.pres)} · ${i.base.hitos.length} hitos`);
+  log('Cambio', i.id, (rebase ? 'Línea base reemplazada' : 'Línea base congelada') + ` · fin ${fmtD(i.base.fin)} · presupuesto ${fmtMon(i.base.pres, monOf(i))} · ${i.base.hitos.length} hitos`);
 }
 function evm(i) {   // valor ganado simple contra la línea base congelada
   const b = i.base; if (!b || !(b.pres > 0) || !b.inicio || !b.fin) return null;
@@ -4115,7 +4125,7 @@ function controlHTML(i) {
   else if (isLive(i) && FASES_ACT.includes(i.fase)) h += kv('Línea base', '<span class="mut">sin congelar</span> ' + (puedeEditarIni(i) && i.inicioPlan && i.finPlan ? btn('Congelar', 'basego', { cls: 'sm', d: { id: i.id } }) : ''));
   if (b && esGasto()) h += kv('', btn('Re-baselinear', 'baserebase', { cls: 'sm', d: { id: i.id } }));
   const rl = i.beneficio > 0 ? Math.round((i.ahorroReal || 0) / i.beneficio * 100) : null;
-  h += kv('Beneficio esperado · real', `${fmtN(i.beneficio || 0)} · ${fmtN(i.ahorroReal || 0)}${rl != null ? ' (' + rl + '%)' : ''}`);
+  h += kv('Beneficio esperado · real', `${fmtMon(i.beneficio || 0, monOf(i))} · ${fmtMon(i.ahorroReal || 0, monOf(i))}${rl != null ? ' (' + rl + '%)' : ''}`);
   return `<div class="pn-sec"><div class="kvs">${h}</div></div>`;
 }
 Acts.basego = d => { const i = byId(d.id); if (!i || !puedeEditarIni(i)) return NO_PERM('Tu rol no permite editar'); if (!(i.inicioPlan && i.finPlan)) return toast('Define inicio y fin plan primero', 'err'); congelarBase(i, false); toast('Línea base congelada'); refresh(); };
@@ -4324,7 +4334,7 @@ function execSummary(tone) {
   S.push({ h: 'Logros recientes', p: [(cerr.length ? `Se completaron ${cerr.length} proyecto(s) en las últimas semanas: ${cerr.map(i => i.titulo).join(', ')}. ` : '') + (recent.length ? `Además se completaron ${recent.length} hitos en los últimos 30 días${det ? ' (' + recent.slice(0, 4).map(h => h.nombre).join('; ') + ')' : ''}.` : 'No se registran hitos completados en los últimos 30 días.')] });
   S.push({ h: 'Foco y alertas', p: crit.map(i => { const w = ragSugerido(i).why; return `${i.titulo} (${i.rag}, ${pct(i.avance)})${desv(i) ? `: desviación de ${desv(i)} d respecto a la línea base` : ''}${w.length ? ' — ' + w.join(', ') : ''}.`; }) });
   S.push({ h: 'Riesgos', p: [rc.length ? `Hay ${rc.length} riesgo(s) crítico(s): ${rc.slice(0, det ? 4 : 2).map(r => `“${r.desc}” (${nameOf(r.ini)}, exposición ${expo(r)})`).join('; ')}.` : 'No hay riesgos críticos abiertos.'] });
-  S.push({ h: 'Finanzas', p: [`Presupuesto en cartera ${fmtN(K.pres)} ${St.cfg.unidad}, con ${fmtN(K.gas)} consumidos (${K.pres ? Math.round(K.gas / K.pres * 100) : 0}%). Las propuestas en pipeline estiman ${fmtN(K.presPipe)} adicionales y el beneficio esperado total asciende a ${fmtN(K.beneficio)} (cifras de beneficio y presupuesto marcadas como estimadas deben validarse).`] });
+  S.push({ h: 'Finanzas', p: [`Presupuesto en cartera ${fmtTot(K.M.pres)}, con ${fmtTot(K.M.gas)} consumidos (${pctMon(K.M.gas, K.M.pres)}%). Las propuestas en pipeline estiman ${fmtTot(K.M.presPipe)} adicionales y el beneficio esperado total asciende a ${fmtTot(K.M.beneficio)} (cifras de beneficio y presupuesto marcadas como estimadas deben validarse).`] });
   S.push({ h: 'Decisiones requeridas', p: pend.length ? pend.sort(by('limite')).slice(0, det ? 6 : 4).map(d => `${d.tipo}: ${d.titulo}${d.limite < hoy() ? ' (vencida)' : ' — límite ' + fmtD(d.limite)}.`) : ['No hay decisiones pendientes.'] });
   if (det) S.push({ h: 'Próximos 30 días', p: nxt.slice(0, 6).map(h => `${fmtD(h.fecha)} · ${h.nombre} (${nameOf(h.ini)})`) });
   return S;
@@ -4338,7 +4348,7 @@ function ask(q) {
   const hit = L.find(i => i.titulo.toLowerCase().split(/[\s\-–:()+]+/).filter(w => w.length > 4).some(w => s.includes(w)) || s.includes(i.id.toLowerCase()));
   if (/atras|retras|desv/.test(s)) { const a = live.filter(atrasado).sort(by(i => -desv(i))); h = a.length ? `<b>${a.length} proyectos atrasados:</b><ul>${a.map(i => `<li>${lnk(i.id)} — +${desv(i)} d (fin proyectado ${fmtD(forecast(i))})</li>`).join('')}</ul>` : 'No hay proyectos atrasados sobre la tolerancia.'; }
   else if (/riesg/.test(s)) { const r = St.riesgos.filter(riesgoAbierto).sort(by(x => -expo(x))).slice(0, 5); h = `<b>Top riesgos abiertos</b> (${riesgosCriticos().length} críticos):<ul>${r.map(x => `<li>[${expo(x)}] ${esc(x.desc)} — ${lnk(x.ini)}</li>`).join('')}</ul>`; }
-  else if (/presupuest|costo|gast|dinero|financ/.test(s)) h = `Presupuesto en cartera <b>${fmtN(K.pres)}</b> ${St.cfg.unidad}; consumido <b>${fmtN(K.gas)}</b> (${K.pres ? Math.round(K.gas / K.pres * 100) : 0}%). Pipeline: <b>${fmtN(K.presPipe)}</b>. Beneficio esperado: <b>${fmtN(K.beneficio)}</b>.`;
+  else if (/presupuest|costo|gast|dinero|financ/.test(s)) h = `Presupuesto en cartera <b>${fmtTot(K.M.pres)}</b>; consumido <b>${fmtTot(K.M.gas)}</b> (${pctMon(K.M.gas, K.M.pres)}%). Pipeline: <b>${fmtTot(K.M.presPipe)}</b>. Beneficio esperado: <b>${fmtTot(K.M.beneficio)}</b>.`;
   else if (/hito/.test(s)) { const v = HITOS().filter(x => !x.completado && x.fecha < hoy()); const p = HITOS().filter(x => !x.completado && x.fecha >= hoy()).sort(by('fecha')).slice(0, 4); h = `<b>${v.length}</b> hitos vencidos. Próximos:<ul>${p.map(x => `<li>${fmtD(x.fecha)} — ${esc(x.nombre)} (${lnk(x.ini)})</li>`).join('')}</ul>`; }
   else if (/decisi/.test(s)) { const d = St.decisiones.filter(x => x.estado === 'Pendiente'); h = `<b>${d.length} decisiones pendientes:</b><ul>${d.slice(0, 6).map(x => `<li>${x.tipo}: ${esc(x.titulo)}${x.limite < hoy() ? ' <span class="neg">(vencida)</span>' : ''}</li>`).join('')}</ul>`; }
   else if (/sobrecarg|capacidad|l[ií]der|carga/.test(s)) { const m = {}; live.filter(i => FASES_ACT.includes(i.fase)).forEach(i => m[i.lider] = (m[i.lider] || 0) + 1); h = `<b>Carga por líder</b> (proyectos activos, capacidad ${St.cfg.capacidadMax}):<ul>${Object.entries(m).sort((a, b) => b[1] - a[1]).map(([l, n]) => `<li>${esc(l)}: ${n}${n > St.cfg.capacidadMax ? ' <span class="neg">sobrecarga</span>' : ''}</li>`).join('')}</ul>`; }
@@ -7668,6 +7678,7 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
   const D = iso => iso ? new Date(+String(iso).slice(0, 4), +String(iso).slice(5, 7) - 1, +String(iso).slice(8, 10)) : null;
   const ragO = r => r === 'Ámbar' ? 'Ambar' : (r || 'Ambar');
   const MM = v => (Number(v) || 0) * 1e6;                       // APIH guarda MM CLP; el original muestra pesos
+  const MMi = (i, v) => (Number(v) || 0) * ({ CLP: 1e6, USD: 1e3, UF: 1 }[monOf(i)]);   // USD en miles, UF en unidades
   const lineas = t => String(t || '');
   const ETAPA_PROP = { 'Recepción': 'Creada', 'Evaluación': 'En evaluación', 'Caso de Negocio': 'Con caso de negocio', 'Aprobación': 'Aprobación' };
   const estadoPrj = i => i.estado === 'Pausado' ? 'A la Espera' : i.estado === 'Cancelado' ? 'Stand By' : i.fase;
@@ -7679,7 +7690,7 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
       id: i.id, nombre: i.titulo, categoria: i.categoria, area: areaDe(i), avance: i.avance, salud_rag: ragO(i.rag), prioridad: i.prioridad, estado: estadoPrj(i),
       resumen_ejecutivo: incT(i, 'resumen') ? lineas(i.resumen) : '', proposito: i.desc || '', responsable: i.lider || '', responsable_negocio: i.negocio || '',
       fecha_inicio: i.inicioPlan || null, fecha_fin_estimada: i.finEst || i.finPlan || null,
-      presupuesto_asignado: MM(i.presupuesto), presupuesto_gastado: MM(i.gastado),
+      presupuesto_asignado: MMi(i, i.presupuesto), presupuesto_gastado: MMi(i, i.gastado), moneda: monOf(i),
       logros_ciclo: incT(i, 'logros') ? lineas(i.logros) : '', proximos_pasos: incT(i, 'proximos') ? lineas(i.proximos) : '',
       issue: incT(i, 'issue') ? lineas(i.issue) : '', riesgo: i.riesgoTxt || (top ? top.desc : ''),
       proximo_hito: hs[0] ? hs[0].nombre : '', proximo_hito_fecha: hs[0] ? hs[0].fecha : null,
@@ -7693,8 +7704,8 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
       id: i.id, nombre: i.titulo, categoria: i.categoria || 'Sin categoría', area: areaDe(i), prioridad: i.prioridad || 'Media', salud_rag: ragO(i.rag),
       etapa_propuesta: etapa, resultado: ['Vigente', 'En espera'].includes(i.estado) ? 'Pendiente' : i.estado, archivada: false,
       resumen_ejecutivo: i.resumen || i.desc || '', propuesto_por: i.propuestoPor || i.lider || '', fecha_etapa: i.faseDesde || i.creada, fecha_propuesta: i.creada,
-      tipo_requerimiento: i.clasif || '—', problema_a_resolver: i.problema || i.resumen || i.desc || '', beneficios_estimados: i.bc || (i.beneficio ? 'Beneficio estimado: ' + fmtN(i.beneficio) + ' ' + St.cfg.unidad : ''),
-      usuarios_impactados: i.usuarios || areaDe(i), presupuesto_asignado: MM(i.presupuesto), responsable_negocio: i.negocio || '', rfp_url: i.rfp || '', _fase: i.fase
+      tipo_requerimiento: i.clasif || '—', problema_a_resolver: i.problema || i.resumen || i.desc || '', beneficios_estimados: i.bc || (i.beneficio ? 'Beneficio estimado: ' + fmtMon(i.beneficio, monOf(i)) : ''),
+      usuarios_impactados: i.usuarios || areaDe(i), presupuesto_asignado: MMi(i, i.presupuesto), moneda: monOf(i), responsable_negocio: i.negocio || '', rfp_url: i.rfp || '', _fase: i.fase
     };
   }
   /* Clasificación (acción / impacto / esfuerzo) que el original obtenía de la IA trimestral: aquí sale del Agente PMO y de la ficha */
@@ -8983,7 +8994,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.6', b: '14-10-2026 00:43' };
+  const VER = { v: 'V22.7', b: '14-10-2026 00:56' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9305,7 +9316,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     { k: 'Presupuesto', t: 'Presupuesto al día', d: 'Confirma cuánto se ha consumido del presupuesto de cada proyecto. Así el costo real queda actualizado para el comité del mes.',
       aplica: i => i.presupuesto > 0,
       hecho: i => { const b = bitMes(i, 'Presupuesto'); return b ? 'Registrado el ' + fmtD(String(b.ts).slice(0, 10)) : null; },
-      estado: i => 'Presupuesto ' + fmtM(i.presupuesto) + ' · consumido ' + fmtM(i.gastado || 0) + ' (' + Math.round((i.gastado || 0) / i.presupuesto * 100) + '%)',
+      estado: i => 'Presupuesto ' + fmtMon(i.presupuesto, monOf(i)) + ' · consumido ' + fmtMon(i.gastado || 0, monOf(i)) + ' (' + Math.round((i.gastado || 0) / i.presupuesto * 100) + '%)',
       btn: i => [{ l: 'Registrar consumo', a: 'misgasto', d: { id: i.id }, pri: true }, { l: 'Está al día, sin cambios', a: 'misgastook', d: { id: i.id } }] }
   ];
   function mesResumen(me) {
@@ -9326,7 +9337,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const i = byId(d.id); if (!i) return;
     if (soloLectura() || !puedeEditarIni(i)) return NO_PERM('Tu rol o el modo solo lectura no permiten editar');
     openForm({ title: 'Presupuesto al día · ' + i.titulo, values: { gastado: i.gastado || 0, nota: '' }, saveLabel: 'Guardar',
-      fields: [{ k: 'gastado', l: 'Consumido a la fecha (' + (St.cfg.unidad || 'MM') + ')', t: 'number', min: 0, w: 3, hint: 'Presupuesto: ' + fmtM(i.presupuesto) + ' · lo último registrado: ' + fmtM(i.gastado || 0) + '. Si lo pasas, <a class="lnk" data-act="chgnew" data-id="' + i.id + '">registra un cambio de presupuesto</a>.' }, { k: 'nota', l: 'Comentario (opcional)', t: 'textarea', w: 3 }],
+      fields: [{ k: 'gastado', l: 'Consumido a la fecha (' + MONEDAS[monOf(i)].n + ')', t: 'number', min: 0, w: 3, hint: 'Presupuesto: ' + fmtMon(i.presupuesto, monOf(i)) + ' · lo último registrado: ' + fmtMon(i.gastado || 0, monOf(i)) + '. Si lo pasas, <a class="lnk" data-act="chgnew" data-id="' + i.id + '">registra un cambio de presupuesto</a>.' }, { k: 'nota', l: 'Comentario (opcional)', t: 'textarea', w: 3 }],
       onSave(o) {
         const a = i.gastado || 0, n = +o.gastado || 0; i.gastado = n;
         log(a !== n ? 'Cambio' : 'Comentario', i.id, mkMes('Presupuesto') + 'Consumido ' + fmtN(a) + ' → ' + fmtN(n) + ' de ' + fmtN(i.presupuesto) + (o.nota ? '. ' + o.nota : ''));
