@@ -538,6 +538,13 @@ body{font:13px/1.45 var(--font)}
 /* ---------- V22.30: filtros en una sola fila ---------- */
 @media (min-width:700px) and (max-width:1600px){.v22-row .tb-l{font-size:0;gap:0}.v22-row .tb-l svg{margin:0 2px}.v22-row .seg button{padding:5px 8px}.v22-row .flt select{width:92px!important;max-width:92px}.v22-row{gap:6px}}
 .g-lh>.g-c:nth-child(n+4),.g-lr>.g-c:nth-child(n+4){display:none}
+/* ---------- V22.32: Presentaciones con riel de miniaturas ---------- */
+@media (min-width:900px){
+#main .pres-s{display:grid!important;grid-template-columns:116px minmax(0,1fr);grid-template-areas:"th deck" "th notes";gap:8px 12px;align-items:start}
+#main .pres-s>.deck{grid-area:deck}#main .pres-s>.notes{grid-area:notes}
+#main .pres-s>.thumbs{grid-area:th;flex-direction:column;overflow-y:auto;overflow-x:hidden;height:0;min-height:100%;align-self:stretch;padding:0 4px 0 0;justify-content:flex-start!important}
+#main .pres-s .thumbs .th{width:100%}
+}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -9117,7 +9124,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.31', b: '14-10-2026 23:00' };
+  const VER = { v: 'V22.32', b: '14-10-2026 23:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
