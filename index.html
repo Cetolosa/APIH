@@ -8952,7 +8952,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.8', b: '14-10-2026 10:23' };
+  const VER = { v: 'V22.9', b: '14-10-2026 10:25' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9105,7 +9105,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
         <label for="sb-key">Contraseña</label><input id="sb-key" type="password" autocomplete="current-password" required>
         <label class="sb-chk"><input id="sb-rem" type="checkbox"> Recordar en este dispositivo</label>
         <button class="btn pri" id="sb-go" type="submit">Entrar</button><button type="button" class="sb-lnk" id="sb-forgot">¿Primera vez u olvidaste tu contraseña?</button><p id="sb-msg" role="alert">${msg ? String(msg).replace(/</g, '&lt;') : ''}</p>
-        <small>Escribe tu correo y presiona el enlace de arriba: te llegará un correo para crear o cambiar tu contraseña.</small></form>`;
+        <small>Escribe tu correo y presiona el enlace de arriba: te llegará un correo para crear o cambiar tu contraseña.</small><small style="text-align:center;opacity:.6;margin-top:6px">APIH ${VER.v} · ${VER.b}</small></form>`;
       const f = d.querySelector('form'), m = d.querySelector('#sb-msg'), b = d.querySelector('#sb-go');
       d.querySelector('#sb-forgot').addEventListener('click', async () => {
         const em = d.querySelector('#sb-mail').value.trim().toLowerCase(); m.style.color = '#c0392b';
@@ -9127,7 +9127,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       d.innerHTML = `<form class="sb-card" autocomplete="off"><h2>Crea tu contraseña</h2><p class="sb-note">${em ? esc(em) : ''}</p>
         <label for="sb-n1">Contraseña nueva</label><input id="sb-n1" type="password" autocomplete="new-password" required><div class="sb-str"><i id="sb-bar"></i></div>
         <label for="sb-n2">Repítela</label><input id="sb-n2" type="password" autocomplete="new-password" required>
-        <small>Mínimo 10 caracteres, con letras y números.</small><button class="btn pri" id="sb-go" type="submit">Guardar y entrar</button><p id="sb-msg" role="alert"></p></form>`;
+        <small>Mínimo 10 caracteres, con letras y números.</small><button class="btn pri" id="sb-go" type="submit">Guardar y entrar</button><p id="sb-msg" role="alert"></p><small style="text-align:center;opacity:.6">APIH ${VER.v} · ${VER.b}</small></form>`;
       const f = d.querySelector('form'), m = d.querySelector('#sb-msg'), b = d.querySelector('#sb-go'), n1 = d.querySelector('#sb-n1'), n2 = d.querySelector('#sb-n2'), bar = d.querySelector('#sb-bar');
       n1.addEventListener('input', () => { const s = SB2.fuerza(n1.value); bar.style.width = s * 20 + '%'; bar.style.background = s < 3 ? '#c0392b' : s < 4 ? '#F2A100' : '#107C10'; });
       f.addEventListener('submit', async ev => {
