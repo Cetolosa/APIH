@@ -1063,10 +1063,10 @@ const SP_SCHEMA = {
   notes: {
     label: 'Comentarios', cfg: 'notesList', coll: 'notas', key: 'Title', title: 'ID (Title)',
     cols: [
-      C.txt('Title', 'id', { rw: false }), C.txt('ProyectoID', 'ini'), C.txt('Area', 'area'), C.txt('Vista', 'vista'), C.txt('Referencia', 'ref'), C.note('Comentario', 'texto'),
+      C.txt('Title', 'id', { rw: false }), C.txt('ProyectoID', 'ini'), C.txt('Area', 'area'), C.txt('Tipo', 'tipo'), C.txt('Visto', 'visto'), C.txt('VistoPor', 'vistoPor'), C.date('FechaVisto', 'fVisto'), C.txt('Vista', 'vista'), C.txt('Referencia', 'ref'), C.note('Comentario', 'texto'),
       C.txt('Autor', 'autor'), C.txt('Correo', 'correo'), C.txt('Fecha', 'ts'), C.ch('Estado', 'estado', ['Abierto', 'Abordado']), C.txt('AbordadoPor', 'por'), C.date('FechaAbordado', 'fAb')
     ],
-    tpl: () => ({ ini: null, area: 'Transversal', vista: '', ref: '', texto: '', autor: '', correo: '', ts: hoy() + 'T00:00', estado: 'Abierto', por: '', fAb: null })
+    tpl: () => ({ ini: null, area: 'Transversal', tipo: '', visto: '', vistoPor: '', fVisto: null, vista: '', ref: '', texto: '', autor: '', correo: '', ts: hoy() + 'T00:00', estado: 'Abierto', por: '', fAb: null })
   },
   audit: {
     label: 'Bitácora', cfg: 'auditList', coll: 'bitacora', key: 'Title', title: 'ID (Title)',
@@ -8622,7 +8622,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   #v22-tour{position:fixed;z-index:99991;width:min(340px,92vw);background:var(--card);color:var(--tx);border:1px solid var(--bd);border-top:4px solid var(--pri);border-radius:12px;padding:14px 16px;box-shadow:0 12px 36px rgba(0,0,0,.35)}
   #v22-tour h3{margin:0 0 4px;font-size:16px}#v22-tour .tr-n{display:inline-block;background:#FFC72C;color:#1a1a1a;font-weight:700;font-size:11px;border-radius:10px;padding:1px 8px;margin-bottom:6px}#v22-tour p{margin:0 0 12px;font-size:13px;line-height:1.45;color:var(--tx2)}#v22-tour .tr-f{display:flex;align-items:center;gap:8px}#v22-tour .tr-f small{margin-right:auto}
   /* comentarios */
-  .v22-nl{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}.v22-n{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;background:var(--card);display:flex;flex-direction:column;gap:6px}.v22-n.ab{opacity:.65}.v22-n .n-h{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2)}.v22-n .n-h b{color:var(--tx)}.v22-n p{margin:0;line-height:1.45;white-space:pre-wrap}.v22-n .n-r{font-size:12px;color:var(--tx2);display:flex;gap:6px;align-items:center}.v22-n .n-a{display:flex;gap:6px;flex-wrap:wrap}
+  .v22-nl{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}.v22-n{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;background:var(--card);display:flex;flex-direction:column;gap:6px}.v22-n.ab{opacity:.65}.v22-n.nv{border-left:4px solid var(--pri)}.v22-iv{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0}.v22-iv .grow{flex:1}.v22-n .n-h{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2)}.v22-n .n-h b{color:var(--tx)}.v22-n p{margin:0;line-height:1.45;white-space:pre-wrap}.v22-n .n-r{font-size:12px;color:var(--tx2);display:flex;gap:6px;align-items:center}.v22-n .n-a{display:flex;gap:6px;flex-wrap:wrap}
   body.v22-pick #main *{cursor:crosshair!important}body.v22-pick #main{outline:3px dashed var(--pri);outline-offset:-3px}
   .v22-ctx{font-size:12px;color:var(--tx2);background:var(--bg2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;margin-bottom:10px;display:flex;gap:6px;align-items:flex-start}
   .v22-f textarea{width:100%;min-height:96px;padding:8px;border:1px solid var(--bd3);border-radius:8px;font:inherit;background:var(--card);color:var(--tx);resize:vertical}.v22-f label{font-size:12px;font-weight:600;color:var(--tx2);display:block;margin:8px 0 4px}.v22-f select{width:100%;height:34px}
@@ -8661,8 +8661,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   V.empty = (t, ic) => EM[t] ? V.emptyRich(EM[t]) : `<div class="empty">${icon(ic, 28)}<p>${esc(t)}</p></div>`;
 
   /* ======================= Comentarios por área ======================= */
+  const esMia = n => (n.correo && n.correo === emailYo()) || n.autor === miUsuario();
   const notaVisible = n => areaVisible(n.area || 'Transversal');
-  const notasVis = () => (St.notas || []).filter(notaVisible);
+  const notasVis = () => (St.notas || []).filter(n => n.tipo !== 'interna' && notaVisible(n));
+  const internas = id => (St.notas || []).filter(n => n.tipo === 'interna' && n.ini === id).sort((a, b) => (a.ts < b.ts ? 1 : -1));
   const notasAbiertas = () => notasVis().filter(n => n.estado !== 'Abordado');
   V.notasAbiertas = notasAbiertas;
   const ctxIni = () => UI.view === 'ficha' ? UI.fichaId : (UI.sel && UI.sel.t === 'ini' ? UI.sel.id : null);
@@ -8678,17 +8680,19 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   function notasListBody() {
     const gob = puedeGobernar(), f = UI.nf, ci = ctxIni();
+    if (f.s === 'int' && !gob) f.s = 'aqui';
     let L = notasVis().filter(n => f.ab && gob ? true : n.estado !== 'Abordado');
     if (f.s === 'aqui') L = L.filter(n => n.vista === UI.view || (ci && n.ini === ci));
     L.sort((a, b) => (a.ts < b.ts ? 1 : -1));
-    const seg = `<div class="seg" style="margin-bottom:10px"><button class="${f.s === 'aqui' ? 'on' : ''}" data-act="notasf" data-s="aqui">Esta pantalla</button><button class="${f.s === 'todos' ? 'on' : ''}" data-act="notasf" data-s="todos">Todos mis comentarios</button></div>${gob ? `<label class="chk" style="margin-left:10px"><input type="checkbox" ${f.ab ? 'checked' : ''} data-chg="notasab"> <span>Ver abordados</span></label>` : ''}`;
+    const seg = `<div class="seg" style="margin-bottom:10px"><button class="${f.s === 'aqui' ? 'on' : ''}" data-act="notasf" data-s="aqui">Esta pantalla</button><button class="${f.s === 'todos' ? 'on' : ''}" data-act="notasf" data-s="todos">Todos mis comentarios</button>${gob ? `<button class="${f.s === 'int' ? 'on' : ''}" data-act="notasf" data-s="int">Notas internas${nIntSinVer() ? ' (' + nIntSinVer() + ')' : ''}</button>` : ''}</div>${gob && f.s !== 'int' ? `<label class="chk" style="margin-left:10px"><input type="checkbox" ${f.ab ? 'checked' : ''} data-chg="notasab"> <span>Ver abordados</span></label>` : ''}`;
     const body = L.length ? `<div class="v22-nl">${L.map(n => notaItem(n, gob)).join('')}</div>` : V.emptyRich({ ic: 'comment', title: f.s === 'aqui' ? 'Nadie ha comentado aquí' : 'No hay comentarios pendientes', line: gob ? 'Cuando alguien deje una observación en tu área, aparecerá acá para que la abordes.' : 'Si ves algo que corregir o aclarar, déjalo como comentario: lo verá tu área.' }, true);
-    return seg + body;
+    return seg + (f.s === 'int' ? intModalBody() : body);
   }
   function notasModal() {
     Modal.open({ title: 'Comentarios por área', wide: false, body: `<div id="v22-nbody">${notasListBody()}</div>`, footer: `<button class="btn" data-act="mclose">Cerrar</button><button class="btn pri" data-act="notanew">${icon('comment', 14)}<span>Dejar un comentario</span></button>` });
   }
   const notasRefresh = () => { render(); const b = sr('#v22-nbody'); if (b) b.innerHTML = notasListBody(); };
+  Acts.notasint = () => { UI.nf.s = 'int'; closePops(); notasModal(); };
   Acts.notaslist = () => { closePops(); notasModal(); };
   Acts.notasf = d => { UI.nf.s = d.s; notasRefresh(); };
   Chg.notasab = el => { UI.nf.ab = el.checked; notasRefresh(); };
@@ -8729,7 +8733,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const dflt = areasDe(areaPorDefecto(ini))[0] || 'Transversal';
     Modal.open({ title: 'Dejar un comentario', body: `<div class="v22-f"><div class="v22-ctx">${icon('pin', 14)}<span><b>Dónde:</b> ${esc(tituloVista(UI.view))}${i ? ' › ' + esc(i.titulo) : ''}${c.ref ? ' › «' + esc(c.ref) + '»' : ''}<br><small>Lo verán quienes tienen acceso al área elegida. Un administrador lo marcará como abordado.</small></span></div>
       <label for="v22-ntx">Tu comentario</label><textarea id="v22-ntx" placeholder="Ej.: la fecha del hito 3 ya no es realista…"></textarea>
-      <label for="v22-nar">Área que debe verlo</label><select id="v22-nar">${selOpts(areas.flatMap(a => areasDe(a)).filter((a, k, arr) => arr.indexOf(a) === k), dflt)}</select>
+      <div id="v22-narw"><label for="v22-nar">Área que debe verlo</label><select id="v22-nar">${selOpts(areas.flatMap(a => areasDe(a)).filter((a, k, arr) => arr.indexOf(a) === k), dflt)}</select></div>
       <div style="margin-top:8px"><button class="btn sm" data-act="notapick">${icon('target', 13)}<span>Elegir otro lugar de la pantalla</span></button></div></div>`,
       footer: `<button class="btn" data-act="mclose">Cancelar</button><button class="btn pri" data-act="notasave">Publicar comentario</button>` });
     Modal.cur.v22 = c; setTimeout(() => { const t = sr('#v22-ntx'); if (t) t.focus(); }, 40);
@@ -8739,7 +8743,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const tx = (sr('#v22-ntx') || {}).value, ar = (sr('#v22-nar') || {}).value;
     if (!tx || !tx.trim()) return toast('Escribe tu comentario', 'err');
     const c = (Modal.cur && Modal.cur.v22) || {}, ini = ctxIni(), hh = new Date().toTimeString().slice(0, 5);
-    const n = { id: 'NOT-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase(), ini: ini || (c.rid && byId(c.rid) ? c.rid : null), area: ar || 'Transversal', vista: UI.view, ref: c.ref || '', texto: tx.trim(), autor: miUsuario(), correo: emailYo(), ts: hoy() + 'T' + hh, estado: 'Abierto', por: '', fAb: null };
+    const n = { id: 'NOT-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase(), ini: ini || (c.rid && byId(c.rid) ? c.rid : null), area: ar || 'Transversal', tipo: '', vista: UI.view, ref: c.ref || '', texto: tx.trim(), autor: miUsuario(), correo: emailYo(), ts: hoy() + 'T' + hh, estado: 'Abierto', por: '', fAb: null };
     St.notas = St.notas || []; St.notas.unshift(n); save(); Modal.close(); toast('Comentario publicado'); render();
   };
 
@@ -8753,9 +8757,9 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   const SECS = [
     ['res', 'Resumen', 'list', true], ['cif', 'Cifras, fechas y responsables', 'money'], ['sal', 'Salud y recomendación', 'target'], ['dep', 'Dependencias', 'link'], ['log', 'Logros y próximos pasos', 'check'], ['cal', 'Calidad de datos', 'shield'],
-    ['hit', 'Hitos', 'flag', true, 'prj'], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Actividad', 'book', true], ['ia', 'IA', 'spark'], ['nota', 'Comentarios del área', 'comment', true]
+    ['hit', 'Hitos', 'flag', true, 'prj'], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Actividad', 'book', true], ['ia', 'IA', 'spark'], ['int', 'Notas internas del PMO', 'lock', true], ['nota', 'Comentarios del área', 'comment', true]
   ];
-  const SIMPLE_OPEN = ['res', 'cif', 'hit', 'rie'];
+  const SIMPLE_OPEN = ['res', 'cif', 'hit', 'rie', 'int'];
   const fh = () => (UI.fh = UI.fh || (() => { try { return JSON.parse(lsGet('apih_fh') || '{}'); } catch (e) { return {}; } })());
   const fhSave = () => lsSet('apih_fh', JSON.stringify(fh()));
   const fOculta = k => !!(fh()[k] && fh()[k].h);
@@ -8800,6 +8804,63 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     if (!cs.length) return [0, V.emptyRich({ ic: 'refresh', title: 'Sin cambios solicitados', line: 'Todo cambio de alcance, fecha o presupuesto queda registrado con quién lo aprobó.', p: ['Solicitar cambio', 'chgnew', { id: i.id }, 'refresh'] })];
     return [cs.length, cs.map(c => `<div class="hrow"><div><b>${esc(c.tipo)} · ${esc(c.desc || c.id)}</b><small>${esc(c.estado)} · ${esc(c.solicita || '')} · ${fmtD(c.creada)}</small></div></div>`).join('')];
   }
+  UI.fi = UI.fi || { solo: false, inc: false };
+  const intTodas = () => (St.notas || []).filter(n => n.tipo === 'interna' && n.ini && byId(n.ini));
+  const intNoVistas = id => intTodas().filter(n => !n.visto && (!id || n.ini === id)).sort((a, b) => (a.ts > b.ts ? 1 : -1));
+  const nIntSinVer = () => puedeGobernar() ? intNoVistas().length : 0;
+  V.nIntSinVer = nIntSinVer;
+  const marcar = (n, v) => { n.visto = v ? 'Si' : ''; n.vistoPor = v ? miUsuario() : ''; n.fVisto = v ? hoy() : null; };
+  function intTexto(list) {
+    const G = {}; list.forEach(n => (G[n.ini] = G[n.ini] || []).push(n));
+    return Object.keys(G).map(id => { const i = byId(id); return (i ? i.titulo : id) + ' (' + id + ') — notas internas no vistas:\n' + G[id].map(n => '- [' + fmtD(String(n.ts).slice(0, 10)) + '] ' + (n.autor || '—') + ': ' + n.texto).join('\n'); }).join('\n\n');
+  }
+  function intItem(n, conIni) {
+    const nv = !n.visto, i = byId(n.ini), pue = esMia(n) || esAdmin();
+    return `<div class="v22-n ${nv ? 'nv' : 'ab'}"><div class="n-h">${avatar(n.autor || '?', 22)}<b>${esc(n.autor || '—')}</b><span>${esc(fmtTS(n.ts))}${n.edit ? ' · editada' : ''}</span><span class="pill ${nv ? '' : 'soft'}" style="margin-left:auto">${nv ? 'Sin ver' : 'Vista'}</span></div>
+      ${conIni && i ? `<div class="n-r">${icon('pin', 12)}<span>${esc(i.titulo)} · ${esc(i.id)}</span></div>` : ''}<p>${esc(n.texto)}</p>
+      <div class="n-a">${nv ? `<button class="btn sm pri" data-act="intvisto" data-id="${esc(n.id)}" data-v="1">${icon('check', 13)}<span>Marcar visto</span></button>` : `<button class="btn sm" data-act="intvisto" data-id="${esc(n.id)}" data-v="0">Marcar como no vista</button><small>Visto por ${esc(n.vistoPor || '—')} · ${esc(fmtD(n.fVisto))}</small>`}
+      ${conIni ? `<button class="btn sm" data-act="intir" data-id="${esc(n.ini)}">Ir a la ficha</button>` : (pue ? `<button class="btn sm" data-act="intedit" data-id="${esc(n.id)}">Editar</button><button class="btn sm" data-act="intdel" data-id="${esc(n.id)}">Eliminar</button>` : '')}</div></div>`;
+  }
+  const intBar = (id, nv) => `<div class="v22-iv"><span class="pill ${nv ? '' : 'soft'}">${nv ? nv + ' sin ver' : 'Todo visto'}</span><label class="chk"><input type="checkbox" ${UI.fi.solo ? 'checked' : ''} data-chg="intsolo"> <span>Solo no vistas</span></label><span class="grow"></span>${nv ? `<button class="btn sm" data-act="intcopy" data-id="${esc(id)}">Copiar no vistas</button><button class="btn sm" data-act="intvistoall" data-id="${esc(id)}">Marcar todas como vistas</button>` : ''}</div>`;
+  function secInt(i) {
+    const all = internas(i.id), nv = intNoVistas(i.id).length, L = UI.fi.solo ? all.filter(n => !n.visto) : all;
+    const ed = `<div class="v22-f"><textarea id="v22-int" data-key="intxt" placeholder="Nota interna del PMO: contexto, acuerdos, alertas… (no la ven el líder ni el equipo del proyecto)"></textarea><div style="margin-top:6px"><button class="btn pri sm" data-act="intadd" data-id="${esc(i.id)}">${icon('plus', 13)}<span>Guardar nota</span></button></div></div>`;
+    const lst = L.length ? `<div class="v22-nl" style="margin-top:10px;max-height:none">${L.map(n => intItem(n, false)).join('')}</div>` : `<p class="mut" style="margin:10px 0 0">${all.length ? 'No hay notas sin ver en esta iniciativa.' : 'Aún no hay notas. Lo que escribas queda guardado aquí, en orden, como historial interno de esta iniciativa.'}</p>`;
+    return [all.length, ed + (all.length ? intBar(i.id, nv) : '') + lst];
+  }
+  function intRefrescar() { render(); const b = sr('#v22-nbody'); if (b) b.innerHTML = notasListBody(); }
+  Chg.intsolo = el => { UI.fi.solo = el.checked; intRefrescar(); };
+  Chg.intinc = el => { UI.fi.inc = el.checked; intRefrescar(); };
+  Acts.intvisto = d => { const n = (St.notas || []).find(x => x.id === d.id); if (!n || !puedeGobernar()) return NO_PERM('Las notas internas son del PMO'); marcar(n, d.v === '1'); save(); intRefrescar(); };
+  Acts.intvistoall = d => {
+    if (!puedeGobernar()) return NO_PERM('Las notas internas son del PMO');
+    const L = intNoVistas(d.id === '*' ? null : d.id); if (!L.length) return;
+    L.forEach(n => marcar(n, true)); save(); toast(L.length + ' nota(s) marcada(s) como vistas'); intRefrescar();
+  };
+  Acts.intcopy = d => { const L = intNoVistas(d.id === '*' ? null : d.id); if (!L.length) return toast('No hay notas sin ver'); copyText(intTexto(L)); };
+  Acts.intir = d => { Modal.close(); Acts.ficha({ id: d.id }); };
+  function intModalBody() {
+    const gob = puedeGobernar(); if (!gob) return '';
+    const todas = intTodas().sort((a, b) => (a.ts < b.ts ? 1 : -1)), nv = todas.filter(n => !n.visto).length, L = UI.fi.inc ? todas : todas.filter(n => !n.visto);
+    const bar = `<div class="v22-iv" style="margin:0 0 10px"><span class="pill ${nv ? '' : 'soft'}">${nv ? nv + ' sin ver' : 'Todo visto'}</span><label class="chk"><input type="checkbox" ${UI.fi.inc ? 'checked' : ''} data-chg="intinc"> <span>Incluir ya vistas</span></label><span class="grow"></span>${nv ? `<button class="btn sm" data-act="intcopy" data-id="*">Copiar no vistas</button><button class="btn sm" data-act="intvistoall" data-id="*">Marcar todas como vistas</button>` : ''}</div>`;
+    return bar + (L.length ? `<div class="v22-nl">${L.map(n => intItem(n, true)).join('')}</div>` : V.emptyRich({ ic: 'lock', title: 'Todo al día', line: 'No hay notas internas sin ver. Cuando agregues o edites una, aparecerá acá.' }, true));
+  }
+  Acts.intadd = d => {
+    if (!puedeGobernar()) return NO_PERM('Las notas internas son del PMO (Gasto o Administrador)');
+    const el = sr('#v22-int'), tx = el && el.value.trim(); if (!tx) return toast('Escribe la nota', 'err');
+    const i = byId(d.id); if (!i) return; const hh = new Date().toTimeString().slice(0, 5);
+    St.notas = St.notas || []; St.notas.unshift({ id: 'NOT-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase(), ini: i.id, tipo: 'interna', area: i.area, vista: 'ficha', ref: '', texto: tx, autor: miUsuario(), correo: emailYo(), ts: hoy() + 'T' + hh, estado: 'Abierto', por: '', fAb: null, visto: '', vistoPor: '', fVisto: null });
+    save(); toast('Nota interna guardada'); render();
+  };
+  Acts.intdel = d => {
+    const n = (St.notas || []).find(x => x.id === d.id); if (!n || !puedeGobernar() || !(esMia(n) || esAdmin())) return NO_PERM('Solo quien la escribió o el administrador puede eliminarla');
+    confirmBox('¿Eliminar esta nota interna?', () => { St.notas = St.notas.filter(x => x.id !== n.id); save(); toast('Nota eliminada'); render(); }, 'Eliminar', true);
+  };
+  Acts.intedit = d => {
+    const n = (St.notas || []).find(x => x.id === d.id); if (!n || !puedeGobernar() || !(esMia(n) || esAdmin())) return NO_PERM('Solo quien la escribió o el administrador puede editarla');
+    Modal.open({ title: 'Editar nota interna', body: `<div class="v22-f"><textarea id="v22-intx">${esc(n.texto)}</textarea></div>`, footer: `<button class="btn" data-act="mclose">Cancelar</button><button class="btn pri" data-act="intsave" data-id="${esc(n.id)}">Guardar</button>` });
+  };
+  Acts.intsave = d => { const n = (St.notas || []).find(x => x.id === d.id), t = (sr('#v22-intx') || {}).value; if (!n || !t || !t.trim()) return toast('La nota no puede quedar vacía', 'err'); n.texto = t.trim(); n.edit = true; marcar(n, false); save(); Modal.close(); render(); };
   function secNota(i) {
     const ns = notasVis().filter(n => n.ini === i.id && n.estado !== 'Abordado'), gob = puedeGobernar();
     if (!ns.length) return [0, V.emptyRich({ ic: 'comment', title: 'Sin comentarios pendientes', line: 'Si ves algo que corregir o aclarar, déjalo aquí: lo verá el área y un administrador lo abordará.', p: ['Dejar un comentario', 'notanew', {}, 'comment'] })];
@@ -8814,6 +8875,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     sec.rie = secRiesgos(i); sec.dec = secDec(i); sec.com = secCom(i); if (!PR) sec.cam = secCam(i);
     sec.act = [null, parsePanel(i, 'actividad').body.innerHTML];
     if (APIH_CONFIG.ia !== false) sec.ia = [null, parsePanel(i, 'ia').body.innerHTML];
+    if (puedeGobernar()) sec.int = secInt(i);
     sec.nota = secNota(i);
     const lista = SECS.filter(s => sec[s[0]] && (!s[4] || (s[4] === 'prj' && !PR)));
     const head = `<div class="fl-head"><div class="fl-k"><button class="btn sm" data-act="flback">${icon('chevl', 13)}<span>Volver</span></button><span>${R.kicker}</span></div><h1>${R.title}</h1><div class="fl-p">${R.pills}</div><div class="fl-a">${R.acts}</div></div>`;
@@ -8895,7 +8957,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   function cmtPopHTML() {
     const n = notasAbiertas().length;
     return `<div class="pop-h">Comentarios por área<small>${n} pendiente(s) en las áreas que ves</small></div><div class="v22-hp"><p class="hp-lead">Deja una observación en cualquier parte de la página. La verá quien tenga acceso a esa área, y un administrador la marcará como abordada.</p>
-      <div class="hp-main">${btn('Dejar un comentario', 'notanew', { ic: 'comment', cls: 'pri' })}</div>
+      ${nIntSinVer() ? `<p class="hp-lead" style="margin-top:0"><b>${nIntSinVer()} nota(s) interna(s) sin ver</b> · <a href="#" data-act="notasint">Revisar</a></p>` : ''}<div class="hp-main">${btn('Dejar un comentario', 'notanew', { ic: 'comment', cls: 'pri' })}</div>
       <div class="hp-f">${btn('Elegir el lugar en pantalla', 'notapick', { ic: 'target', cls: 'sm' })}${btn('Ver comentarios (' + n + ')', 'notaslist', { ic: 'list', cls: 'sm' })}</div></div>`;
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
