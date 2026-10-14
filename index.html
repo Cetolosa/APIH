@@ -19,7 +19,7 @@ h1,h2,h3,h4{margin:0;font-weight:600}button{font:inherit;color:inherit;cursor:po
 .ic{flex:none;vertical-align:middle}
 
 /* ---------- layout ---------- */
-#app{display:grid;grid-template-columns:224px minmax(0,1fr) 392px;grid-template-rows:52px minmax(0,1fr);height:100vh}
+#app{display:grid;grid-template-columns:224px minmax(0,1fr) 392px;grid-template-rows:52px minmax(0,1fr);height:100vh;height:100dvh}
 #app.nopanel{grid-template-columns:224px minmax(0,1fr)}#app.nopanel #panel{display:none}
 .top{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 14px;background:linear-gradient(90deg,#0B2A4A,#0E4377);color:#fff;z-index:30;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .brand{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:196px}.logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#4FC3F7,#0D446A);display:grid;place-items:center;font-weight:800;color:#fff;font-size:18px}.logo.big{width:4cqw;height:4cqw;font-size:2.4cqw;border-radius:.8cqw}
@@ -74,7 +74,7 @@ h1,h2,h3,h4{margin:0;font-weight:600}button{font:inherit;color:inherit;cursor:po
 .composer{display:flex;gap:6px;margin-bottom:10px}.composer input{flex:1;min-width:0}.composer.big{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px;box-shadow:var(--sh);margin-bottom:12px}.composer.big select{max-width:240px}
 
 /* ---------- modal / toasts / popovers ---------- */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.42);display:grid;place-items:center;z-index:100;padding:16px}.modal{background:var(--card);border-radius:8px;width:min(560px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;box-shadow:var(--shl)}.modal.wide{width:min(940px,100%)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.42);display:grid;place-items:center;z-index:100;padding:16px}.modal{background:var(--card);border-radius:8px;width:min(560px,100%);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;box-shadow:var(--shl)}.modal.wide{width:min(940px,100%)}
 .m-h{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--bd)}.m-h h2{font-size:15px;flex:1}.m-b{padding:16px 18px;overflow:auto}.m-f{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--bd);background:var(--bg2);border-radius:0 0 10px 10px}
 #toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}.toast{display:flex;align-items:center;gap:8px;background:#201F1E;color:#fff;border-radius:8px;padding:9px 16px;box-shadow:var(--shl);font-size:13px;animation:tin .2s}.toast.err{background:var(--redd)}.toast.out{opacity:0;transition:.4s}@keyframes tin{from{transform:translateY(10px);opacity:0}}
 .popw{position:relative}.pop{display:none;position:absolute;top:calc(100% + 6px);min-width:210px;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px;box-shadow:var(--shl);z-index:60;padding:4px}.pop.open{display:block}.pop.wide{width:360px}
@@ -864,7 +864,7 @@ function seedState() {
   return migrateV5({ v: 3, cfg: Object.assign(defaultCfg(), { comiteParts: s.comiteParts || [] }), ini: s.iniciativas, compromisos: s.compromisos || [], cambios: s.cambios || [], notas: [], documentos: [], hitos: s.hitos, riesgos: s.riesgos, decisiones: s.decisiones, comites: s.comites, bitacora: s.bitacora, ptpl: [], psnap: {}, pres: s.presentaciones, usuarios: s.usuarios, eventos: [], iaLog: [], seq: {} });
 }
 /* V4: sin localStorage. El estado inicial lo entrega DataService.init() (SharePoint o demo en memoria). */
-function save() { ppInval(); DataService.commit(); }
+function save() { _ixGen++; ppInval(); DataService.commit(); }
 function nextId(prefix, list) {
   const mx = Math.max(0, ...list.map(x => parseInt(String(x.id).split('-')[1], 10) || 0));
   return prefix + '-' + String(mx + 1).padStart(3, '0');
@@ -913,8 +913,11 @@ const PRJS = () => St.ini.filter(i => !esProp(i));
 const PROPS = () => St.ini.filter(esProp);
 /* hitos visibles = solo de proyectos (las propuestas no tienen cronograma) */
 const HITOS = () => St.hitos.filter(h => { const i = byId(h.ini); return i && !esProp(i); });
-const hitosDe = id => St.hitos.filter(h => h.ini === id);
-const riesgosDe = id => St.riesgos.filter(r => r.ini === id);
+/* índices por iniciativa (O(1) en vez de filtrar toda la lista por cada proyecto); se invalidan en save() y al cambiar la lista */
+let _ixGen = 0; const _ix = {};
+const _porIni = (k, id) => { const arr = St[k]; let c = _ix[k]; if (!c || c.arr !== arr || c.n !== arr.length || c.g !== _ixGen) { const m = new Map(); arr.forEach(x => { let l = m.get(x.ini); if (!l) m.set(x.ini, l = []); l.push(x); }); _ix[k] = c = { arr, n: arr.length, g: _ixGen, m }; } return (c.m.get(id) || []).slice(); };
+const hitosDe = id => _porIni('hitos', id);
+const riesgosDe = id => _porIni('riesgos', id);
 function hitoEstado(h) {   // semaforización automática
   if (h.completado) return (h.fechaReal && h.fechaReal > h.fecha) ? { k: 'late', t: 'Completado con retraso', c: '#F2A100' } : { k: 'done', t: 'Completado', c: '#107C10' };
   const d = diffD(h.fecha, hoy());
@@ -2070,7 +2073,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('input', e => { const r = e.target; if (r && r.dataset && r.dataset.rng != null && r.nextElementSibling) r.nextElementSibling.textContent = r.value + r.dataset.rng; });
 document.addEventListener('submit', e => { if (e.target && e.target.id === 'mform') e.preventDefault(); }, true);
-document.addEventListener('input', e => { const el = e.target.closest('[data-chg]'); if (!el) return; if (['text', 'search'].includes(el.type) || el.tagName === 'TEXTAREA') { const f = Chg[el.dataset.chg]; if (f && el.dataset.live !== 'no') f(el, e); } });
+document.addEventListener('input', e => { const el = e.target.closest('[data-chg]'); if (!el) return; if (['text', 'search'].includes(el.type) || el.tagName === 'TEXTAREA') { const f = Chg[el.dataset.chg]; if (f && el.dataset.live !== 'no') { clearTimeout(Chg._dt); Chg._dt = setTimeout(() => f(el, e), 180); } } });
 document.addEventListener('change', e => { const el = e.target.closest('[data-chg]'); if (!el) return; if (['text', 'search'].includes(el.type) || el.tagName === 'TEXTAREA') return; const f = Chg[el.dataset.chg]; if (f) f(el, e); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if ($('#modal')) Modal.close(); else closePops(); }
@@ -9014,7 +9017,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.12', b: '14-10-2026 11:30' };
+  const VER = { v: 'V22.13', b: '14-10-2026 11:50' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
