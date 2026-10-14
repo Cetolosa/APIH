@@ -8971,9 +8971,13 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
+  const VER = { v: 'V22.5', b: '14-10-2026 00:12' };
+  V.version = VER;
+  const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
   renderChrome = function () {
     renderChrome0.apply(this, arguments);
+    const vs = sr('.top .b-t.app small'); if (vs) { vs.textContent = VER.v + ' · ' + VER.b; vs.classList.add('v22-ver'); vs.title = 'APIH ' + VER.v + ' · compilada el ' + VER.b; }
     const tr = sr('.top-r');
     if (tr && !sr('#v22-help')) tr.insertAdjacentHTML('afterbegin', `<div class="popw"><button class="btn sm v22-help" id="v22-help" data-act="pop" data-id="pop-help" aria-label="Ayuda de esta pantalla">${icon('help', 16)}<span>Ayuda</span></button><div class="pop wide v22-pop" id="pop-help" style="right:0"></div></div>
       <div class="popw"><button class="icon-btn bell" id="v22-cmt" data-act="pop" data-id="pop-cmt" aria-label="Comentarios por área" title="Comentarios por área">${icon('comment', 18)}<b id="v22-cmtN"></b></button><div class="pop wide v22-pop" id="pop-cmt" style="right:0"></div></div>`);
