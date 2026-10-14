@@ -2364,11 +2364,11 @@ function cxTable(sh, cols) {   // mapea encabezados (tolerante a tildes/mayúscu
   return sh.rows.slice(hi + 1).map((r, k) => ({ n: hi + k + 2, g: c => idx[c] == null ? undefined : r[idx[c]] })).filter(x => cols.some(c => { const v = x.g(c); return v != null && v !== ''; }));
 }
 function cxParse(sheets) {
-  const R = { plan: [], hitos: [], errs: [], vacio: false }, ok = i => i && puedeEditarIni(i);
+  const R = { plan: [], hitos: [], errs: [], warns: [], vacio: false }, ok = i => i && puedeEditarIni(i);
   const sp = cxSheet(sheets, ['planificacion', 'plan']), sh = cxSheet(sheets, ['hitos', 'hito']);
   const tp = cxTable(sp, CX_PLAN), th = cxTable(sh, CX_HITO);
   if (!tp && !th) { R.errs.push('No se encontraron las hojas «Planificación» u «Hitos» con la columna «ID Iniciativa». Use la plantilla.'); return R; }
-  const E = (h, n, m) => R.errs.push(`${h} · fila ${n}: ${m}`);
+  const E = (h, n, m) => R.errs.push(`${h} · fila ${n}: ${m}`), Wn = (h, n, m) => R.warns.push(`${h} · fila ${n}: ${m}`);   // E = error (se omite la fila) · Wn = aviso (se aplica, pero conviene revisar)
   (tp || []).forEach(x => {
     const id = String(x.g('ID Iniciativa') || '').trim(), i = byId(id);
     if (!id) return E('Planificación', x.n, 'falta ID Iniciativa'); if (!i) return E('Planificación', x.n, `la iniciativa ${id} no existe`); if (!ok(i)) return E('Planificación', x.n, `sin permiso para editar ${id}`);
@@ -2391,6 +2391,8 @@ function cxParse(sheets) {
     const cp = x.g('Completado (Sí/No)'); if (cp != null && cp !== '') v.completado = cxBool(cp); else if (v.fechaReal) v.completado = true;
     if (v.completado === false) v.fechaReal = null; else if (v.completado && !v.fechaReal && !(cur && cur.fechaReal)) v.fechaReal = hoy();
     if (!cur && !v.fecha) bad.push('hito nuevo sin Fecha plan'); if (bad.length) return E('Hitos', x.n, `${id} · ${nm}: ${bad.join(', ')}`);
+    { const ip = i.inicioPlan, fp = i.finPlan; if (v.fecha && ((ip && v.fecha < ip) || (fp && v.fecha > fp))) Wn('Hitos', x.n, `${id} · ${nm}: la Fecha plan ${fmtD(v.fecha)} queda fuera del plan del proyecto (${fmtD(ip)} – ${fmtD(fp)})`);
+      if (v.fechaReal && v.fechaReal > hoy()) Wn('Hitos', x.n, `${id} · ${nm}: la Fecha real ${fmtD(v.fechaReal)} está en el futuro`); }
     if (cur) { const ch = {}; Object.keys(v).forEach(k => { if (v[k] !== cur[k] && !(v[k] == null && !cur[k])) ch[k] = v[k]; }); if (Object.keys(ch).length) R.hitos.push({ cur, ch, id, nm }); }
     else R.hitos.push({ nuevo: { ini: id, nombre: nm, fase: v.fase || '', fecha: v.fecha, completado: !!v.completado, fechaReal: v.fechaReal || null, resp: v.resp || i.lider || '' }, id, nm });
   });
@@ -2404,9 +2406,12 @@ function cxPreview() {
   const fv = (k, v) => v === true ? 'Sí' : v === false ? 'No' : v == null || v === '' ? '—' : /^\d{4}-\d{2}-\d{2}$/.test(v) ? fmtD(v) : v;
   const det = (cur, ch) => Object.keys(ch).map(k => `${lbl[k] || k}: ${esc(fv(k, cur[k]))} → <b>${esc(fv(k, ch[k]))}</b>`).join(' · ');
   const rows = [...R.plan.map(p => `<tr><td>Planificación</td><td>${esc(p.i.id)} · ${esc(p.i.titulo)}</td><td>${det(p.i, p.ch)}</td></tr>`), ...R.hitos.map(h => `<tr><td>Hito ${h.nuevo ? 'nuevo' : 'actualizado'}</td><td>${esc(h.id)} · ${esc(h.nm)}</td><td>${h.nuevo ? `Fecha plan <b>${esc(fv('fecha', h.nuevo.fecha))}</b>${h.nuevo.completado ? ' · completado' : ''}` : det(h.cur, h.ch)}</td></tr>`)];
-  return `<div class="chips" style="margin:8px 0"><span class="pill">${R.plan.length} iniciativas con cambios de planificación</span><span class="pill">${nN} hitos nuevos</span><span class="pill">${nU} hitos actualizados</span><span class="pill ${R.errs.length ? 'bad' : ''}" style="${R.errs.length ? 'background:var(--redbg);color:var(--red)' : ''}">${R.errs.length} errores</span></div>`
-    + (R.errs.length ? `<div class="note bad" style="margin:6px 0;max-height:130px;overflow:auto">${icon('warn', 14)} <span>${R.errs.slice(0, 40).map(esc).join('<br>')}${R.errs.length > 40 ? '<br>… y ' + (R.errs.length - 40) + ' más' : ''}</span></div>` : '')
-    + (rows.length ? `<div class="tbl-w" style="max-height:260px;overflow:auto"><table class="tbl"><thead><tr><th>Tipo</th><th>Elemento</th><th>Cambio</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>` : (R.errs.length ? '' : '<p class="mut">El archivo no trae cambios respecto de lo que ya está cargado.</p>'));
+  return `<div class="chips" style="margin:8px 0"><span class="pill">${R.plan.length} iniciativas con cambios de planificación</span><span class="pill">${nN} hitos nuevos</span><span class="pill">${nU} hitos actualizados</span><span class="pill ${R.errs.length ? 'bad' : ''}" style="${R.errs.length ? 'background:var(--redbg);color:var(--red)' : ''}">${R.errs.length} errores</span>${R.warns.length ? `<span class="pill" style="background:#FFF4CE;color:#8A5A00">${R.warns.length} avisos</span>` : ''}</div>`
+    + (rows.length || R.errs.length || R.warns.length ? `<div class="tbl-w" style="max-height:300px;overflow:auto"><table class="tbl"><thead><tr><th>Estado</th><th>Tipo</th><th>Elemento</th><th>Cambio / detalle</th></tr></thead><tbody>${[
+        ...R.errs.map(m => { const [h, r] = m.split(': ', 1).concat(m.slice(m.indexOf(': ') + 2)); return `<tr style="background:var(--redbg)"><td><b style="color:var(--red)">✕ Se omite</b></td><td colspan="2">${esc(h)}</td><td>${esc(r)}</td></tr>`; }),
+        ...R.warns.map(m => { const k = m.indexOf(': '); return `<tr style="background:#FFF4CE"><td><b style="color:#8A5A00">⚠ Revisar</b></td><td colspan="2">${esc(m.slice(0, k))}</td><td>${esc(m.slice(k + 2))}</td></tr>`; }),
+        ...rows.map(r => r.replace('<tr>', '<tr style="background:#E4F3E5"><td><b style="color:#13420f">✓ Válida</b></td>'))
+      ].join('')}</tbody></table></div>` : '<p class="mut">El archivo no trae cambios respecto de lo que ya está cargado.</p>');
 }
 Acts.cargaxl = () => {
   if (soloLectura()) return toast('Modo solo lectura: no se puede cargar', 'err');
@@ -3762,12 +3767,26 @@ function actSemana(i, W) {
   return real ? 'real' : nc ? 'nc' : null;
 }
 const hoyW = () => wkIni(hoy());
+/* Tope anti-vanidad: el tenedor «Al día» no puede ganarse si el proyecto lleva TOPE_SIN_AVANCE semanas seguidas actualizándose sin avance real
+   (ni % de avance ni hitos cerrados). Es una señal de gestión desconectada del progreso, no un castigo: se levanta con cualquier avance. */
+const TOPE_SIN_AVANCE = 3;
+const avanceEn = (i, d) => { let v = 0; (i.hist || []).forEach(h => { if (h[0] <= d) v = +h[1]; }); return v; };
+function avanzoSemana(i, W) {
+  const E = addD(W, 6);
+  return avanceEn(i, E) > avanceEn(i, addD(W, -1)) || hitosDe(i.id).some(h => h.completado && h.fechaReal && h.fechaReal >= W && h.fechaReal <= E);
+}
+function sinAvanceSostenido(i, W) {
+  if (+i.avance >= 100 && !hitosDe(i.id).some(h => !h.completado)) return false;   // nada pendiente que avanzar
+  for (let k = 0; k < TOPE_SIN_AVANCE; k++) { const w = addD(W, -7 * k); if (avanzoSemana(i, w) || !actSemana(i, w)) return false; }
+  return true;
+}
 function vencidosA(arr, f, E, doneF) { return arr.filter(x => x[f] && x[f] < E && !doneF(x, E)); }
 function starsOf(i, W) {
   const cur = W === hoyW(), E = cur ? hoy() : addD(W, 6), out = {};
   /* Al día */
   const a = actSemana(i, W); let dia = a === 'real';
   if (a === 'nc') dia = !(actSemana(i, addD(W, -7)) === 'nc' && actSemana(i, addD(W, -14)) === 'nc');
+  const tope = dia && sinAvanceSostenido(i, W); if (tope) dia = false;
   out.dia = dia ? 'on' : 'off';
   /* Hitos */
   const hs = hitosDe(i.id), expl = St.cambios.some(c => c.ini === i.id && c.estado !== 'Rechazado' && c.tipo === 'Fecha' && (c.creada || '') <= E);
@@ -3784,7 +3803,7 @@ function starsOf(i, W) {
     const f = forecast(i), fuera = f && i.finPlan && desv(i) > cfgI(i,'tolDesv');
     out.gob = fuera && !St.cambios.some(c => c.ini === i.id && c.estado !== 'Rechazado') ? 'off' : 'on';
   } else { out.rsk = 'na'; out.gob = 'na'; }
-  return STAR_DEF.map(d => ({ ...d, s: out[d.k] }));
+  return STAR_DEF.map(d => ({ ...d, s: out[d.k], ...(d.k === 'dia' && tope ? { tip: 'Llevas ' + TOPE_SIN_AVANCE + ' semanas actualizando sin avance real: sube el % de avance o cierra un hito y se enciende.' } : {}) }));
 }
 const cieloLleno = st => !st.some(x => x.s === 'off') && st.some(x => x.s === 'on');
 const starsHist = st => st.filter(x => ['dia', 'hit', 'cmp'].includes(x.k));        // criterio histórico (calculable hacia atrás)
