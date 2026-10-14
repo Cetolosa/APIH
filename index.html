@@ -8609,6 +8609,15 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   .v22-row .tb-l{font-weight:700;color:var(--tx)}.v22-row .flt{flex-direction:row;align-items:center;gap:6px}.v22-row .flt small{margin:0}
   .v22-row .search{flex:0 1 300px;min-width:170px}.v22-row .flt-guia{margin-left:auto}.v22-row>.seg{margin-left:auto}
   .v22-row .flt-note{font-size:12px}
+  .v22-row .search{flex:1 1 150px;max-width:280px;min-width:130px}.v22-row select{max-width:170px;height:32px}.v22-row .seg button{padding:5px 10px;font-size:12.5px;white-space:nowrap}.v22-row .btn{height:32px}
+  .v22-row .toolbar,.v22-row .tb-r{margin:0}.v22-row>.seg~.seg{margin-left:0}
+  .v22-mstrip{padding:6px 12px;margin:0 0 8px;gap:10px}.v22-mstrip .grow{font-size:13px;min-width:200px}.v22-mstrip .btn{height:30px}.v22-mstrip svg{flex:none}
+  #main>.seg{margin-bottom:6px}
+  /* Presentaciones: barra de configuración en una sola línea; los proyectos elegidos se muestran en línea con el selector */
+  .p2-bar{padding:5px 8px;margin-bottom:6px;gap:6px 10px}
+  .p2-bar .fld:has([data-chg=padd]){flex:0 1 auto;max-width:48%;display:flex!important;flex-direction:row!important;flex-wrap:nowrap;align-items:center;gap:4px 6px}
+  .p2-bar .fld:has([data-chg=padd])>.chips{display:flex;flex-wrap:wrap;gap:4px;margin:0}.p2-bar .fld:has([data-chg=padd])>select{flex:1 1 130px;max-width:220px;height:30px}
+  .p2-bar .fld:has([data-chg=padd])>.seg{margin:0!important}.p2-bar .chip{height:28px;padding:0 4px 0 8px;font-size:12px}.p2-bar{align-items:center}.p2-bar .fld{position:relative}.p2-bar .fld>label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.p2-bar .fld:has(input[data-k=titulo]){flex:1 1 160px}.p2-bar .chip .lnk{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}.p2-bar .fld:has([data-chg=padd])>select{flex:0 0 112px}.p2-bar .fld:has([data-chg=padd])>.chips{min-width:0}
   .v22-more .pop{min-width:200px}.v22-more .pop button{display:flex;align-items:center;gap:8px;width:100%;text-align:left}
   /* barra superior ordenada */
   .top .brand{min-width:0;flex:none}.top .b-t{white-space:nowrap}.top .b-t small{white-space:nowrap}
@@ -9001,13 +9010,16 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
         let ref = sr('.v22-main', act); while (ref && ref.parentNode !== act) ref = ref.parentNode; act.insertBefore(w, ref || null);
       }
     }
-    const fb = sr(':scope>.flt-bar', m), tb = sr(':scope>.toolbar', m);
-    if (fb || tb) {
+    const fb = sr(':scope>.flt-bar', m), tbs = sra(':scope>.toolbar', m);
+    if (fb || tbs.length) {
       const row = document.createElement('div'); row.className = 'v22-row'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Filtros y búsqueda');
-      [fb, tb].forEach(c => { if (c) { [...c.childNodes].forEach(n => row.appendChild(n)); c.remove(); } });
+      [fb, ...tbs].forEach(c => { if (c) { [...c.childNodes].forEach(n => row.appendChild(n)); c.remove(); } });
+      const tabs = UI.view === 'cielo' ? sr(':scope>.seg', m) : null; if (tabs) { tabs.style.margin = '0 0 0 auto'; row.appendChild(tabs); }
       ph.insertAdjacentElement('afterend', row);
     }
   }
+  const presLayout0 = presLayout;
+  presLayout = function () { presLayout0.apply(this, arguments); const b = sr('.p2-bar [data-act=pdrawer] span'); if (b) b.textContent = 'Diapositivas'; const t = sr('.p2-bar input[data-k=titulo]'); if (t) { t.placeholder = 'Título de la presentación'; t.setAttribute('aria-label', 'Título'); } };
   const render0 = render;
   render = function () { render0.apply(this, arguments); try { primaria(); compactar(); } catch (e) { console.error(e); } };
   const banner0 = banner;
@@ -9248,7 +9260,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const P = cieloPersona(me), L = V.misionPend(me), pend = L.filter(x => x.m.length), n = P.off, resta = 6 - ((pD(hoy()).getDay() + 6) % 7);
     if (!L.length) return '';
     const ok = !pend.length;
-    return `<div class="v22-mstrip ${ok ? 'ok' : ''}" id="v22-mstrip">${icon(ok ? 'check' : 'target', 20)}<div class="grow">${ok ? '<b>¡Mesa perfecta!</b> Todos tus proyectos tienen los 5 tenedores. Mantenlo hasta el domingo.' : `<b>Tu misión:</b> encender ${n} tenedor${n === 1 ? '' : 'es'} apagado${n === 1 ? '' : 's'} en ${pend.length} proyecto${pend.length === 1 ? '' : 's'} antes del domingo (${resta === 0 ? 'hoy cierra' : 'faltan ' + diaPlural(resta)}). Ganas la semana perfecta cuando no quede ninguno.`}</div>${ok ? '' : btn('Ver qué hacer', 'misir', { ic: 'chevd', cls: 'pri' })}${btn('Cómo se juega', 'cielotab', { d: { k: 'how' }, cls: 'sm' })}</div>`;
+    return `<div class="v22-mstrip ${ok ? 'ok' : ''}" id="v22-mstrip">${icon(ok ? 'check' : 'target', 20)}<div class="grow">${ok ? '<b>¡Mesa perfecta!</b> Todos tus proyectos tienen los 5 tenedores. Mantenlo hasta el domingo.' : `<b>Tu misión:</b> ${n} tenedor${n === 1 ? '' : 'es'} por encender en ${pend.length} proyecto${pend.length === 1 ? '' : 's'} · cierra el domingo (${resta === 0 ? 'hoy' : 'faltan ' + diaPlural(resta)}).`}</div>${ok ? '' : btn('Ver qué hacer', 'misir', { ic: 'chevd', cls: 'pri' })}</div>`;
   }
   Acts.misir = () => { const el = sr('#v22-mis'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   Acts.cocir = d => { const s = (fh()[d.k] = fh()[d.k] || {}); s.c = false; s.h = false; fhSave(); Acts.ficha({ id: d.id }); setTimeout(() => { const el = sr('#fl-' + d.k); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); };
