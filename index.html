@@ -533,6 +533,8 @@ body{font:13px/1.45 var(--font)}
 .pill{color:color-mix(in srgb,var(--c,var(--tx2)) 62%,#000)}
 :root[data-theme=dark] .pill{color:color-mix(in srgb,var(--c,var(--tx2)) 70%,#fff)}
 .prio.p-Baja{color:#17692F}:root[data-theme=dark] .prio.p-Alta{color:#FF8087}:root[data-theme=dark] .prio.p-Media{color:#F5B83D}:root[data-theme=dark] .prio.p-Baja{color:#5FD07A}:root[data-theme=dark] .seg .on,:root[data-theme=dark] .seg button.on{color:#06182B}.av{background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2))}
+/* ---------- V22.29: IA compacta ---------- */
+.agent>p,.agent>.a-r{display:none}.agent{padding:10px 14px;gap:8px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -4473,7 +4475,7 @@ Views.ia = {
     const cnt = ag => all.filter(x => x.agente === ag).length;
     const nm = { pmo: 'PMO', riesgos: 'Riesgos', roadmap: 'Roadmap' };
     const card = id => { const a = AGENTS[id], on = St.cfg.agentes[id], running = run && run.ids[run.cur] === id, doneNow = run && run.done.includes(id), n = id === 'ejecutivo' ? null : cnt(nm[id]), l = last(id);
-      return `<article class="agent ${on ? '' : 'off'} ${running ? 'run' : ''}" style="--c:${a.c}"><div class="a-h"><span class="a-i">${icon(a.ic, 18)}</span><div><h3>${a.n}</h3><small>${on ? (running ? 'Analizando…' : l ? 'Último análisis ' + fmtTS(l.ts) : 'En espera') : 'Desactivado'}</small></div><label class="sw" title="Activar/desactivar"><input type="checkbox" ${on ? 'checked' : ''} data-chg="agtoggle" data-id="${id}" aria-label="Activar ${a.n}"><i></i></label></div>
+      return `<article class="agent ${on ? '' : 'off'} ${running ? 'run' : ''}" style="--c:${a.c}" title="${esc(a.d + ' Revisa: ' + a.rules.join(', ') + '.')}"><div class="a-h"><span class="a-i">${icon(a.ic, 18)}</span><div><h3>${a.n}</h3><small>${on ? (running ? 'Analizando…' : l ? 'Último análisis ' + fmtTS(l.ts) : 'En espera') : 'Desactivado'}</small></div><label class="sw" title="Activar/desactivar"><input type="checkbox" ${on ? 'checked' : ''} data-chg="agtoggle" data-id="${id}" aria-label="Activar ${a.n}"><i></i></label></div>
       <p>${a.d}</p><ul class="a-r">${a.rules.map(r => `<li>${icon('check', 12)} ${r}</li>`).join('')}</ul>
       ${running ? `<div class="a-log">${STEPS[id].slice(0, run.step).map((s, k) => `<div class="${k === run.step - 1 ? 'cur' : ''}">${k < run.step - 1 ? '✔' : '…'} ${s}</div>`).join('')}</div>${prog(run.step / STEPS[id].length * 100, 'Verde', 4)}` : ''}
       <div class="a-f">${n != null ? `<span class="a-n">${n} hallazgos</span>` : '<span class="a-n">Resumen</span>'}<button class="btn sm ${doneNow ? '' : 'pri'}" data-act="iarun" data-id="${id}" ${(!on || run) ? 'disabled' : ''}>${icon('play', 12)} Ejecutar</button></div></article>`; };
@@ -9112,7 +9114,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.28', b: '14-10-2026 20:00' };
+  const VER = { v: 'V22.29', b: '14-10-2026 21:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
