@@ -1440,7 +1440,7 @@ function pnpScript() {
    --------------------------------------------------------------------- */
 const COLLS = Object.keys(SP_SCHEMA);   // projects, risks, milestones, decisions, audit, committees
 const backendName = () => APIH_CONFIG.auth && APIH_CONFIG.auth.provider === 'supabase' ? 'Supabase' : 'SharePoint';
-const backendLabel = () => APIH_CONFIG.auth && APIH_CONFIG.auth.provider === 'supabase' ? 'Servidor seguro · datos cifrados' : 'SharePoint · ' + APIH_CONFIG.siteName;
+const backendLabel = () => APIH_CONFIG.auth && APIH_CONFIG.auth.provider === 'supabase' ? 'Servidor seguro · acceso individual' : 'SharePoint · ' + APIH_CONFIG.siteName;
 const newSvc = () => APIH_CONFIG.auth && APIH_CONFIG.auth.provider === 'supabase' && typeof SupabaseService !== 'undefined' ? new SupabaseService(APIH_CONFIG) : new SharePointService(APIH_CONFIG);
 const DataService = {
   mode: 'demo', svc: null, snap: null, timer: null, poll: null, busy: false, again: false, dirty: false, tries: 0,
@@ -1611,66 +1611,24 @@ const DataService = {
 };
 
 /* ==========================================================================
-   APIH · Cifrado en el navegador (Web Crypto). Compartido por la app y el generador de accesos.
-   Una sola «clave de equipo» produce DOS secretos independientes (PBKDF2-SHA256, 310.000 iteraciones):
-     · clave de cifrado AES-256-GCM (32 B)  → los datos salen cifrados; el proveedor nunca los lee.
-     · secreto de acceso (32 B) → se convierte, por correo, en la contraseña que ve Supabase (HMAC-SHA256).
-   El proveedor solo conoce esa contraseña derivada: no puede deducir la clave de equipo ni la de cifrado.
-   ========================================================================== */
-const SBC = {
-  te: new TextEncoder(), td: new TextDecoder(),
-  b64(buf) { let s = ''; const a = new Uint8Array(buf); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); },
-  unb64(s) { const b = atob(s), a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; },
-  b64u(buf) { return SBC.b64(buf).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
-  async derive(teamKey) {
-    const km = await crypto.subtle.importKey('raw', SBC.te.encode(String(teamKey)), 'PBKDF2', false, ['deriveBits']);
-    const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: SBC.te.encode('APIH|v1|master'), iterations: 310000 }, km, 512));
-    return { enc: bits.slice(0, 32), auth: bits.slice(32) };
-  },
-  async authPass(authBytes, email) {
-    const k = await crypto.subtle.importKey('raw', authBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    return SBC.b64u(await crypto.subtle.sign('HMAC', k, SBC.te.encode('auth|' + String(email).trim().toLowerCase())));
-  },
-  aesKey(encBytes) { return crypto.subtle.importKey('raw', encBytes, 'AES-GCM', false, ['encrypt', 'decrypt']); },
-  async seal(key, text) {
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    return 'v1.' + SBC.b64(iv) + '.' + SBC.b64(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, SBC.te.encode(text)));
-  },
-  async open(key, s) {
-    const p = String(s).split('.'); if (p[0] !== 'v1' || p.length !== 3) throw new Error('Formato de dato no reconocido');
-    return SBC.td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: SBC.unb64(p[1]) }, key, SBC.unb64(p[2])));
-  }
-};
-
-/* ==========================================================================
    APIH · Proveedor Supabase (alternativa a SharePoint mientras no exista el registro en Entra ID)
-   · Inicio de sesión: correo + CLAVE DE EQUIPO. La clave de equipo se transforma en el navegador (sbcrypto.js)
-     en la contraseña que ve Supabase y en la clave AES con que se cifran todos los datos.
-   · Tabla única `registros(lista, id, datos)`; `datos` es siempre texto cifrado (AES-GCM).
+   · Inicio de sesión individual: correo corporativo + contraseña propia (Supabase Auth; recuperable por correo).
+   · Tabla única `registros(lista, id, datos)`; `datos` = 'p1.' + JSON en texto. La protección es el servidor (RLS + solo correos @aramark.cl).
    · Los roles se hacen cumplir en el servidor con RLS (ver APIH_supabase_setup.sql).
    ========================================================================== */
 const SB = {
-  KEY: 'APIH_SB', sess: null, _key: null,
+  KEY: 'APIH_SB', sess: null,
   restore() {
     for (const st of [sessionStorage, localStorage]) { try { const j = st.getItem(SB.KEY); if (j) { SB.sess = JSON.parse(j); SB.sess._st = st === localStorage ? 'l' : 's'; return; } } catch (e) { } }
   },
   persist() { if (!SB.sess) return; const { _st, ...s } = SB.sess; try { (_st === 'l' ? localStorage : sessionStorage).setItem(SB.KEY, JSON.stringify(s)); } catch (e) { } },
-  clear() { SB.sess = null; SB._key = null; try { sessionStorage.removeItem(SB.KEY); localStorage.removeItem(SB.KEY); } catch (e) { } },
+  clear() { SB.sess = null; try { sessionStorage.removeItem(SB.KEY); localStorage.removeItem(SB.KEY); } catch (e) { } },
   get cfg() { return APIH_CONFIG.supabase || {}; },
   async _auth(grant, body) {
     const r = await fetch(SB.cfg.url + '/auth/v1/token?grant_type=' + grant, { method: 'POST', headers: { apikey: SB.cfg.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const e = new Error(j.error_description || j.msg || ('HTTP ' + r.status)); e.status = r.status; e.code = j.error_code || j.error; throw e; }
     return j;
-  },
-  async login(email, teamKey, remember) {
-    email = String(email || '').trim().toLowerCase();
-    if (!email || !teamKey) throw new Error('Ingresa tu correo y la clave');
-    const k = await SBC.derive(teamKey), pass = await SBC.authPass(k.auth, email);
-    let j; try { j = await SB._auth('password', { email, password: pass }); }
-    catch (e) { if (e.status === 400 || e.status === 401 || e.status === 422) throw new Error('Correo o clave incorrectos'); throw e; }
-    SB.sess = { email, access: j.access_token, refresh: j.refresh_token, exp: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), enc: SBC.b64(k.enc), _st: remember ? 'l' : 's' };
-    SB._key = null; SB.persist();
   },
   async token() {
     if (!SB.sess) throw new Error('Sesión no iniciada');
@@ -1680,31 +1638,10 @@ const SB = {
     }
     return SB.sess.access;
   },
-  async key() { if (!SB.sess.enc) return null; if (!SB._key) SB._key = await SBC.aesKey(SBC.unb64(SB.sess.enc)); return SB._key; },
   logout() { SB.clear(); }
 };
 
-const SBLogin = {
-  show(msg) {
-    if (document.getElementById('sb-login')) { const m = document.getElementById('sb-msg'); if (m && msg) m.textContent = msg; return; }
-    const d = document.createElement('div'); d.id = 'sb-login'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Iniciar sesión');
-    d.innerHTML = `<form class="sb-card" autocomplete="on"><h1>APIH</h1><p class="sb-sub">Portfolio Intelligence Hub · acceso solo para personas autorizadas</p>
-      <label for="sb-mail">Correo corporativo</label><input id="sb-mail" type="email" autocomplete="username" required placeholder="nombre.apellido@aramark.cl">
-      <label for="sb-key">Clave de acceso</label><input id="sb-key" type="password" autocomplete="current-password" required>
-      <label class="sb-chk"><input id="sb-rem" type="checkbox"> Recordar en este dispositivo</label>
-      <button class="btn pri" id="sb-go" type="submit">Entrar</button><p id="sb-msg" role="alert">${msg ? String(msg).replace(/</g, '&lt;') : ''}</p>
-      <small>Los datos se cifran en tu navegador antes de enviarse: el proveedor del servicio no puede leerlos.</small></form>`;
-    const st = document.createElement('style'); st.textContent = `#sb-login{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:var(--bg,#f3f4f6);padding:16px}#sb-login .sb-card{width:min(380px,100%);background:var(--card,#fff);color:var(--tx,#1a1a1a);border:1px solid var(--bd,#d8dbe0);border-top:4px solid #D52B1E;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.12)}#sb-login h1{margin:0;font-size:24px;letter-spacing:.04em}#sb-login .sb-sub{margin:0 0 8px;color:var(--tx2,#555);font-size:13px}#sb-login label{font-size:12px;font-weight:600}#sb-login input[type=email],#sb-login input[type=password]{padding:10px;border:1px solid var(--bd,#c4c8cf);border-radius:8px;font:inherit;background:var(--bg,#fff);color:inherit}#sb-login .sb-chk{display:flex;gap:6px;align-items:center;font-weight:400}#sb-login .btn{margin-top:6px;justify-content:center}#sb-login #sb-msg{min-height:18px;margin:0;color:#c0392b;font-size:13px}#sb-login small{color:var(--tx2,#555);font-size:11px}`;
-    document.head.appendChild(st); document.body.appendChild(d);
-    const f = d.querySelector('form'), m = d.querySelector('#sb-msg'), b = d.querySelector('#sb-go');
-    f.addEventListener('submit', async ev => {
-      ev.preventDefault(); b.disabled = true; m.style.color = ''; m.textContent = 'Verificando…';
-      try { await SB.login(d.querySelector('#sb-mail').value, d.querySelector('#sb-key').value, d.querySelector('#sb-rem').checked); location.reload(); }
-      catch (e) { m.style.color = '#c0392b'; m.textContent = e.message; b.disabled = false; }
-    });
-    setTimeout(() => { const i = d.querySelector('#sb-mail'); if (i) i.focus(); }, 50);
-  }
-};
+const SBLogin = {};
 
 /* ---- AuthService: proveedor 'supabase' ---- */
 (function () {
@@ -1735,14 +1672,13 @@ class SupabaseService extends SharePointService {
     const t = await res.text(); return { data: t ? JSON.parse(t) : null, res };
   }
   async listItems(ent) {
-    const l = encodeURIComponent(this.listName(ent)), key = await SB.key(), idc = this._idCol(ent), out = [], PAGE = 1000;   // key = null en sesiones sin llave: solo se leen filas 'p1.' (texto plano)
+    const l = encodeURIComponent(this.listName(ent)), idc = this._idCol(ent), out = [], PAGE = 1000;
     for (let off = 0; ; off += PAGE) {
       const { data } = await this._rest('registros?select=id,datos&lista=eq.' + l + '&order=id&limit=' + PAGE + '&offset=' + off);
       for (const r of data || []) {
         let txt;
         if (String(r.datos).startsWith('p1.')) txt = r.datos.slice(3);
-        else if (!key) throw new Error('«' + r.id + '» aún está cifrado con la clave anterior: el administrador debe migrar los datos');
-        else { try { txt = await SBC.open(key, r.datos); } catch (e) { throw new Error('No se pudo descifrar «' + r.id + '»: la clave de equipo no corresponde a estos datos'); } }
+        else throw new Error('«' + r.id + '» tiene un formato antiguo (cifrado) y no se puede leer. Avisa al administrador.');
         out.push({ spid: r.id, f: { [idc]: r.id, [DATOS_COL.n]: txt } });
       }
       if (!data || data.length < PAGE) break;
@@ -9038,7 +8974,6 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       u0.outerHTML = `<div class="popw v22-usrw"><button class="v22-usr" data-act="pop" data-id="pop-usr" aria-haspopup="menu" aria-label="Mi cuenta">${avatar(nm, 30)}<span><b>${esc(nm)}</b><small>${esc((St.cfg.cargo || '').split('·')[0])}</small></span><span class="chv">${icon('chevd', 13)}</span></button>
         <div class="pop v22-pop usr-m" id="pop-usr" style="right:0"><div class="pop-h"><b>${esc(nm)}</b><small>${esc(em)}</small></div><button data-act="pwchange">${icon('lock', 15)} Cambiar mi contraseña</button><button data-act="sbout">${icon('user', 15)} Cerrar sesión</button></div></div>`;
     }
-    /* sesión con clave de equipo (sin contraseña personal) o con sesión Supabase: botón «Clave» */
     if (UI.view === 'ficha') $('#app').classList.toggle('nopanel', !UI.panel || !UI.sel);
   };
   /* Encabezado compacto: acciones secundarias en «Más», y filtros + búsqueda en una sola fila */
@@ -9074,7 +9009,6 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   const banner0 = banner;
   banner = function () {
     let h = banner0.apply(this, arguments);
-    if (SB.sess && SB.sess.legacy) h = `<div class="note warn" style="margin-bottom:8px">${icon('lock', 14)}<span><b>Todavía entras con la clave compartida del equipo.</b> Crea tu contraseña personal: solo tú la conocerás y podrás cambiarla cuando quieras.</span>${btn('Crear mi contraseña', 'pwchange', { cls: 'pri sm' })}</div>` + (h || '');
     return h;
   };
 
@@ -9125,20 +9059,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
 
   /* ======================= Login individual (Supabase Auth) ======================= */
   const SB2 = {
-    async derive2(pw, email) {
-      const km = await crypto.subtle.importKey('raw', SBC.te.encode(String(pw)), 'PBKDF2', false, ['deriveBits']);
-      const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: SBC.te.encode('APIH|v2|' + email), iterations: 310000 }, km, 512));
-      return { wrap: bits.slice(0, 32), auth: SBC.b64u(bits.slice(32)) };
-    },
     async rest(token, path, opt = {}) {
       const r = await fetch(SB.cfg.url + '/rest/v1/' + path, { method: opt.method || 'GET', headers: Object.assign({ apikey: SB.cfg.anonKey, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, opt.headers || {}), body: opt.body });
       if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
       const t = r.status === 204 ? '' : await r.text(); return t ? JSON.parse(t) : null;
-    },
-    async getWrap(token, email) { const rows = await SB2.rest(token, 'registros?select=datos&lista=eq.APIH_Claves&id=eq.' + encodeURIComponent(email)); return rows && rows[0] ? rows[0].datos : null; },
-    async putWrap(token, email, dekB64, wrapBytes) {
-      const datos = await SBC.seal(await SBC.aesKey(wrapBytes), dekB64);
-      await SB2.rest(token, 'registros?on_conflict=lista,id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ lista: 'APIH_Claves', id: email, datos }]) });
     },
     async recover(email) {
       const r = await fetch(SB.cfg.url + '/auth/v1/recover?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method: 'POST', headers: { apikey: SB.cfg.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
@@ -9148,12 +9072,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       const r = await fetch(SB.cfg.url + '/auth/v1/user', { method: 'PUT', headers: { apikey: SB.cfg.anonKey, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ password: auth }) });
       if (!r.ok) { const j = await r.json().catch(() => ({})); const e = new Error(j.msg || j.error_description || ('HTTP ' + r.status)); e.status = r.status; e.code = j.error_code; throw e; }
     },
-    /* guarda la llave de cifrado envuelta con la contraseña nueva y luego cambia la contraseña en Supabase (en ese orden: si algo falla, el acceso anterior sigue sirviendo) */
-    async enroll(newPw) {
-      const email = SB.sess.email, k2 = await SB2.derive2(newPw, email), tk = await SB.token();
-      try { await SB2.putWrap(tk, email, SB.sess.enc, k2.wrap); } catch (e) { throw new Error('No se pudo guardar tu llave personal en el servidor (' + (e.status || 'sin conexión') + '). Avisa al administrador.'); }
-      try { await SB2.setPassword(tk, k2.auth); } catch (e) { throw new Error(e.code === 'same_password' ? 'La contraseña nueva debe ser distinta a la actual' : 'No se pudo cambiar la contraseña en el servicio de acceso: ' + e.message); }
-      delete SB.sess.legacy; SB.persist();
+    /* cambia la contraseña: verifica la actual y luego fija la nueva */
+    async cambiar(actual, nueva) {
+      try { await SB._auth('password', { email: SB.sess.email, password: actual }); } catch (e) { if ([400, 401, 422].includes(e.status)) throw new Error('La contraseña actual no es correcta'); throw e; }
+      try { await SB2.setPassword(await SB.token(), nueva); } catch (e) { throw new Error(e.code === 'same_password' ? 'La contraseña nueva debe ser distinta a la actual' : 'No se pudo cambiar la contraseña: ' + e.message); }
     },
     valida(pw, email) {
       if (String(pw).length < 10) return 'Usa al menos 10 caracteres';
@@ -9168,23 +9090,8 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     email = String(email || '').trim().toLowerCase();
     if (!email || !pw) throw new Error('Ingresa tu correo y tu contraseña');
     const store = remember ? 'l' : 's', exp = j => Math.floor(Date.now() / 1000) + (j.expires_in || 3600);
-    /* 0) login normal: la contraseña va directo a Supabase Auth (recuperable por correo); sin llave de cifrado */
-    let j = null;
-    try { j = await SB._auth('password', { email, password: pw }); } catch (e) { if (![400, 401, 422].includes(e.status)) throw e; }
-    if (j) { SB.sess = { email, access: j.access_token, refresh: j.refresh_token, exp: exp(j), enc: null, _st: store }; SB._key = null; SB.persist(); return { legacy: false }; }
-    /* 1) (transición) contraseña personal anterior, con llave de cifrado */
-    const k2 = await SB2.derive2(pw, email);
-    try { j = await SB._auth('password', { email, password: k2.auth }); } catch (e) { if (![400, 401, 422].includes(e.status)) throw e; }
-    if (j) {
-      let wrapped; try { wrapped = await SB2.getWrap(j.access_token, email); } catch (e) { throw new Error('No se pudo leer tu llave de cifrado (' + (e.status || 'sin conexión') + ')'); }
-      if (!wrapped) throw new Error('Tu cuenta no tiene llave de cifrado. Pide al administrador que restablezca tu acceso.');
-      let dek; try { dek = await SBC.open(await SBC.aesKey(k2.wrap), wrapped); } catch (e) { throw new Error('No se pudo abrir tu llave de cifrado. Pide al administrador que restablezca tu acceso.'); }
-      SB.sess = { email, access: j.access_token, refresh: j.refresh_token, exp: exp(j), enc: dek, _st: store }; SB._key = null; SB.persist(); return { legacy: false };
-    }
-    /* 2) acceso inicial con la clave de equipo (solo hasta crear la contraseña personal) */
-    const k = await SBC.derive(pw), pass = await SBC.authPass(k.auth, email);
-    try { j = await SB._auth('password', { email, password: pass }); } catch (e) { if ([400, 401, 422].includes(e.status)) throw new Error('Correo o contraseña incorrectos'); throw e; }
-    SB.sess = { email, access: j.access_token, refresh: j.refresh_token, exp: exp(j), enc: SBC.b64(k.enc), legacy: true, _st: store }; SB._key = null; SB.persist(); return { legacy: true };
+    try { const j = await SB._auth('password', { email, password: pw }); SB.sess = { email, access: j.access_token, refresh: j.refresh_token, exp: exp(j), _st: store }; SB.persist(); return {}; }
+    catch (e) { if ([400, 401, 422].includes(e.status)) throw new Error('Correo o contraseña incorrectos'); throw e; }
   };
   SBLogin.show = function (msg) {
     if (document.getElementById('sb-login')) { const m = document.getElementById('sb-msg'); if (m && msg) m.textContent = msg; return; }
@@ -9208,27 +9115,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       });
       f.addEventListener('submit', async ev => {
         ev.preventDefault(); b.disabled = true; m.style.color = ''; m.textContent = 'Verificando…';
-        try { const r = await SB.login(d.querySelector('#sb-mail').value, d.querySelector('#sb-key').value, d.querySelector('#sb-rem').checked); if (r.legacy) paso2(); else location.reload(); }
+        try { await SB.login(d.querySelector('#sb-mail').value, d.querySelector('#sb-key').value, d.querySelector('#sb-rem').checked); location.reload(); }
         catch (e) { m.style.color = '#c0392b'; m.textContent = e.message; b.disabled = false; }
       });
       setTimeout(() => { const i = d.querySelector('#sb-mail'); if (i) i.focus(); }, 50);
-    };
-    const paso2 = () => {
-      d.innerHTML = `<form class="sb-card" autocomplete="off"><h2>Crea tu contraseña personal</h2><p class="sb-note">Hasta hoy el equipo entraba con una clave compartida. Desde ahora cada persona tiene la suya: solo tú la conoces y la puedes cambiar cuando quieras. Nadie, ni el administrador, puede verla.</p>
-        <label for="sb-n1">Contraseña nueva</label><input id="sb-n1" type="password" autocomplete="new-password" required><div class="sb-str"><i id="sb-bar"></i></div>
-        <label for="sb-n2">Repítela</label><input id="sb-n2" type="password" autocomplete="new-password" required>
-        <small>Mínimo 10 caracteres, con letras y números. Si la olvidas, el administrador debe restablecer tu acceso.</small>
-        <button class="btn pri" id="sb-go" type="submit">Guardar y entrar</button><p id="sb-msg" role="alert"></p><button type="button" class="sb-lnk" id="sb-later">Hacerlo después (seguiré usando la clave compartida)</button></form>`;
-      const f = d.querySelector('form'), m = d.querySelector('#sb-msg'), b = d.querySelector('#sb-go'), n1 = d.querySelector('#sb-n1'), n2 = d.querySelector('#sb-n2'), bar = d.querySelector('#sb-bar');
-      n1.addEventListener('input', () => { const s = SB2.fuerza(n1.value); bar.style.width = s * 20 + '%'; bar.style.background = s < 3 ? '#c0392b' : s < 4 ? '#F2A100' : '#107C10'; });
-      d.querySelector('#sb-later').addEventListener('click', () => location.reload());
-      f.addEventListener('submit', async ev => {
-        ev.preventDefault(); m.style.color = '#c0392b';
-        const err = SB2.valida(n1.value, SB.sess.email); if (err) { m.textContent = err; return; } if (n1.value !== n2.value) { m.textContent = 'Las contraseñas no coinciden'; return; }
-        b.disabled = true; m.style.color = ''; m.textContent = 'Guardando…';
-        try { await SB2.enroll(n1.value); location.reload(); } catch (e) { m.style.color = '#c0392b'; m.textContent = e.message; b.disabled = false; }
-      });
-      setTimeout(() => n1.focus(), 50);
     };
     /* llegada desde el correo de recuperación: #access_token=…&type=recovery */
     const paso3 = () => {
@@ -9247,7 +9137,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
         b.disabled = true; m.style.color = ''; m.textContent = 'Guardando…';
         try {
           await SB2.setPassword(tk, n1.value);
-          SB.sess = { email: em, access: tk, refresh: rf, exp: Math.floor(Date.now() / 1000) + (+q.get('expires_in') || 3600), enc: null, _st: 's' }; SB._key = null; SB.persist();
+          SB.sess = { email: em, access: tk, refresh: rf, exp: Math.floor(Date.now() / 1000) + (+q.get('expires_in') || 3600), _st: 's' }; SB.persist();
           history.replaceState(null, '', location.pathname + location.search); location.reload();
         } catch (e) { m.style.color = '#c0392b'; m.textContent = e.code === 'same_password' ? 'La contraseña nueva debe ser distinta a la anterior' : e.message; b.disabled = false; }
       });
@@ -9255,48 +9145,22 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     };
     if (/type=recovery/.test(location.hash)) paso3(); else paso1();
   };
-  /* cambiar mi contraseña (o crearla, si aún uso la clave compartida) */
+  /* cambiar mi contraseña */
   Acts.pwchange = () => {
     if (!(SB.sess && AuthService.provider === 'supabase')) return toast('El cambio de contraseña aplica al acceso con Supabase', 'err');
-    closePops(); const leg = !!SB.sess.legacy;
-    Modal.open({ title: leg ? 'Crear mi contraseña personal' : 'Cambiar mi contraseña', body: `<div class="v22-f"><p class="mut" style="margin:0 0 6px;line-height:1.45">${leg ? 'Hoy entras con la clave compartida del equipo. Crea una contraseña solo tuya.' : 'Solo tú conoces tu contraseña; el administrador no puede verla ni cambiarla.'}</p>
-      ${leg ? '' : '<label for="pw0">Contraseña actual</label><input id="pw0" type="password" autocomplete="current-password" style="width:100%">'}
+    closePops();
+    Modal.open({ title: 'Cambiar mi contraseña', body: `<div class="v22-f"><p class="mut" style="margin:0 0 6px;line-height:1.45">Solo tú conoces tu contraseña. Si la olvidas, puedes pedir un enlace por correo desde la pantalla de acceso.</p>
+      <label for="pw0">Contraseña actual</label><input id="pw0" type="password" autocomplete="current-password" style="width:100%">
       <label for="pw1">Contraseña nueva</label><input id="pw1" type="password" autocomplete="new-password" style="width:100%"><label for="pw2">Repite la nueva</label><input id="pw2" type="password" autocomplete="new-password" style="width:100%"><small>Mínimo 10 caracteres, con letras y números.</small><p id="pwmsg" role="alert" style="color:var(--red);min-height:18px;margin:6px 0 0"></p></div>`,
       footer: `<button class="btn" data-act="mclose">Cancelar</button><button class="btn pri" data-act="pwsave" id="pwgo">Guardar contraseña</button>` });
   };
   Acts.pwsave = async () => {
-    const m = sr('#pwmsg'), v = id => (sr(id) || {}).value || '', leg = !!SB.sess.legacy, b = sr('#pwgo'); m.textContent = '';
+    const m = sr('#pwmsg'), v = id => (sr(id) || {}).value || '', b = sr('#pwgo'); m.textContent = '';
     const err = SB2.valida(v('#pw1'), SB.sess.email); if (err) { m.textContent = err; return; } if (v('#pw1') !== v('#pw2')) { m.textContent = 'Las contraseñas no coinciden'; return; }
-    if (!leg && !v('#pw0')) { m.textContent = 'Escribe tu contraseña actual'; return; }
+    if (!v('#pw0')) { m.textContent = 'Escribe tu contraseña actual'; return; }
     b.disabled = true; m.style.color = 'var(--tx2)'; m.textContent = 'Guardando…';
-    try {
-      if (!leg) { const k0 = await SB2.derive2(v('#pw0'), SB.sess.email); try { await SB._auth('password', { email: SB.sess.email, password: k0.auth }); } catch (e) { if ([400, 401, 422].includes(e.status)) throw new Error('La contraseña actual no es correcta'); throw e; } }
-      await SB2.enroll(v('#pw1')); Modal.close(); toast('Contraseña actualizada'); render();
-    } catch (e) { m.style.color = 'var(--red)'; m.textContent = e.message; b.disabled = false; }
-  };
-
-  /* Migración única (solo administrador, consola del navegador): SBMigrar('APIH_Notas') = prueba sin escribir · SBMigrar('APIH_Notas', true) = aplica · SBMigrar() / SBMigrar(null, true) = todas las listas.
-     Tercer parámetro = la clave de equipo anterior (se usa solo en memoria para descifrar). Descifra cada fila 'v1.' y la reescribe como 'p1.'. */
-  window.SBMigrar = async function (lista, aplicar, claveEquipo) {
-    if (!esAdmin()) return console.warn('Solo el administrador puede migrar');
-    let key;
-    if (claveEquipo) { const k = await SBC.derive(claveEquipo); key = await SBC.aesKey(k.enc); }
-    else if (SB.sess && SB.sess.enc) key = await SB.key();
-    else return console.warn('Falta la llave: SBMigrar(lista, aplicar, "clave de equipo")');
-    const tk = await SB.token(), out = { listas: {}, plano: 0, cifradas: 0, migradas: 0, errores: [] };
-    const filtro = lista ? '&lista=eq.' + encodeURIComponent(lista) : '&lista=neq.APIH_Claves';
-    for (let off = 0; ; off += 500) {
-      const rows = await SB2.rest(tk, 'registros?select=lista,id,datos&order=lista,id&limit=500&offset=' + off + filtro), up = [];
-      for (const r of rows || []) {
-        out.listas[r.lista] = (out.listas[r.lista] || 0) + 1;
-        if (String(r.datos).startsWith('p1.')) { out.plano++; continue; }
-        out.cifradas++;
-        try { up.push({ lista: r.lista, id: r.id, datos: 'p1.' + await SBC.open(key, r.datos) }); } catch (e) { out.errores.push(r.lista + '/' + r.id + ': no descifra'); }
-      }
-      if (aplicar && up.length) { try { await SB2.rest(tk, 'registros?on_conflict=lista,id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(up) }); out.migradas += up.length; } catch (e) { out.errores.push('escritura: HTTP ' + e.status); } }
-      if (!rows || rows.length < 500) break;
-    }
-    console.log(aplicar ? 'Migración aplicada' : 'Prueba (no se escribió nada)', out); return out;
+    try { await SB2.cambiar(v('#pw0'), v('#pw1')); Modal.close(); toast('Contraseña actualizada'); render(); }
+    catch (e) { m.style.color = 'var(--red)'; m.textContent = e.message; b.disabled = false; }
   };
 
   /* ======================= Mi cocina: misión guiada ======================= */

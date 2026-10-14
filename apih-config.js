@@ -1,7 +1,7 @@
 /* Configuración pública de APIH (se puede editar directo en GitHub, sin recompilar).
-   Ambos valores son PÚBLICOS por diseño: la seguridad real está en las reglas del servidor y en el cifrado.
+   Ambos valores son PÚBLICOS por diseño: la seguridad real está en el inicio de sesión individual y en las reglas del servidor (RLS).
    Los obtienes en Supabase → Project Settings → API:  "Project URL"  y  la clave "anon / publishable".
-   NUNCA pegues aquí la clave "service_role" ni la clave de equipo. */
+   NUNCA pegues aquí la clave "service_role". */
 window.APIH_OVERRIDE = {
   auth: { provider: 'supabase' },
   supabase: {
