@@ -2924,22 +2924,25 @@ Views.portfolio = {
         if (!cl) body += gr.map(rowH).join('');
       });
     }
-    const resp = uniq(all.map(i => i.lider)).sort();
+    const resp = uniq(all.map(i => i.lider)).sort(); const nAdv = ['fase', 'estado', 'rag', 'prio', 'resp', 'tini'].filter(k => f[k]).length + (f.hideDone ? 1 : 0);
     const tot = { p: sumM(rows, i => i.presupuesto), g: sumM(rows.filter(i => !esProp(i)), i => i.gastado) };
     return pageHead('Portfolio', `Vista PMO · ${rows.length} de ${all.length} ${f.tipo === 'Propuesta' ? 'propuestas' : f.tipo === 'Todo' ? 'registros (proyectos y propuestas)' : 'proyectos'} · ${f.tipo === 'Propuesta' ? 'Costo estimado' : 'Presupuesto'} ${fmtTot(tot.p)}`, `<span class="edit-only">${btn('Nueva propuesta', 'new', { d: { t: 'prop' }, ic: 'plus', cls: 'pri' })}</span>${btn('Excel', 'pxlsx', { ic: 'down', cls: 'pri' })}${btn('JSON', 'pjson', { ic: 'down' })}${btn('CSV', 'pcsv', { ic: 'down' })}`) + `
     <div class="toolbar"><div class="seg">${[['Proyecto', 'Proyectos', nPrj], ['Propuesta', 'Propuestas', nProp], ['Todo', 'Todo', nPrj + nProp]].map(([k, l, n]) => `<button class="${f.tipo === k ? 'on' : ''}" data-act="ptipo" data-k="${k}">${l} <small style="display:inline;color:inherit;opacity:.75">${n}</small></button>`).join('')}</div></div>
     <div class="toolbar">
       <div class="search"><span>${icon('search', 14)}</span><input data-key="pf-q" data-chg="flt" data-v="portfolio" data-f="q" type="search" placeholder="Buscar en el portfolio…" value="${esc(f.q)}"></div>
+      <button class="btn pf-advb ${UI.pfAdv || nAdv ? 'on' : ''}" data-act="pfadv" aria-expanded="${!!(UI.pfAdv || nAdv)}">${icon('filter', 14)}<span>Más filtros${nAdv ? ' · ' + nAdv : ''}</span><span aria-hidden="true">▾</span></button>
+      <label class="tb-l">Agrupar<select data-chg="flt" data-v="portfolio" data-f="group">${selOpts(Object.entries(GROUPS).map(([v, t]) => ({ v, t })), f.group)}</select></label>
+      <div class="popw"><button class="btn" data-act="pop" data-id="pop-cols">${icon('list2', 15)}<span>Columnas</span></button><div class="pop cols" id="pop-cols" style="right:0">${PCOLS.filter(c => (c.t === 'a' ? f.tipo === 'Todo' : c.t === 'j' ? f.tipo !== 'Propuesta' : c.t === 'p' ? f.tipo !== 'Proyecto' : true)).map(c => `<label class="chk"><input type="checkbox" ${f.cols.includes(c.k) ? 'checked' : ''} data-chg="pcol" data-k="${c.k}"> <span>${c.h}</span></label>`).join('')}</div></div>
+      ${nAdv || f.q ? btn('Limpiar', 'pclear', { ic: 'x' }) : ''}
+      <div class="pf-adv ${UI.pfAdv || nAdv ? 'open' : ''}">
       <select data-chg="flt" data-v="portfolio" data-f="fase" aria-label="Fase">${selOpts(f.tipo === 'Propuesta' ? FASES_PROP : f.tipo === 'Proyecto' ? FASES_PRJ : FASES, f.fase, 'Todas las fases')}</select>
       <select data-chg="flt" data-v="portfolio" data-f="estado" aria-label="Estado">${selOpts(f.tipo === 'Propuesta' ? ESTADOS_PROP : f.tipo === 'Proyecto' ? ESTADOS_PRJ : ESTADOS, f.estado, 'Todos los estados')}</select>
       ${f.tipo === 'Propuesta' ? '' : `<select data-chg="flt" data-v="portfolio" data-f="rag" aria-label="RAG">${selOpts(RAGS, f.rag, 'Todos los RAG')}</select>`}
       <select data-chg="flt" data-v="portfolio" data-f="tini" aria-label="Tipo de iniciativa">${selOpts(((St.cfg.metodo || {}).tipos || []).map(t => t.nombre), f.tini, 'Todos los tipos')}</select>
       <select data-chg="flt" data-v="portfolio" data-f="prio" aria-label="Prioridad">${selOpts(PRIOS, f.prio, 'Toda prioridad')}</select>
       <select data-chg="flt" data-v="portfolio" data-f="resp" aria-label="Responsable">${selOpts(resp, f.resp, 'Todos los responsables')}</select>
-      <label class="tb-l">Agrupar<select data-chg="flt" data-v="portfolio" data-f="group">${selOpts(Object.entries(GROUPS).map(([v, t]) => ({ v, t })), f.group)}</select></label>
       <label class="chk tb-c"><input type="checkbox" ${f.hideDone ? 'checked' : ''} data-chg="flt" data-v="portfolio" data-f="hideDone" data-bool="1"> <span>Ocultar finalizados</span></label>
-      <div class="popw"><button class="btn" data-act="pop" data-id="pop-cols">${icon('list2', 15)}<span>Columnas</span></button><div class="pop cols" id="pop-cols" style="right:0">${PCOLS.filter(c => (c.t === 'a' ? f.tipo === 'Todo' : c.t === 'j' ? f.tipo !== 'Propuesta' : c.t === 'p' ? f.tipo !== 'Proyecto' : true)).map(c => `<label class="chk"><input type="checkbox" ${f.cols.includes(c.k) ? 'checked' : ''} data-chg="pcol" data-k="${c.k}"> <span>${c.h}</span></label>`).join('')}</div></div>
-      ${Object.values({ q: f.q, fase: f.fase, estado: f.estado, rag: f.rag, prio: f.prio, resp: f.resp, tini: f.tini }).some(Boolean) ? btn('Limpiar', 'pclear', { ic: 'x' }) : ''}
+      </div>
     </div>
     <div class="tbl-w" data-keep="pf"><table class="tbl ${f.dens === 'c' ? 'dense' : ''}"><thead><tr>${cols.map(c => `<th class="${c.num ? 'n' : ''} c-${c.k}" style="min-width:${c.w}px"><button data-act="psort" data-k="${c.k}" aria-label="Ordenar por ${c.h}">${c.h}${f.sort === c.k ? `<span class="sorti">${f.dir > 0 ? '▲' : '▼'}</span>` : ''}</button></th>`).join('')}</tr></thead>
     <tbody>${body || `<tr><td colspan="${cols.length}">${empty('Sin resultados con los filtros actuales')}</td></tr>`}</tbody>
@@ -2952,6 +2955,7 @@ Chg.pcol = el => { const f = F('portfolio', {}); f.cols = PCOLS.map(c => c.k).fi
 Acts.psort = d => { const f = F('portfolio', {}); if (f.sort === d.k) f.dir = -f.dir; else { f.sort = d.k; f.dir = 1; } render(); };
 Acts.pgrp = d => { const f = F('portfolio', {}); f.col = f.col || {}; f.col[d.g] = !f.col[d.g]; render(); };
 Acts.pclear = () => { Object.assign(F('portfolio', {}), { q: '', fase: '', estado: '', rag: '', prio: '', resp: '', area: '', tini: '' }); render(); };
+Acts.pfadv = () => { UI.pfAdv = !UI.pfAdv; render(); };
 Acts.ptipo = d => { Object.assign(F('portfolio', {}), { tipo: d.k, fase: '', estado: '', rag: '' }); render(); };
 Acts.pdens = () => { const f = F('portfolio', {}); f.dens = f.dens === 'c' ? 'n' : 'c'; render(); };
 Acts.pcsv = () => { const f = F('portfolio', {}); const rows = portfolioRows(); const cols = pcols(); download('APIH_portfolio_' + hoy() + '.csv', toCSV(rows, cols.map(c => ({ h: c.h, f: c.f }))), 'text/csv'); toast(rows.length + ' filas exportadas'); };
@@ -4491,7 +4495,7 @@ function filtrosHTML() {
     <button class="btn mine ${FL.mine ? 'on' : ''}" data-act="mine" aria-pressed="${FL.mine}" title="Mostrar solo lo que depende de ${esc(me)}">${icon('check', 14)}<span>Sólo lo mío</span></button>
     ${on ? btn('Limpiar', 'flclear', { ic: 'x', cls: 'sm' }) : ''}
     ${FL.verComo ? `<span class="flt-note">Viendo como <b>${esc(FL.verComo)}</b> · <button class="lnk" data-act="vercomo" data-n="">Volver a mi usuario</button></span>` : ''}
-    ${GUIA[UI.view] ? `<button class="lnk flt-guia" data-act="guia" data-m="${UI.guiaOpen[UI.view] ? 'off' : 'on'}" aria-expanded="${!!UI.guiaOpen[UI.view]}">${icon('help', 14)} Cómo operar esta pantalla</button>` : ''}</div>`;
+    ${GUIA[UI.view] ? `<button class="lnk flt-guia" data-act="guia" data-m="${UI.guiaOpen[UI.view] ? 'off' : 'on'}" aria-expanded="${!!UI.guiaOpen[UI.view]}" aria-label="Cómo operar esta pantalla" title="Cómo operar esta pantalla">${icon('help', 15)}<span class="gtx">Guía</span></button>` : ''}</div>`;
 }
 Chg.respG = el => { FL.resp = el.value; ppInval(); refresh(); };
 Acts.mine = () => { FL.mine = !FL.mine; ppInval(); refresh(); };
@@ -8712,6 +8716,9 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   .pn-h{padding:16px 18px 12px}.pn-h h3{font-size:20px;margin:6px 0 8px}.pn-a{display:flex;flex-wrap:nowrap!important;gap:8px;margin-top:12px;align-items:stretch}.pn-a .btn{white-space:nowrap}.pn-a .pn-main{flex:1;justify-content:center;height:38px;font-size:14px}.pn-a .btn{height:38px}.pn-a .popw .pop{min-width:190px;display:none}.pn-a .popw .pop.open{display:block}.pn-a .pop button{display:flex;width:100%;justify-content:flex-start;border:0;background:none;height:34px;padding:0 10px}.pn-a .pop button:hover{background:var(--pri-l)}
   .pn-ph2{background:var(--bg2);border:1px solid var(--bd2)!important;border-radius:10px;padding:10px 12px!important;margin:12px 0}.pn-ph2 .ph-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}.pn-ph2 .lbl{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.3px}.pn-ph2 .ph-sp{flex:1}.pn-ph2 .lnk{font-weight:700;font-size:13px;white-space:nowrap}.pn-ph2 .flow span{height:6px}
   .pn-b .kv span{font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;color:var(--tx2)}.pn-b .kv b{font-size:17px}.pn-b .kvs{gap:14px 16px}.tabs.sm{overflow-x:auto}.tabs.sm button{padding:10px 9px;font-size:13px;white-space:nowrap}
+  .v22-row .flt{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:0 2px 0 8px;gap:4px;height:32px}.v22-row .flt small{font-size:10px;letter-spacing:.3px}.v22-row .flt select{border:0;background:transparent;width:auto;max-width:140px;height:28px;font-size:13px;padding-right:2px}
+  .v22-row .search{flex:0 1 210px;min-width:140px}.v22-row .flt-guia{margin-left:0;order:9;width:32px;height:32px;justify-content:center;padding:0;border-radius:8px}.v22-row .flt-guia .gtx{display:none}.v22-row .flt-guia:hover{background:var(--bg2)}.v22-row .tb-r,.v22-row .count{white-space:nowrap}
+  .pf-adv{order:10;display:none;flex-basis:100%;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;margin:2px 0 4px;background:var(--bg2);border:1px solid var(--bd2);border-radius:10px}.pf-adv.open{display:flex}.pf-adv select{height:30px;border-radius:8px;background:var(--card);font-size:13px;max-width:170px}.pf-advb.on{border-color:var(--pri);color:var(--pri)}.v22-row .tb-l select{height:30px}
   .fl2-t2{display:flex;align-items:center;gap:12px;padding:6px 14px 8px;border-top:1px solid var(--bd2)}.fl2-t2 h1{font-size:22px}.fl2-t2 .fl-ph{margin:0;flex:none}.fl2-t2 .fl-ph .flow{width:150px}.lk-s{display:none}
   @media(max-width:1250px){.fl2-top{flex-wrap:wrap}.fl2-t2{flex-wrap:wrap}}
   @media(max-width:900px){.fl2-bar{flex-wrap:wrap}.fl2{position:static}.fl2-top{flex-wrap:wrap}.fl2-sp{flex-basis:100%;height:0}.fl2-top h1{white-space:normal}}
@@ -9088,7 +9095,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.23', b: '14-10-2026 15:20' };
+  const VER = { v: 'V22.24', b: '14-10-2026 16:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
