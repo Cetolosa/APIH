@@ -8589,9 +8589,14 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   .v22-pop{width:340px;max-width:92vw}.v22-hp{padding:4px 12px 12px;display:flex;flex-direction:column;gap:10px;font-size:13px}.v22-hp .hp-lead{margin:0;line-height:1.45}.v22-hp ul{margin:0;padding-left:18px;color:var(--tx2);line-height:1.5}.v22-hp .hp-main .btn{width:100%;justify-content:center;height:38px;font-size:14px}.v22-hp .hp-f{display:flex;gap:6px;flex-wrap:wrap}.v22-hp .hp-dyn{background:var(--ambbg);border:1px solid #F2D27A;color:#5B4100;border-radius:8px;padding:8px 10px;display:flex;gap:8px;align-items:center;justify-content:space-between}
   :root[data-theme=dark] .v22-hp .hp-dyn{background:#3A2F0E;border-color:#6E5A1B;color:#F5DC9A}
   /* recorrido */
-  #v22-spot{position:fixed;z-index:99990;border-radius:10px;box-shadow:0 0 0 9999px rgba(10,20,35,.62);pointer-events:none;transition:all .25s}
+  #v22-spot{position:fixed;z-index:99990;border-radius:10px;box-shadow:0 0 0 9999px rgba(8,16,28,.78);outline:3px solid #FFC72C;outline-offset:2px;pointer-events:none;transition:all .25s;animation:v22pulse 1.4s ease-in-out infinite}
+  @keyframes v22pulse{0%,100%{outline-color:#FFC72C;outline-offset:2px}50%{outline-color:#fff;outline-offset:6px}}
+  #v22-tour .tr-ar{position:absolute;width:16px;height:16px;background:var(--card);transform:rotate(45deg);border:1px solid var(--bd)}
+  #v22-tour .tr-ar.t{top:-9px;border-right:0;border-bottom:0}#v22-tour .tr-ar.b{bottom:-9px;border-left:0;border-top:0}#v22-tour .tr-ar.l{left:-9px;border-top:0;border-right:0}
+  .v22-seg{border-color:rgba(255,255,255,.45)!important;background:rgba(255,255,255,.12)!important}.v22-seg button{color:#fff!important;font-weight:600}.v22-seg button.on{background:#fff!important;color:var(--pri)!important}
+  @media (max-width:900px){.v22-seg{display:none}}
   #v22-tour{position:fixed;z-index:99991;width:min(340px,92vw);background:var(--card);color:var(--tx);border:1px solid var(--bd);border-top:4px solid var(--pri);border-radius:12px;padding:14px 16px;box-shadow:0 12px 36px rgba(0,0,0,.35)}
-  #v22-tour h3{margin:0 0 4px;font-size:15px}#v22-tour p{margin:0 0 12px;font-size:13px;line-height:1.45;color:var(--tx2)}#v22-tour .tr-f{display:flex;align-items:center;gap:8px}#v22-tour .tr-f small{margin-right:auto}
+  #v22-tour h3{margin:0 0 4px;font-size:16px}#v22-tour .tr-n{display:inline-block;background:#FFC72C;color:#1a1a1a;font-weight:700;font-size:11px;border-radius:10px;padding:1px 8px;margin-bottom:6px}#v22-tour p{margin:0 0 12px;font-size:13px;line-height:1.45;color:var(--tx2)}#v22-tour .tr-f{display:flex;align-items:center;gap:8px}#v22-tour .tr-f small{margin-right:auto}
   /* comentarios */
   .v22-nl{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}.v22-n{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;background:var(--card);display:flex;flex-direction:column;gap:6px}.v22-n.ab{opacity:.65}.v22-n .n-h{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2)}.v22-n .n-h b{color:var(--tx)}.v22-n p{margin:0;line-height:1.45;white-space:pre-wrap}.v22-n .n-r{font-size:12px;color:var(--tx2);display:flex;gap:6px;align-items:center}.v22-n .n-a{display:flex;gap:6px;flex-wrap:wrap}
   body.v22-pick #main *{cursor:crosshair!important}body.v22-pick #main{outline:3px dashed var(--pri);outline-offset:-3px}
@@ -8877,6 +8882,8 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const tr = sr('.top-r');
     if (tr && !sr('#v22-help')) tr.insertAdjacentHTML('afterbegin', `<div class="popw"><button class="btn sm v22-help" id="v22-help" data-act="pop" data-id="pop-help" aria-label="Ayuda de esta pantalla">${icon('help', 16)}<span>Ayuda</span></button><div class="pop wide v22-pop" id="pop-help" style="right:0"></div></div>
       <div class="popw"><button class="icon-btn bell" id="v22-cmt" data-act="pop" data-id="pop-cmt" aria-label="Comentarios por área" title="Comentarios por área">${icon('comment', 18)}<b id="v22-cmtN"></b></button><div class="pop wide v22-pop" id="pop-cmt" style="right:0"></div></div>`);
+    if (tr && !sr('#v22-seg')) tr.insertAdjacentHTML('afterbegin', `<span class="seg v22-seg" id="v22-seg" role="group" aria-label="Nivel de detalle de la interfaz" title="Simple: lo esencial · Profesional: todo el detalle"></span>`);
+    const sg = sr('#v22-seg'); if (sg) sg.innerHTML = ['simple', 'pro'].map(m => `<button class="${modoUI() === m ? 'on' : ''}" data-act="modo" data-m="${m}" aria-pressed="${modoUI() === m}">${m === 'simple' ? 'Simple' : 'Profesional'}</button>`).join('');
     const ph = sr('#pop-help'); if (ph) ph.innerHTML = helpHTML();
     const pc = sr('#pop-cmt'); if (pc) pc.innerHTML = cmtPopHTML();
     const nb = sr('#v22-cmtN'); if (nb) { const n = notasAbiertas().length; nb.textContent = n > 99 ? '99+' : n || ''; nb.style.display = n ? '' : 'none'; }
@@ -8896,9 +8903,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
 
   /* ======================= Recorrido de primera vez ======================= */
   const TOUR = [
-    { s: null, t: 'Bienvenido a APIH', d: 'En seis pasos cortos te muestro lo que más vas a usar. Las pantallas son las mismas en modo Simple y Profesional; solo cambia cuánto detalle ves. Partes en Simple.' },
+    { s: null, t: 'Bienvenido a APIH', d: 'En siete pasos cortos te muestro lo que más vas a usar. Te iré marcando cada cosa con un recuadro amarillo en la pantalla.' },
     { s: '#side', t: 'El menú', d: 'Aquí están las pantallas. En modo Simple ves solo las esenciales.' },
-    { s: '.top .btn.pri', t: 'Crear', d: 'Propuestas, riesgos, hitos y decisiones se crean desde este botón.' },
+    { s: '.top [data-id="pop-new"]', t: 'Crear', d: 'Este botón azul «Nuevo» sirve para crear propuestas, riesgos, hitos y decisiones.' },
+    { s: '#v22-seg', t: 'Simple o Profesional', d: 'Este selector cambia cuánto detalle ves. Las pantallas son las mismas, con el mismo orden y los mismos colores. Siempre partes en Simple.' },
     { s: '.gsearch', t: 'Buscar', d: 'Encuentra cualquier proyecto, riesgo o hito. Atajo: la tecla «/».' },
     { s: '#v22-help', t: 'Ayuda según donde estés', d: 'Este botón te sugiere qué hacer en la pantalla que estás viendo, y cambia con ella.' },
     { s: '#v22-cmt', t: 'Comentarios por área', d: 'Deja una observación en cualquier parte. La verá tu área y un administrador la marcará como abordada.' }
@@ -8911,15 +8919,19 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     let sp = document.getElementById('v22-spot'), cd = document.getElementById('v22-tour');
     if (!sp) { sp = document.createElement('div'); sp.id = 'v22-spot'; document.body.appendChild(sp); }
     if (!cd) { cd = document.createElement('div'); cd.id = 'v22-tour'; cd.setAttribute('role', 'dialog'); cd.setAttribute('aria-label', 'Recorrido'); document.body.appendChild(cd); }
-    cd.innerHTML = `<h3>${esc(st.t)}</h3><p>${esc(st.d)}</p><div class="tr-f"><small>${n + 1} de ${TOUR.length}</small><button class="btn sm" data-act="tourx">Saltar</button><button class="btn sm pri" data-act="tournext">${n === TOUR.length - 1 ? 'Listo' : 'Siguiente'}</button></div>`;
+    cd.innerHTML = `<span class="tr-n">Paso ${n + 1} de ${TOUR.length}</span><h3>${esc(st.t)}</h3><p>${esc(st.d)}</p><div class="tr-f"><small></small><button class="btn sm" data-act="tourx">Saltar</button><button class="btn sm pri" data-act="tournext">${n === TOUR.length - 1 ? 'Listo' : 'Siguiente'}</button></div>`;
     const el = st.s && sr(st.s), r = el && el.getBoundingClientRect();
     if (r && r.width > 0 && r.height > 0) {
-      Object.assign(sp.style, { left: r.left - 6 + 'px', top: r.top - 6 + 'px', width: r.width + 12 + 'px', height: r.height + 12 + 'px', boxShadow: '0 0 0 9999px rgba(10,20,35,.62)' });
-      const cw = Math.min(340, innerWidth * .92); let x = Math.min(Math.max(8, r.left), innerWidth - cw - 8), y = r.bottom + 14; if (y + 170 > innerHeight) y = Math.max(8, r.top - 180);
-      if (el.id === 'side') { x = Math.min(r.right + 14, innerWidth - cw - 8); y = 90; }
+      Object.assign(sp.style, { left: r.left - 6 + 'px', top: r.top - 6 + 'px', width: r.width + 12 + 'px', height: r.height + 12 + 'px' });
+      const cw = Math.min(340, innerWidth * .92), ch = cd.offsetHeight || 170; let x, y, side = 't';
+      if (el.id === 'side') { x = r.right + 22; y = Math.max(80, r.top + 40); side = 'l'; }
+      else { x = Math.min(Math.max(8, r.left + r.width / 2 - cw / 2), innerWidth - cw - 8); y = r.bottom + 22; if (y + ch > innerHeight - 8) { y = Math.max(8, r.top - ch - 22); side = 'b'; } }
       Object.assign(cd.style, { left: x + 'px', top: y + 'px', transform: 'none' });
+      const ar = document.createElement('i'); ar.className = 'tr-ar ' + side;
+      if (side === 'l') ar.style.top = Math.max(14, Math.min(ch - 30, r.top + r.height / 2 - y - 8)) + 'px'; else ar.style.left = Math.max(14, Math.min(cw - 30, r.left + r.width / 2 - x - 8)) + 'px';
+      cd.appendChild(ar);
     } else {
-      Object.assign(sp.style, { left: '50%', top: '40%', width: '0', height: '0', boxShadow: '0 0 0 9999px rgba(10,20,35,.62)' });
+      Object.assign(sp.style, { left: '50%', top: '40%', width: '0', height: '0' });
       Object.assign(cd.style, { left: '50%', top: '38%', transform: 'translateX(-50%)' });
     }
     const b = cd.querySelector('.pri'); if (b) b.focus();
