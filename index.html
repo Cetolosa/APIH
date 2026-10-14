@@ -8702,8 +8702,9 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   .fl2-bar{display:flex;align-items:center;gap:2px;flex-wrap:nowrap;padding:0 14px;border-top:1px solid var(--bd2)}.fl2-l{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--tx2);margin-right:6px}
   .fl2-tab{height:34px;padding:0 12px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;font:inherit;font-size:13px;color:var(--tx2);cursor:pointer}.fl2-tab:hover{color:var(--tx)}.fl2-tab.on{border-bottom-color:var(--pri);color:var(--tx);font-weight:700}.fl2-tab.off{opacity:.55;text-decoration:line-through}
   .fl2-lk{background:none;border:0;font:inherit;font-size:13px;color:var(--tx2);cursor:pointer;padding:4px 6px}.fl2-lk:hover{color:var(--pri);text-decoration:underline}#pop-flsec .off{opacity:.6}
-  .pn-a .btn:not(.pri) span{display:none}.pn-a{gap:4px}.pn-a .btn:not(.pri){padding:0 6px}
-  .pn-ph{display:flex;align-items:center;gap:8px;margin-top:8px}.pn-ph .flow{flex:1;min-width:60px}.pn-ph .flow span{height:5px}.pn-ph .lnk{white-space:nowrap;font-size:12px;font-weight:600}.pn-h h3{font-size:17px;margin:6px 0 6px}
+  .pn-h{padding:16px 18px 12px}.pn-h h3{font-size:20px;margin:6px 0 8px}.pn-a{display:flex;flex-wrap:nowrap!important;gap:8px;margin-top:12px;align-items:stretch}.pn-a .btn{white-space:nowrap}.pn-a .pn-main{flex:1;justify-content:center;height:38px;font-size:14px}.pn-a .btn{height:38px}.pn-a .popw .pop{min-width:190px;display:none}.pn-a .popw .pop.open{display:block}.pn-a .pop button{display:flex;width:100%;justify-content:flex-start;border:0;background:none;height:34px;padding:0 10px}.pn-a .pop button:hover{background:var(--pri-l)}
+  .pn-ph2{background:var(--bg2);border:1px solid var(--bd2)!important;border-radius:10px;padding:10px 12px!important;margin:12px 0}.pn-ph2 .ph-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}.pn-ph2 .lbl{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.3px}.pn-ph2 .ph-sp{flex:1}.pn-ph2 .lnk{font-weight:700;font-size:13px;white-space:nowrap}.pn-ph2 .flow span{height:6px}
+  .pn-b .kv span{font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;color:var(--tx2)}.pn-b .kv b{font-size:17px}.pn-b .kvs{gap:14px 16px}.tabs.sm{overflow-x:auto}.tabs.sm button{padding:10px 9px;font-size:13px;white-space:nowrap}
   .fl2-t2{display:flex;align-items:center;gap:12px;padding:6px 14px 8px;border-top:1px solid var(--bd2)}.fl2-t2 h1{font-size:22px}.fl2-t2 .fl-ph{margin:0;flex:none}.fl2-t2 .fl-ph .flow{width:150px}.lk-s{display:none}
   @media(max-width:1250px){.fl2-top{flex-wrap:wrap}.fl2-t2{flex-wrap:wrap}}
   @media(max-width:900px){.fl2-bar{flex-wrap:wrap}.fl2{position:static}.fl2-top{flex-wrap:wrap}.fl2-sp{flex-basis:100%;height:0}.fl2-top h1{white-space:normal}}
@@ -9007,21 +9008,21 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   /* botón «Ficha completa» en el panel contextual + estado vacío de hitos en el panel */
   panelIni = function (i) {
     let h = panelIni0(i);
-    h = h.replace('<div class="pn-a">', `<div class="pn-a"><button class="btn sm" data-act="ficha" data-id="${esc(i.id)}" title="Ver todo en una sola página">${icon('full', 14)}<span>Ficha completa</span></button>`);
-    /* mismo estilo que la ficha: estados sin fase/tipo, y la línea de fase actual en el encabezado */
+    h = h.replace('<div class="pn-a">', `<div class="pn-a"><button class="btn sm" data-act="ficha" data-id="${esc(i.id)}" title="Ver todo en una sola página">${icon('full', 14)}<span>Ficha</span></button>`);
+    /* panel: acciones principales visibles (Actualizar / Ficha) y el resto en «Herramientas»; la fase como tarjeta con barra */
     try {
-      const t = document.createElement('template'); t.innerHTML = h; const f = t.content, ph = f.querySelector('.pn-h');
-      if (ph) {
-        const src = document.createElement('template'); src.innerHTML = parsePanel(i, 'resumen').body.innerHTML; const sf = src.content, fl = sf.querySelector('.flow'), fs = fl && fl.closest('.pn-sec');
-        const pp = ph.querySelector('.pn-p'); if (pp) pp.querySelectorAll('.pill.tp,.pill.soft').forEach(x => x.remove()); if (pp) [...pp.querySelectorAll('.pill')].forEach(x => { if (x.textContent.trim() === i.fase) x.remove(); });
-        if (fs) {
-          const lnk = fs.querySelector('.flow-l a'), dv = document.createElement('div'); dv.className = 'pn-ph';
-          dv.innerHTML = `${fasePill(i.fase)}${fl.outerHTML}${lnk ? lnk.outerHTML : ''}`; (pp || ph.querySelector('h3')).after(dv);
-          const own = f.querySelector('.pn-b .flow'); if (own) { const o = own.closest('.pn-sec'); if (o) o.remove(); }
-        }
-        ph.querySelectorAll('.pn-a .btn').forEach(b => { const tx = b.textContent.trim(); if (!b.getAttribute('title')) b.setAttribute('title', tx); b.setAttribute('aria-label', tx); });
-        h = [...f.childNodes].map(n => n.outerHTML || n.textContent || '').join('');
+      const t = document.createElement('template'); t.innerHTML = h; const f = t.content, pa = f.querySelector('.pn-a');
+      if (pa) {
+        const bs = [...pa.querySelectorAll('button')], vis = [], tools = [];
+        bs.forEach(b => { const tx = b.textContent.trim(); b.classList.remove('sm'); if (b.classList.contains('pri')) { b.classList.add('pn-main'); vis.push(b.outerHTML); } else if (/^Ficha/.test(tx)) vis.push(b.outerHTML); else tools.push(b.outerHTML); });
+        vis.sort((x, y) => (/pn-main/.test(y) ? 1 : 0) - (/pn-main/.test(x) ? 1 : 0)); pa.innerHTML = vis.join('') + (tools.length ? `<div class="popw"><button class="btn" data-act="pop" data-id="pop-ptools" aria-haspopup="true">Herramientas <span aria-hidden="true">▾</span></button><div class="pop" id="pop-ptools" style="right:0">${tools.join('')}</div></div>` : '');
       }
+      const fl = f.querySelector('.pn-b .flow'), fs = fl && fl.closest('.pn-sec');
+      if (fs) {
+        const lnk = fs.querySelector('.flow-l a'), dv = document.createElement('div'); dv.className = 'pn-sec pn-ph2';
+        dv.innerHTML = `<div class="ph-top"><span class="lbl">Fase:</span>${fasePill(i.fase)}<span class="ph-sp"></span>${lnk ? lnk.outerHTML : ''}</div>${fl.outerHTML}`; fs.replaceWith(dv);
+      }
+      h = [...f.childNodes].map(n => n.outerHTML || n.textContent || '').join('');
     } catch (e) { }
     h = h.replace('<p class="mut">Sin hitos.</p>', V.emptyRich({ ic: 'flag', title: 'Sin hitos todavía', line: 'Cárgalos con la plantilla de Excel o crea el primero.', p: ['Cargar plantilla Excel', 'cargaxl', {}, 'up'], s: ['Crear hito', 'new', { t: 'hito', ini: i.id }, 'flag'] }));
     return h;
@@ -9080,7 +9081,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.21', b: '14-10-2026 14:40' };
+  const VER = { v: 'V22.22', b: '14-10-2026 15:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
