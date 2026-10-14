@@ -516,6 +516,12 @@ input,select,textarea{accent-color:var(--pri);caret-color:var(--pri)}
 body{font:13px/1.45 var(--font)}
 .flt-bar select,.toolbar select,.toolbar input,.toolbar .search input,#main select{font-size:13px}
 
+/* ---------- V22.25: tablas unificadas ---------- */
+.tbl th{font-size:11.5px;letter-spacing:.2px}
+.tbl td{height:40px;padding:0 10px}.tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tbody tr:last-child td{border-bottom:0}.tbl td.mit{max-width:240px}
+.tbl td:last-child{max-width:none;overflow:visible}
+.tbl td label[title^=Incluir] span{display:none}.tbl th.inc-c{width:64px}.tbl td:has(label[title^=Incluir]){width:64px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -2877,15 +2883,15 @@ const PCOLS = [
   { k: 'tipo', h: 'Tipo', w: 92, t: 'a', f: i => tipoLbl(i), s: i => tipoLbl(i), r: i => tipoPill(i) },
   { k: 'tini', h: 'Tipo de iniciativa', w: 150, f: i => i.tipoIni || '', s: i => (i.tipoIni || '').toLowerCase(), r: i => esc(i.tipoIni || '—') },
   { k: 'id', h: 'ID', w: 84, f: i => i.id, s: i => i.id, r: i => `<span class="mono">${i.id}</span>` },
-  { k: 'titulo', h: 'Nombre', w: 270, f: i => i.titulo, s: i => i.titulo.toLowerCase(), r: i => `<a class="lnk tt" data-act="sel" data-t="ini" data-id="${i.id}">${esc(i.titulo)}</a>${i.origen === 'demo' ? ' <sup class="est">demo</sup>' : ''}` },
+  { k: 'titulo', h: 'Nombre', w: 230, f: i => i.titulo, s: i => i.titulo.toLowerCase(), r: i => `<a class="lnk tt" data-act="sel" data-t="ini" data-id="${i.id}">${esc(i.titulo)}</a>${i.origen === 'demo' ? ' <sup class="est">demo</sup>' : ''}` },
   { k: 'sponsor', h: 'Sponsor', w: 140, f: i => i.sponsor, s: i => i.sponsor, r: i => `${esc(i.sponsor || '—')}${estTag(i, 'sponsor')}` },
-  { k: 'lider', h: 'Responsable', w: 150, f: i => i.lider, s: i => i.lider, r: i => `<span class="pp">${avatar(i.lider, 20)}${esc(i.lider)}</span>` },
+  { k: 'lider', h: 'Responsable', w: 140, f: i => i.lider, s: i => i.lider, r: i => `<span class="pp">${avatar(i.lider, 20)}${esc(i.lider)}</span>` },
   { k: 'area', h: 'Área', w: 100, f: i => i.area, s: i => i.area, r: i => esc(i.area.replace(/,/g, ', ')) },
   { k: 'fase', h: 'Fase', w: 130, f: i => i.fase, s: i => FASES.indexOf(i.fase), r: i => fasePill(i.fase) },
   { k: 'estado', h: 'Estado', w: 100, f: i => i.estado, s: i => ESTADOS.indexOf(i.estado), r: i => estPill(i.estado) },
   { k: 'rag', h: 'RAG', w: 82, t: 'j', f: i => i.rag, s: i => RAGS.indexOf(i.rag), r: i => ragPill(i.rag) },
   { k: 'prioridad', h: 'Prioridad', w: 88, f: i => i.prioridad, s: i => PRIOS.indexOf(i.prioridad), r: i => prioPill(i.prioridad) },
-  { k: 'presupuesto', h: 'Presupuesto / Costo est.', w: 120, num: 1, f: i => i.presupuesto, s: i => i.presupuesto, r: i => fmtMon(i.presupuesto, monOf(i)) + estTag(i, 'presupuesto') },
+  { k: 'presupuesto', h: 'Presupuesto', w: 110, num: 1, f: i => i.presupuesto, s: i => i.presupuesto, r: i => fmtMon(i.presupuesto, monOf(i)) + estTag(i, 'presupuesto') },
   { k: 'beneficio', h: 'Beneficio', w: 96, num: 1, f: i => i.beneficio, s: i => i.beneficio, r: i => fmtMon(i.beneficio, monOf(i)) },
   { k: 'score', h: 'Puntaje', w: 80, t: 'p', f: i => priorScore(i), s: i => priorScore(i), r: i => i.score ? `<b>${priorScore(i)}</b>` : '<span class="mut">—</span>' },
   { k: 'dfase', h: 'Días en fase', w: 100, t: 'p', num: 1, f: i => diasEnFase(i), s: i => diasEnFase(i), r: i => `<span style="color:${semFase(i).c};font-weight:600">${diasEnFase(i)} d</span>` },
@@ -2894,7 +2900,7 @@ const PCOLS = [
   { k: 'finPlan', h: 'Fin Plan / Objetivo', w: 110, f: i => i.finPlan, s: i => i.finPlan || '', r: i => fmtD(i.finPlan) },
   { k: 'inicioReal', h: 'Inicio Real', w: 90, t: 'j', f: i => i.inicioReal, s: i => i.inicioReal || '', r: i => fmtD(i.inicioReal) },
   { k: 'finReal', h: 'Fin Real', w: 90, t: 'j', f: i => i.finReal, s: i => i.finReal || '', r: i => fmtD(i.finReal) },
-  { k: 'desv', h: 'Desviación', w: 96, num: 1, t: 'j', f: i => desv(i), s: i => desv(i), r: i => desv(i) ? `<span class="${desv(i) > cfgI(i,'tolDesv') ? 'neg' : 'warnt'}">+${desv(i)} d</span>` : '<span class="mut">0 d</span>' },
+  { k: 'desv', h: 'Desv.', w: 80, num: 1, t: 'j', f: i => desv(i), s: i => desv(i), r: i => desv(i) ? `<span class="${desv(i) > cfgI(i,'tolDesv') ? 'neg' : 'warnt'}">+${desv(i)} d</span>` : '<span class="mut">0 d</span>' },
   { k: 'hito', h: 'Próximo Hito', w: 220, t: 'j', f: i => { const h = nextHito(i); return h ? h.nombre + ' (' + h.fecha + ')' : ''; }, s: i => { const h = nextHito(i); return h ? h.fecha : '9'; }, r: i => { const h = nextHito(i); if (!h) return '<span class="mut">—</span>'; const e = hitoEstado(h); return `<span class="hn" title="${esc(h.nombre)}">${esc(h.nombre)}</span> <small style="color:${e.c}">${fmtD(h.fecha)}</small>`; } },
 ];
 /* columnas visibles según el tipo en pantalla: j = solo proyectos · p = solo propuestas · a = solo en vista Todo */
@@ -2912,7 +2918,7 @@ function portfolioRows() {
 }
 Views.portfolio = {
   render() {
-    const f = F('portfolio', { tipo: 'Proyecto', q: '', fase: '', estado: '', rag: '', prio: '', resp: '', area: '', group: '', sort: 'id', dir: 1, cols: PCOLS.map(c => c.k), hideDone: false, dens: 'n', col: {} });
+    const f = F('portfolio', { tipo: 'Proyecto', q: '', fase: '', estado: '', rag: '', prio: '', resp: '', area: '', group: '', sort: 'id', dir: 1, cols: ['id','tipo','titulo','lider','fase','estado','rag','avance','presupuesto','desv','score'], hideDone: false, dens: 'n', col: {} });
     const rows = portfolioRows(), cols = pcols().filter(c => !(['tini', 'sponsor'].includes(c.k) && rows.length && rows.every(i => !c.f(i)))), all = f.tipo === 'Propuesta' ? scopeP() : f.tipo === 'Todo' ? scopeAll() : scope(), nPrj = scope().length, nProp = scopeP().length;
     const grp = f.group; let body = '';
     const rowH = i => `<tr data-act="sel" data-t="ini" data-id="${i.id}" class="${UI.sel && UI.sel.id === i.id ? 'sel' : ''}">${cols.map(c => `<td class="${c.num ? 'n' : ''} c-${c.k}">${PCELL(c, i)}</td>`).join('')}</tr>`;
@@ -3137,7 +3143,7 @@ Views.riesgos = {
       <select data-chg="flt" data-v="risk" data-f="ini">${selOpts(uniq(all.map(r => r.ini).filter(Boolean)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todos los proyectos')}</select><select data-chg="flt" data-v="risk" data-f="estado">${selOpts(RISK_ESTADOS, f.estado, 'Todos los estados')}</select><select data-chg="flt" data-v="risk" data-f="cat">${selOpts(RISK_CATS, f.cat, 'Todas las categorías')}</select>
       <select data-chg="flt" data-v="risk" data-f="nivel">${selOpts(['Crítico', 'Alto', 'Medio', 'Bajo'], f.nivel, 'Todos los niveles')}</select><select data-chg="flt" data-v="risk" data-f="dueno">${selOpts(uniq(St.riesgos.map(r => r.dueno).filter(Boolean)).sort(), f.dueno, 'Todos los dueños')}</select>
       <label class="chk tb-c"><input type="checkbox" ${f.hideClosed ? 'checked' : ''} data-chg="flt" data-v="risk" data-f="hideClosed" data-bool="1"> <span>Ocultar cerrados</span></label></div>
-    <div class="tbl-w"><table class="tbl"><thead><tr><th>ID</th><th>Proyecto</th><th style="min-width:260px">Descripción</th><th class="n">Impacto</th><th class="n">Prob.</th><th class="n">Exposición</th><th style="min-width:240px">Mitigación</th><th>Dueño</th><th>Estado</th></tr></thead><tbody>
+    <div class="tbl-w"><table class="tbl"><thead><tr><th>ID</th><th>Proyecto</th><th style="min-width:220px">Descripción</th><th class="n" title="Impacto">Imp.</th><th class="n" title="Probabilidad">Prob.</th><th class="n" title="Exposición">Exp.</th><th style="min-width:200px">Mitigación</th><th>Dueño</th><th>Estado</th></tr></thead><tbody>
     ${rows.map(r => { const n = nivelRiesgo(expo(r)); return `<tr data-act="sel" data-t="risk" data-id="${r.id}" class="${UI.sel && UI.sel.id === r.id ? 'sel' : ''}"><td class="mono">${r.id}</td><td>${esc(nameOf(r.ini))}</td><td><b>${esc(r.desc)}</b><small>${esc(r.cat)}</small></td><td class="n">${r.imp}</td><td class="n">${r.prob}</td><td class="n"><span class="expo" style="background:${n.c}" title="${n.n}">${expo(r)}</span></td><td class="mit">${esc(r.mit || '—')}</td><td>${esc(r.dueno || '—')}</td><td><span class="pill soft">${r.estado}</span></td></tr>`; }).join('') || `<tr><td colspan="9">${empty('Sin riesgos con estos filtros', 'shield')}</td></tr>`}</tbody></table></div>`;
   }
 };
@@ -4551,7 +4557,7 @@ Views.personas = {
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="p-q" data-chg="flt" data-v="pers" data-f="q" type="search" placeholder="Buscar persona o cargo…" value="${esc(f.q)}"></div>
       <select data-chg="flt" data-v="pers" data-f="rol">${selOpts(roles, f.rol, 'Todos los roles')}</select>
       <small style="display:inline;margin-left:auto">${rows.length} de ${all.length} personas</small></div>
-    <div class="tbl-w"><table class="tbl"><thead><tr><th>Persona</th><th>Cargo</th><th>Acceso</th><th>Roles en el portafolio</th><th>Áreas</th><th class="n">Proyectos activos</th><th class="n">Hitos abiertos</th><th class="n">Riesgos</th><th class="n">Decisiones</th><th></th></tr></thead><tbody>
+    <div class="tbl-w"><table class="tbl"><thead><tr><th>Persona</th><th>Cargo</th><th>Acceso</th><th>Roles</th><th>Áreas</th><th class="n" title="Proyectos activos">Proy.</th><th class="n" title="Hitos abiertos">Hitos</th><th class="n">Riesgos</th><th class="n" title="Decisiones">Decis.</th><th></th></tr></thead><tbody>
     ${rows.map(p => `<tr><td><span class="pp">${avatar(p.n, 26)}<b>${esc(p.n)}</b></span></td><td>${esc(p.cargo || '—')}</td><td>${p.acceso ? `<span class="pill ${p.acceso === 'Gasto' ? '' : 'soft'}" title="${ADMIN_USERS.includes(p.n) ? 'Titular del Panel de Administración' : ''}">${esc(p.acceso)}${ADMIN_USERS.includes(p.n) ? ' · Panel Admin' : ''}</span>` : '<span class="mut">—</span>'}</td>
       <td><div class="chips">${Object.entries(p.roles).map(([r, n]) => `<span class="pill soft" title="${n} registro(s)">${esc(r)} · ${n}</span>`).join('') || '<span class="mut">—</span>'}</div></td><td>${[...p.areas].filter(Boolean).map(esc).join(', ') || '—'}</td>
       <td class="n">${p.lidera || '—'}</td><td class="n">${p.hitos ? p.hitos + (p.hitosAtr ? ` <span class="neg" title="vencidos">(${p.hitosAtr})</span>` : '') : '—'}</td><td class="n">${p.riesgos || '—'}</td><td class="n">${p.decis || '—'}</td>
@@ -9095,7 +9101,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.24', b: '14-10-2026 16:00' };
+  const VER = { v: 'V22.25', b: '14-10-2026 17:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
