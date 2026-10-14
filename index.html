@@ -8645,7 +8645,7 @@ const PROP_PREG = [
   ['¿Qué se decidió y quién responde?', 'Decisiones, acuerdos, bitácora', 'decisiones'],
   ['¿Cómo informo a la dirección?', 'Presentaciones de comité', 'presentaciones']
 ];
-const PROP_CICLO = [['Demanda', 'Necesidad del negocio'], ['Evaluación', 'Caso de negocio'], ['Aprobación', 'Decisión del comité'], ['Ejecución', 'Hitos y presupuesto'], ['Seguimiento', 'Riesgos y atrasos'], ['Cierre', 'Beneficios logrados']];
+const PROP_CICLO = [['Demanda', 'Necesidad del negocio · Iniciativas › Propuestas'], ['Evaluación', 'Caso de negocio · Iniciativas › Propuestas'], ['Aprobación', 'Decisión del comité · Gobierno'], ['Ejecución', 'Hitos y presupuesto · Planificación'], ['Seguimiento', 'Riesgos y atrasos · Planificación'], ['Cierre', 'Beneficios logrados · Iniciativas › Tabla']];
 const PROP_ROLES = [['Dirección y patrocinadores', 'Ven el estado del portafolio y toman decisiones de inversión y prioridad.'], ['PMO / IT Business Partner', 'Gobierna el pipeline, prepara el comité y asegura la calidad de la información.'], ['Líderes de proyecto', 'Reportan avance, hitos y riesgos de lo que ejecutan, en un solo lugar.'], ['Áreas de negocio', 'Siguen el estado de sus solicitudes y el compromiso de entrega.']];
 
 Views.proposito = {
@@ -9135,12 +9135,12 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
 
   /* ======================= Ayuda contextual ======================= */
   const HELP = {
-    _def: { lead: 'Usa el menú de la izquierda para moverte. Lo que más se hace aquí está resaltado en azul.', tips: ['Con «/» buscas cualquier proyecto, riesgo o hito.', 'En el menú ⋯ cambias entre Simple y Profesional.'] },
+    _def: { lead: 'Usa el menú de la izquierda para elegir la sección y las pestañas de arriba para cambiar de vista. Lo que más se hace aquí está resaltado en azul.', tips: ['Con «/» buscas cualquier proyecto, riesgo o hito.', 'Arriba a la derecha cambias entre Simple y Profesional.', 'Al volver a una sección se abre la pestaña donde estabas.'] },
     dashboard: { lead: 'Aquí ves dónde estamos y qué hay que decidir. Parte por las tarjetas de arriba.', tips: ['Haz clic en un proyecto: su resumen se abre a la derecha.', '«Ficha completa» (en ese panel) muestra todo en una sola página.', 'Cambia el alcance con «Área» en el menú ⋯.'], dyn: () => { const n = navBadge('decisiones'); return n ? [n + ' decisión(es) pendiente(s)', 'decisiones'] : null; } },
-    proyectos: { lead: 'Lista de proyectos. Abre uno para ver o actualizar su estado.', tips: ['Clic en una fila: resumen a la derecha. Doble clic: ficha completa.', 'La planificación se carga masivamente con «Cargar Excel».'] },
+    proyectos: { lead: 'Tablero de proyectos (sección Iniciativas). Abre uno para ver o actualizar su estado.', tips: ['Clic en una fila: resumen a la derecha. Doble clic: ficha completa.', 'La planificación se carga masivamente con «Cargar Excel».'] },
     propuestas: { lead: 'Demanda en evaluación. Cada propuesta pasa por compuertas antes de ser proyecto.', tips: ['Abre una propuesta para ver su caso de negocio.', 'Doble clic abre la ficha completa.'] },
-    hitos: { lead: 'Fechas clave de los proyectos. Marca como cumplidos los que ya pasaron.', tips: ['Si un hito se atrasa, registra la reprogramación en Control de cambios.', 'Carga muchos de una vez con «Cargar Excel».'], dyn: () => { const n = navBadge('hitos'); return n ? [n + ' hito(s) vencido(s)', 'hitos'] : null; } },
-    riesgos: { lead: 'Lo que podría salir mal y cómo se está mitigando.', tips: ['Ordena por exposición para ver primero lo crítico.', 'Cada riesgo debería tener dueño y plan de mitigación.'], dyn: () => { const n = navBadge('riesgos'); return n ? [n + ' riesgo(s) crítico(s)', 'riesgos'] : null; } },
+    hitos: { lead: 'Fechas clave de los proyectos (sección Planificación). Marca como cumplidos los que ya pasaron.', tips: ['Si un hito se atrasa, registra la reprogramación en Control de cambios.', 'Carga muchos de una vez con «Cargar Excel».'], dyn: () => { const n = navBadge('hitos'); return n ? [n + ' hito(s) vencido(s)', 'hitos'] : null; } },
+    riesgos: { lead: 'Lo que podría salir mal y cómo se está mitigando (sección Planificación).', tips: ['Ordena por exposición para ver primero lo crítico.', 'Cada riesgo debería tener dueño y plan de mitigación.'], dyn: () => { const n = navBadge('riesgos'); return n ? [n + ' riesgo(s) crítico(s)', 'riesgos'] : null; } },
     decisiones: { lead: 'Decisiones del comité y su estado.', tips: ['«Resolver» deja la decisión aplicada con fecha y responsable.'] },
     compromisos: { lead: 'Acuerdos de reuniones con responsable y fecha.', tips: ['Los vencidos aparecen primero.'], dyn: () => { const n = navBadge('compromisos'); return n ? [n + ' compromiso(s) vencido(s)', 'compromisos'] : null; } },
     cambios: { lead: 'Todo cambio de alcance, fecha o presupuesto queda registrado y aprobado.', tips: ['Solo el sponsor, el administrador o Gasto pueden resolverlos.'] },
@@ -9163,7 +9163,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.35', b: '15-10-2026 02:00' };
+  const VER = { v: 'V22.36', b: '15-10-2026 03:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9286,7 +9286,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   /* ======================= Recorrido de primera vez ======================= */
   const TOUR = [
     { s: null, t: 'Bienvenido a APIH', d: 'En siete pasos cortos te muestro lo que más vas a usar. Te iré marcando cada cosa con un recuadro amarillo en la pantalla.' },
-    { s: '#side', t: 'El menú', d: 'Aquí están las pantallas. En modo Simple ves solo las esenciales.' },
+    { s: '#side', t: 'El menú', d: 'Aquí están las secciones. Cada rol ve solo las suyas, y dentro de cada sección hay pestañas arriba (por ejemplo, Planificación reúne Gantt, Roadmap, Calendario, Hitos y Riesgos).' },
     { s: '.top [data-id="pop-new"]', t: 'Crear', d: 'Este botón azul «Nuevo» sirve para crear propuestas, riesgos, hitos y decisiones.' },
     { s: '#v22-seg', t: 'Simple o Profesional', d: 'Este selector cambia cuánto detalle ves. Las pantallas son las mismas, con el mismo orden y los mismos colores. Siempre partes en Simple.' },
     { s: '.gsearch', t: 'Buscar', d: 'Encuentra cualquier proyecto, riesgo o hito. Atajo: la tecla «/».' },
