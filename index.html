@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- CSP: limita a dónde puede conectarse la app (impide enviar datos o tokens a un servidor ajeno), bloquea plugins, <base> y formularios externos -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://hpsjzuqcijjwthrxgmeu.supabase.co https://graph.microsoft.com https://login.microsoftonline.com https://*.sharepoint.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'">
 <title>APIH · Aramark Portfolio Intelligence Hub</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F6CBD'/%3E%3Ctext x='16' y='23' font-size='20' font-family='Segoe UI,Arial' font-weight='800' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
 <style>
@@ -679,6 +681,31 @@ const SEED = {"iniciativas":[],"hitos":[],"riesgos":[],"decisiones":[],"comites"
 'use strict';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+/* ---- Defensa en profundidad contra XSS ----
+   Todo HTML que entra por innerHTML / outerHTML / insertAdjacentHTML pasa por este filtro: si contiene algo peligroso
+   (<script>, <iframe>, atributos on*, javascript:, srcdoc…) se parsea en un <template> inerte y se limpia antes de insertarlo.
+   Así un dato malicioso guardado en la base (por ejemplo un ID con «"><img onerror=…>») no puede ejecutar código. HTML normal: sin costo. */
+(function () {
+  const RISK = /<\s*(script|iframe|object|embed|base|meta|link|frame|frameset|applet)\b|\son[a-z]+\s*=|javascript\s*:|vbscript\s*:|srcdoc\s*=|formaction\s*=|data\s*:\s*text|data\s*:\s*application/i;
+  const BAD = new Set(['SCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'BASE', 'META', 'LINK', 'FRAME', 'FRAMESET', 'APPLET']);
+  const URLA = new Set(['href', 'src', 'xlink:href', 'action', 'formaction', 'poster', 'data']);
+  window.limpiarHTML = function (html) {
+    html = String(html == null ? '' : html); if (!RISK.test(html)) return html;
+    const t = document.createElement('template'); dI.set.call(t, html);   // setter original: sin pasar otra vez por el filtro
+    t.content.querySelectorAll('*').forEach(el => {
+      if (BAD.has(el.tagName.toUpperCase())) { el.remove(); return; }
+      [...el.attributes].forEach(a => {
+        const n = a.name.toLowerCase(), v = a.value.replace(/[\s\u0000-\u001f]/g, '').toLowerCase();
+        if (n.startsWith('on') || n === 'srcdoc' || (URLA.has(n) && /^(javascript|vbscript|data:text|data:application)/.test(v))) el.removeAttribute(a.name);
+      });
+    });
+    return t.innerHTML;
+  };
+  const dI = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML'), dO = Object.getOwnPropertyDescriptor(Element.prototype, 'outerHTML'), iah = Element.prototype.insertAdjacentHTML;
+  Object.defineProperty(Element.prototype, 'innerHTML', { configurable: true, enumerable: dI.enumerable, get: dI.get, set(v) { dI.set.call(this, window.limpiarHTML(v)); } });
+  Object.defineProperty(Element.prototype, 'outerHTML', { configurable: true, enumerable: dO.enumerable, get: dO.get, set(v) { dO.set.call(this, window.limpiarHTML(v)); } });
+  Element.prototype.insertAdjacentHTML = function (pos, html) { return iah.call(this, pos, window.limpiarHTML(html)); };
+})();
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = p => p + '-' + Math.random().toString(36).slice(2, 8);
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -1778,7 +1805,7 @@ function fieldHTML(f, v) {
   else if (f.t === 'select') inp = `<select id="${id}" name="${f.k}">${selOpts(f.opts, v, f.blank)}</select>`;
   else if (f.t === 'check') inp = `<label class="chk"><input type="checkbox" id="${id}" name="${f.k}" ${v ? 'checked' : ''}> <span>${esc(f.lbl || '')}</span></label>`;
   else if (f.t === 'multi') inp = `<div class="multi" id="${id}" data-k="${f.k}">${f.opts.map(o => `<label class="chk"><input type="checkbox" value="${esc(o.v)}" ${(v || []).includes(o.v) ? 'checked' : ''}> <span>${esc(o.t)}</span></label>`).join('')}</div>`;
-  else if (f.t === 'range') inp = `<div class="rng"><input type="range" id="${id}" name="${f.k}" min="${f.min ?? 0}" max="${f.max ?? 100}" step="${f.step || 1}" value="${v ?? 0}" oninput="this.nextElementSibling.textContent=this.value+'${f.suf || ''}'"><b>${v ?? 0}${f.suf || ''}</b></div>`;
+  else if (f.t === 'range') inp = `<div class="rng"><input type="range" id="${id}" name="${f.k}" min="${f.min ?? 0}" max="${f.max ?? 100}" step="${f.step || 1}" value="${v ?? 0}" data-rng="${esc(f.suf || '')}"><b>${v ?? 0}${f.suf || ''}</b></div>`;
   else inp = `<input id="${id}" name="${f.k}" type="${f.t || 'text'}" value="${esc(v ?? '')}" ${f.ph ? `placeholder="${esc(f.ph)}"` : ''} ${f.step ? `step="${f.step}"` : ''} ${f.min != null ? `min="${f.min}"` : ''} ${f.max != null ? `max="${f.max}"` : ''} ${f.list ? `list="dl_${f.k}"` : ''}>${f.list ? `<datalist id="dl_${f.k}">${f.list.map(x => `<option value="${esc(x)}">`).join('')}</datalist>` : ''}`;
   return `<div class="${cls}"><label for="${id}">${esc(f.l || '')}${req}</label>${inp}${f.hint ? `<small>${f.hint}</small>` : ''}</div>`;
 }
@@ -1792,10 +1819,10 @@ function openForm(o) {
       if (f.sec) { const t = o.tabs.find(t => (t.secs || []).some(x => f.sec.startsWith(x))); if (t) cur = t.k; if (!f.hide) H[cur] = (H[cur] || '') + `<div class="fsec">${esc(f.sec)}</div>`; return; }
       H[cur] = (H[cur] || '') + fieldHTML(f, vals[f.k]);
     });
-    body = `<div class="ftabs" role="tablist">${o.tabs.map((t, n) => `<button type="button" role="tab" class="${n ? '' : 'on'}" data-act="ftab" data-t="${t.k}">${esc(t.t)}</button>`).join('')}</div><form id="mform" onsubmit="return false">${o.tabs.map((t, n) => `<div class="ftab ${n ? '' : 'on'}" data-t="${t.k}"><div class="fgrid">${H[t.k] || ''}</div>${(o.tabExtra && o.tabExtra[t.k]) || ''}</div>`).join('')}</form>${o.extra || ''}`;
+    body = `<div class="ftabs" role="tablist">${o.tabs.map((t, n) => `<button type="button" role="tab" class="${n ? '' : 'on'}" data-act="ftab" data-t="${t.k}">${esc(t.t)}</button>`).join('')}</div><form id="mform">${o.tabs.map((t, n) => `<div class="ftab ${n ? '' : 'on'}" data-t="${t.k}"><div class="fgrid">${H[t.k] || ''}</div>${(o.tabExtra && o.tabExtra[t.k]) || ''}</div>`).join('')}</form>${o.extra || ''}`;
   } else {
     o.fields.forEach(f => { if (f.sec) { body += `<div class="fsec">${esc(f.sec)}</div>`; return; } body += fieldHTML(f, vals[f.k]); });
-    body = `<form id="mform" class="fgrid" onsubmit="return false">${body}</form>${o.extra || ''}`;
+    body = `<form id="mform" class="fgrid">${body}</form>${o.extra || ''}`;
   }
   Modal.open({ title: o.title, wide: o.wide, body, footer: `${o.danger ? `<button class="btn danger left" data-act="mdanger">${icon('trash', 14)}<span>${o.danger}</span></button>` : ''}<button class="btn" data-act="mclose">Cancelar</button><button class="btn pri" data-act="msave">${esc(o.saveLabel || 'Guardar')}</button>` });
   Modal.cur.form = o;
@@ -2015,9 +2042,12 @@ function gsearch(q) {
 document.addEventListener('click', e => {
   if (!e.target.closest('.popw')) closePops();
   if (!e.target.closest('.gsearch')) { const g = $('#gsres'); if (g) g.classList.remove('open'); }
+  if (e.target.closest('[data-nostop]')) return;   // el control maneja su propio clic (no abre la fila)
   const el = e.target.closest('[data-act]'); if (!el) return;
   const a = el.dataset.act; if (Acts[a]) { e.preventDefault(); Acts[a](el.dataset, el, e); }
 });
+document.addEventListener('input', e => { const r = e.target; if (r && r.dataset && r.dataset.rng != null && r.nextElementSibling) r.nextElementSibling.textContent = r.value + r.dataset.rng; });
+document.addEventListener('submit', e => { if (e.target && e.target.id === 'mform') e.preventDefault(); }, true);
 document.addEventListener('input', e => { const el = e.target.closest('[data-chg]'); if (!el) return; if (['text', 'search'].includes(el.type) || el.tagName === 'TEXTAREA') { const f = Chg[el.dataset.chg]; if (f && el.dataset.live !== 'no') f(el, e); } });
 document.addEventListener('change', e => { const el = e.target.closest('[data-chg]'); if (!el) return; if (['text', 'search'].includes(el.type) || el.tagName === 'TEXTAREA') return; const f = Chg[el.dataset.chg]; if (f) f(el, e); });
 document.addEventListener('keydown', e => {
@@ -3095,7 +3125,7 @@ Views.hitos = {
       <select data-chg="flt" data-v="hitos" data-f="resp">${selOpts(uniq(all.map(h => h.resp).filter(Boolean)).sort(), f.resp, 'Todos los responsables')}</select>
       ${f.est || f.ini || f.resp || f.q ? btn('Limpiar', 'hclear', { ic: 'x' }) : ''}</div>
     <div class="tbl-w"><table class="tbl"><thead><tr><th style="width:40px"></th><th>Proyecto</th><th style="min-width:240px">Hito</th><th>Fecha plan</th><th>Fecha real</th><th>Responsable</th><th>Estado</th></tr></thead><tbody>
-    ${rows.map(h => { const e = hitoEstado(h); return `<tr data-act="sel" data-t="hito" data-id="${h.id}" class="${UI.sel && UI.sel.id === h.id ? 'sel' : ''}"><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado" onclick="event.stopPropagation()"></td><td>${iniLink(h.ini)}</td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b></td><td>${fmtD(h.fecha)}<small>${rel(h.fecha)}</small></td><td>${fmtD(h.fechaReal)}</td><td>${esc(h.resp || '—')}</td><td><span class="pill" style="--c:${e.c}">${e.t}</span></td></tr>`; }).join('') || `<tr><td colspan="7">${empty('Sin hitos', 'flag')}</td></tr>`}</tbody></table></div>`;
+    ${rows.map(h => { const e = hitoEstado(h); return `<tr data-act="sel" data-t="hito" data-id="${h.id}" class="${UI.sel && UI.sel.id === h.id ? 'sel' : ''}"><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado" data-nostop="1"></td><td>${iniLink(h.ini)}</td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b></td><td>${fmtD(h.fecha)}<small>${rel(h.fecha)}</small></td><td>${fmtD(h.fechaReal)}</td><td>${esc(h.resp || '—')}</td><td><span class="pill" style="--c:${e.c}">${e.t}</span></td></tr>`; }).join('') || `<tr><td colspan="7">${empty('Sin hitos', 'flag')}</td></tr>`}</tbody></table></div>`;
   }
 };
 Acts.hest = d => { const f = F('hitos', {}); f.est = f.est === d.k ? '' : d.k; render(); };
@@ -8962,7 +8992,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.10', b: '14-10-2026 10:52' };
+  const VER = { v: 'V22.11', b: '14-10-2026 10:56' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
