@@ -636,6 +636,19 @@ body{font:13px/1.45 var(--font)}
 }
 @media (min-width:981px) and (max-width:1280px){#app.rail{grid-template-columns:60px minmax(0,1fr) 340px}#app.rail.nopanel{grid-template-columns:60px minmax(0,1fr)}}
 @media (max-width:980px){.rail-t{display:none}}
+/* ---------- V22.49: capacidad de equipos ---------- */
+.cp-k{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.cp-k .k{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px}.cp-k .k small{display:block;color:var(--tx3);font-size:11.5px}.cp-k .k b{font-size:22px}.cp-k .k i{font-style:normal;font-size:12px;color:var(--tx3);margin-left:6px}
+.cp-t{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden}.cp-t th{font-size:11.5px;font-weight:600;color:var(--tx3);text-align:center;padding:8px 6px;background:var(--bg2);border-bottom:1px solid var(--bd)}.cp-t th:first-child{text-align:left;padding-left:14px}
+.cp-t td{padding:6px;border-bottom:1px solid var(--bd2);text-align:center;vertical-align:middle}.cp-t td:first-child{text-align:left;padding-left:14px;min-width:200px}
+.cp-p{display:flex;align-items:center;gap:9px;border:0;background:none;font:inherit;color:inherit;cursor:pointer;text-align:left;padding:0}.cp-p b{display:block;font-size:13px}.cp-p small{color:var(--tx3);font-size:11.5px}
+.cp-c{display:inline-grid;place-items:center;width:100%;min-width:58px;height:34px;border:0;border-radius:8px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.cp-c.g{background:color-mix(in srgb,#107C10 16%,var(--card));color:color-mix(in srgb,#107C10 75%,var(--tx))}.cp-c.y{background:color-mix(in srgb,#CA8A04 20%,var(--card));color:color-mix(in srgb,#8A5A00 70%,var(--tx))}.cp-c.r{background:color-mix(in srgb,#D13438 18%,var(--card));color:color-mix(in srgb,#A4262C 75%,var(--tx))}.cp-c.n{background:var(--bg2);color:var(--tx3);font-weight:500}.cp-c.sel{outline:2px solid var(--pri);outline-offset:1px}
+.cp-in{width:56px;text-align:center}.cp-x td{background:var(--bg2)!important;text-align:left!important;padding:10px 14px!important}
+.cp-gt{display:grid;gap:5px 0;align-items:center;font-size:12px}.cp-mh{font-size:11px;color:var(--tx3);text-align:center}.cp-pl{grid-column:1;min-width:0;padding-right:10px}.cp-pl b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cp-pl small{color:var(--tx3);font-size:11px}
+.cp-b{border:0;height:20px;border-radius:5px;background:var(--c);color:#fff;font:inherit;font-size:10.5px;padding:0 6px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;margin:0 2px}
+#main>.cp-wrap,#main>.cp-k,#main>.cp-2{flex:none!important}.cp-wrap{overflow-x:auto;border-radius:10px}.cp-leg span{white-space:nowrap}.cp-leg{display:flex;gap:12px;white-space:nowrap;font-size:11.5px;color:var(--tx3);align-items:center}.cp-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}.cp-leg i.g{background:#8fcf8f}.cp-leg i.y{background:#f0cf85}.cp-leg i.r{background:#ee9aa0}
+.cp-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}.cp-s{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd2);font-size:12.5px}.cp-s:last-child{border:0}.cp-s .g{margin-left:auto;color:var(--green);font-weight:700;white-space:nowrap}.cp-s .lnk{border:0;background:none;text-align:left;padding:0;cursor:pointer}
+@media (max-width:900px){.cp-k{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-2{grid-template-columns:1fr}}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -2097,7 +2110,7 @@ function copyText(t) { try { navigator.clipboard.writeText(t).then(() => toast('
 /* ---------- navegación ---------- */
 const NAV = [
   ['dashboard', 'Dashboard', 'dashboard'], ['cielo', 'Mi cocina', 'fork'], ['portfolio', 'Portfolio', 'portfolio'], ['proyectos', 'Proyectos', 'list'], ['propuestas', 'Propuestas', 'bulb'], ['hitos', 'Hitos', 'flag'], ['riesgos', 'Riesgos', 'shield'],
-  ['roadmap', 'Roadmap', 'road'], ['gantt', 'Gantt', 'gantt'], ['comite', 'Comité', 'users'], ['decisiones', 'Decisiones', 'gavel'], ['compromisos', 'Compromisos', 'check'], ['cambios', 'Cambios', 'refresh'], ['bitacora', 'Bitácora', 'book'], ['calendario', 'Calendario', 'cal'], ['personas', 'Personas', 'person'],
+  ['roadmap', 'Roadmap', 'road'], ['gantt', 'Gantt', 'gantt'], ['comite', 'Comité', 'users'], ['decisiones', 'Decisiones', 'gavel'], ['compromisos', 'Compromisos', 'check'], ['cambios', 'Cambios', 'refresh'], ['bitacora', 'Bitácora', 'book'], ['calendario', 'Calendario', 'cal'], ['capacidad', 'Capacidad', 'users'], ['personas', 'Personas', 'person'],
   ['presentaciones', 'Presentaciones', 'slides'], ['miconfig', 'Mi configuración', 'settings'], ['admin', 'Administración', 'settings'], ['ia', 'IA', 'spark'], ['proposito', 'Para qué sirve', 'help']
 ];
 const NAV_GRUPO = ['proyectos', 'propuestas', 'hitos', 'riesgos'];   // «Iniciativas»: un solo bloque de menú
@@ -4582,7 +4595,7 @@ function escalarSync() {   // las decisiones que superan el plazo de escalamient
    ============================================================ */
 const NAV_SIMPLE = ['dashboard', 'cielo', 'proyectos', 'riesgos', 'decisiones', 'presentaciones', 'personas', 'miconfig', 'admin'];
 const COLS_SIMPLE = ['id', 'titulo', 'lider', 'rag', 'avance', 'finPlan'];
-const NAV_GRP = { dashboard: 'Portafolio', cielo: 'Portafolio', portfolio: 'Portafolio', proyectos: 'Portafolio', propuestas: 'Portafolio', hitos: 'Portafolio', riesgos: 'Portafolio', roadmap: 'Portafolio', gantt: 'Portafolio',
+const NAV_GRP = { dashboard: 'Portafolio', cielo: 'Portafolio', portfolio: 'Portafolio', proyectos: 'Portafolio', propuestas: 'Portafolio', hitos: 'Portafolio', riesgos: 'Portafolio', roadmap: 'Portafolio', gantt: 'Portafolio', capacidad: 'Portafolio',
   comite: 'Gobierno', decisiones: 'Gobierno', compromisos: 'Gobierno', cambios: 'Gobierno', bitacora: 'Gobierno', calendario: 'Gobierno', personas: 'Personas y reportes', presentaciones: 'Personas y reportes',
   miconfig: 'Sistema', admin: 'Sistema', ia: 'Sistema', proposito: 'Sistema' };
 const modoUI = () => (UI.uiOv || 'simple') === 'pro' ? 'pro' : 'simple';   // cada sesión parte en Simple
@@ -4940,6 +4953,53 @@ function personasData() {
   });
   return Object.values(P).filter(p => p.n);
 }
+/* ============================================================
+   V22.49 · Capacidad de equipos
+   Carga mensual por líder = proyectos vivos que lidera y cuyo plan (inicio → el mayor entre fin plan y fin proyectado) toca ese mes.
+   Capacidad = St.cfg.capPers[persona] o, si no hay, el valor general St.cfg.capacidadMax.
+   ============================================================ */
+const capDe = n => { const o = (St.cfg.capPers || {})[_nrm(n)]; return o > 0 ? +o : Math.max(1, +St.cfg.capacidadMax || 5); };
+const capFin = i => [i.finPlan, forecast(i)].filter(Boolean).sort().pop() || null;
+const capIni = i => i.inicioPlan || i.inicioReal || i.creada || hoy();
+function capMeses(h) { const b = pD(hoy()); return Array.from({ length: h }, (_, k) => { const a = new Date(b.getFullYear(), b.getMonth() + k, 1, 12), z = new Date(b.getFullYear(), b.getMonth() + k + 1, 0, 12); return { s: toISO(a), e: toISO(z), l: MESES[a.getMonth()].slice(0, 3), y: a.getFullYear() }; }); }
+function capData(h) {
+  const meses = capMeses(h), R = respSel(), by = {};
+  scope().filter(i => !esProp(i) && isLive(i) && i.lider).forEach(i => { (by[i.lider] = by[i.lider] || []).push(i); });
+  const gente = Object.keys(by).filter(n => !R || n === R).map(n => {
+    const ps = by[n].map(i => ({ i, s: capIni(i), e: capFin(i) })), cap = capDe(n);
+    const carga = meses.map(m => ps.filter(p => p.s <= m.e && (!p.e || p.e >= m.s)));
+    const ns = carga.map(c => c.length), n3 = ns.slice(0, 3), prom3 = n3.reduce((a, b) => a + b, 0) / Math.max(1, n3.length);
+    return { n, cap, ps, carga, ns, over: ns.some(x => x > cap), hold: Math.max(0, cap - prom3), prom3 };
+  }).sort((a, b) => (b.over - a.over) || (b.ns.reduce((x, y) => x + y, 0) / b.cap - a.ns.reduce((x, y) => x + y, 0) / a.cap) || a.n.localeCompare(b.n));
+  const tot = meses.map((_, k) => gente.reduce((a, p) => a + p.ns[k], 0)), capT = gente.reduce((a, p) => a + p.cap, 0);
+  const pk = tot.reduce((b, v, k) => v > tot[b] ? k : b, 0);
+  return { meses, gente, tot, capT, pk, holgura: gente.reduce((a, p) => a + p.hold, 0) };
+}
+const capCls = (n, cap) => n === 0 ? 'n' : n > cap ? 'r' : n >= cap * .8 ? 'y' : 'g';
+Views.capacidad = {
+  render() {
+    const f = F('cap', { h: 6, alerta: false, open: '' }), D = capData(f.h), g = esGasto(), fmt1 = x => (Math.round(x * 10) / 10).toLocaleString('es-CL');
+    const rows = D.gente.filter(p => !f.alerta || p.over);
+    const sobre = D.gente.filter(p => p.over);
+    const cand = scopeP().filter(i => isLive(i) && i.estado === 'Vigente' && (i.fase === 'Aprobación' || (i.fase === 'Evaluación' && priorScore(i) >= 70))).sort(by(i => -priorScore(i))).slice(0, 4);
+    const libres = D.gente.filter(p => p.hold >= .5).sort(by(p => -p.hold));
+    const th = D.meses.map(m => `<th>${m.l} ${String(m.y).slice(2)}</th>`).join('');
+    const bar = (p, r) => { const M = D.meses, a = Math.max(0, M.findIndex(m => p.e == null || p.e >= m.s)), zi = M.map((m, k) => p.s <= m.e ? k : -1).filter(k => k >= 0).pop(); if (zi == null || zi < a || p.s > M[M.length - 1].e) return ''; const first = M.findIndex(m => p.s <= m.e); const c1 = Math.max(a, first < 0 ? 0 : first), c2 = zi; return `<button class="cp-b" style="grid-row:${r + 2};grid-column:${c1 + 2}/${c2 + 3};--c:${RAG_C[p.i.rag] || 'var(--pri)'}" data-act="sel" data-t="ini" data-id="${p.i.id}" title="${esc(p.i.titulo)} · ${fmtD(p.s)} → ${fmtD(p.e)}">${fmtD(p.s)} → ${p.e ? fmtD(p.e) : 'sin fecha'}</button>`; };
+    const exp = p => { const M = D.meses; return `<tr class="cp-x"><td colspan="${M.length + 2}"><div class="cp-gt" style="grid-template-columns:210px repeat(${M.length},minmax(0,1fr))"><span></span>${M.map(m => `<span class="cp-mh">${m.l}</span>`).join('')}${p.ps.map((q, r) => `<span class="cp-pl" style="grid-row:${r + 2}"><b>${esc(q.i.titulo)}</b><small>${esc(q.i.fase)} · ${esc(q.i.rag)}</small></span>${bar(q, r)}`).join('')}</div></td></tr>`; };
+    return pageHead('Capacidad de equipos', 'Carga de cada líder en los próximos meses según los proyectos que lidera, comparada con su capacidad.', btn('Exportar CSV', 'capcsv', { ic: 'download' })) + `
+    <div class="toolbar"><label class="chk"><input type="checkbox" ${f.alerta ? 'checked' : ''} data-chg="capalerta"> <span>Solo con alerta</span></label><span class="cp-leg"><span><i class="g"></i>&lt; 80%</span><span><i class="y"></i>80–100%</span><span><i class="r"></i>&gt; 100%</span></span><div class="seg">${[3, 6, 12].map(h => `<button class="${f.h === h ? 'on' : ''}" data-act="caph" data-h="${h}">${h} meses</button>`).join('')}</div></div>
+    <div class="cp-k"><div class="k"><small>Personas con proyectos</small><b>${D.gente.length}</b></div><div class="k"><small>Sobrecargadas (algún mes)</small><b style="color:${sobre.length ? 'var(--red)' : 'inherit'}">${sobre.length}</b><i>${esc(sobre.slice(0, 3).map(p => p.n.split(' ')[0]).join(', ') || '—')}</i></div><div class="k"><small>Mes de mayor carga</small><b>${D.gente.length ? D.meses[D.pk].l : '—'}</b><i>${D.gente.length ? D.tot[D.pk] + ' de ' + D.capT + ' cupos' : ''}</i></div><div class="k"><small>Holgura próx. 3 meses</small><b style="color:var(--green)">${fmt1(D.holgura)}</b><i>proyectos</i></div></div>
+    ${rows.length ? `<div class="cp-wrap"><table class="cp-t"><thead><tr><th>Persona</th><th>Capacidad</th>${th}</tr></thead><tbody>${rows.map(p => `<tr><td><button class="cp-p" data-act="capopen" data-n="${esc(p.n)}" aria-expanded="${f.open === p.n}">${avatar(p.n, 30)}<span><b>${esc(p.n)}</b><small>${p.ps.length} proyecto${p.ps.length === 1 ? ' vivo' : 's vivos'}</small></span></button></td><td>${g && !FL.verComo ? `<input type="number" min="1" max="20" class="cp-in" value="${p.cap}" data-chg="capp" data-n="${esc(p.n)}" aria-label="Capacidad de ${esc(p.n)}">` : `<b>${p.cap}</b>`}<small class="mut"> proy.</small></td>${p.ns.map((n, k) => `<td><button class="cp-c ${capCls(n, p.cap)} ${f.open === p.n ? 'sel' : ''}" data-act="capopen" data-n="${esc(p.n)}" title="${n} de ${p.cap} · ${D.meses[k].l} ${D.meses[k].y}">${n ? n + ' / ' + p.cap : '—'}</button></td>`).join('')}</tr>${f.open === p.n ? exp(p) : ''}`).join('')}</tbody></table></div>` : `<div class="card">${empty(f.alerta ? 'Nadie supera su capacidad en este horizonte' : 'Sin proyectos vivos con líder asignado', 'users')}</div>`}
+    <div class="cp-2"><div class="card"><header><h2>Quién puede tomar más</h2><small>holgura media próx. 3 meses</small></header>${libres.map(p => `<div class="cp-s">${avatar(p.n, 26)}<b>${esc(p.n)}</b><span class="g">+${fmt1(p.hold)} cupos</span></div>`).join('') || '<p class="mut">Nadie tiene holgura de al menos 0,5 cupos.</p>'}</div>
+    <div class="card"><header><h2>Propuestas candidatas a iniciar</h2><small>por puntaje</small></header>${cand.map(i => `<div class="cp-s"><button class="lnk" data-act="sel" data-t="ini" data-id="${i.id}"><b>${esc(i.titulo)}</b></button><small class="mut">${esc(i.fase)} · puntaje ${priorScore(i)}</small>${libres[0] ? `<span class="g" title="Mayor holgura">Sugerido: ${esc(libres.find(p => _nrm(p.n) === _nrm(i.lider)) ? i.lider : libres[0].n)}</span>` : ''}</div>`).join('') || '<p class="mut">No hay propuestas candidatas por ahora.</p>'}</div></div>`;
+  }
+};
+Acts.caph = d => { F('cap', {}).h = +d.h; render(); };
+Acts.capopen = d => { const f = F('cap', {}); f.open = f.open === d.n ? '' : d.n; render(); };
+Chg.capalerta = el => { F('cap', {}).alerta = el.checked; render(); };
+Chg.capp = el => { if (!esGasto() || FL.verComo) return; const v = Math.min(20, Math.max(1, +el.value || 0)), def = Math.max(1, +St.cfg.capacidadMax || 5), c = Object.assign({}, St.cfg.capPers || {}); if (v === def) delete c[_nrm(el.dataset.n)]; else c[_nrm(el.dataset.n)] = v; St.cfg.capPers = c; refresh(); };
+Acts.capcsv = () => { const D = capData(F('cap', { h: 6 }).h); download('APIH_capacidad_' + hoy() + '.csv', toCSV(D.gente, [{ h: 'Persona', f: p => p.n }, { h: 'Capacidad', f: p => p.cap }, ...D.meses.map((m, k) => ({ h: m.l + ' ' + m.y, f: p => p.ns[k] }))])); };
+
 Views.personas = {
   render() {
     const f = F('pers', { q: '', rol: '' }), A = St.cfg.areaGlobal, R = respSel();
@@ -8929,6 +8989,10 @@ const GUIA = {
     ['Filtra', 'Por tipo y proyecto sobre el feed.'],
     ['Comenta', 'Los comentarios por proyecto se escriben en su panel; aquí se listan.'],
     ['Exporta', '«Exportar CSV» de la bitácora.']] },
+  capacidad: { t: 'Capacidad de equipos', p: [
+    ['Lee el mapa', 'Cada celda es la carga del líder en ese mes: proyectos vivos que lidera / su capacidad. Verde bajo 80%, ámbar hasta 100%, rojo sobre 100%.'],
+    ['Ve qué la explica', 'Clic en una persona o en una celda para desplegar sus proyectos y fechas.'],
+    ['Ajusta la capacidad', 'Gasto puede cambiar la capacidad de cada persona (por ejemplo media jornada); el valor general está en Administración › Parámetros.']] },
   calendario: { t: 'Calendario', p: [
     ['Navega el mes', 'Flechas y «Hoy»; clic en un día para ver sus eventos a la derecha.'],
     ['Elige qué ver', 'Casillas de tipo (Hito, Comité, Entrega, Vencimiento, Ciclo, Otro).'],
@@ -9525,7 +9589,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.48', b: '15-10-2026 16:40' };
+  const VER = { v: 'V22.49', b: '15-10-2026 17:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9554,7 +9618,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   const MENU = [
     { k: 'inicio', t: 'Inicio', ic: 'dashboard', vs: [['dashboard', 'Dashboard'], ['cielo', 'Mi cocina']] },
     { k: 'iniciativas', t: 'Iniciativas', ic: 'list', vs: [['portfolio', 'Tabla'], ['proyectos', 'Tablero'], ['propuestas', 'Propuestas']] },
-    { k: 'planificacion', t: 'Planificación', ic: 'gantt', vs: [['gantt', 'Gantt'], ['roadmap', 'Roadmap'], ['calendario', 'Calendario'], ['hitos', 'Hitos'], ['riesgos', 'Riesgos']] },
+    { k: 'planificacion', t: 'Planificación', ic: 'gantt', vs: [['gantt', 'Gantt'], ['roadmap', 'Roadmap'], ['calendario', 'Calendario'], ['hitos', 'Hitos'], ['capacidad', 'Capacidad'], ['riesgos', 'Riesgos']] },
     { k: 'gobierno', t: 'Gobierno', ic: 'gavel', vs: [['comite', 'Comité'], ['decisiones', 'Decisiones'], ['compromisos', 'Compromisos'], ['cambios', 'Cambios']] },
     { k: 'pendientes', t: 'Mis pendientes', ic: 'check', vs: [['decisiones', 'Decisiones'], ['compromisos', 'Compromisos']] },
     { k: 'presentaciones', t: 'Presentaciones', ic: 'slides', vs: [['presentaciones', 'Presentaciones']] },
@@ -9570,7 +9634,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   };
   V.MENU = MENU; V.MENU_ROL = MENU_ROL;
   const menuKeys = () => { const r = rolActual(), c = St.cfg && St.cfg.menuRol && St.cfg.menuRol[r]; return (Array.isArray(c) && c.length ? c : MENU_ROL[r] || MENU_ROL.Invitado); };
-  const viewOk = v => v === 'admin' ? esAdmin() : v === 'ia' ? puedeUsarIA() : v === 'cielo' ? cieloOn() : v === 'personas' ? esGasto() : true;
+  const viewOk = v => v === 'admin' ? esAdmin() : v === 'ia' ? puedeUsarIA() : v === 'cielo' ? cieloOn() : v === 'personas' ? esGasto() : v === 'capacidad' ? puedeGobernar() : true;
   const menuGroups = () => { const ks = menuKeys(); return MENU.filter(g => ks.includes(g.k)).map(g => Object.assign({}, g, { vs: g.vs.filter(x => viewOk(x[0])) })).filter(g => g.vs.length); };
   const grupoDe = (v, gs) => { if (v === 'ficha') v = 'portfolio'; return gs.find(g => g.vs.some(x => x[0] === v)); };
   const lastTabs = (() => { try { return JSON.parse(lsGet('apih_tabs') || '{}'); } catch (e) { return {}; } })();
