@@ -3768,7 +3768,7 @@ Views.admin = {
       b = `<div class="card"><header><h2>Auditoría de calidad de datos</h2><small>Promedio ${pct(avg(rows, r => r.c.pct))} · críticos = Sponsor, Líder, Área, Prioridad, Fechas plan</small></header><div class="tbl-w"><table class="tbl"><thead><tr><th>Iniciativa</th><th>Completitud</th><th>Faltan (crítico)</th><th>Faltan (recomendado)</th><th>Faltan (opcional)</th></tr></thead><tbody>${rows.map(({ i, c }) => `<tr data-act="sel" data-t="ini" data-id="${i.id}"><td><b>${esc(i.titulo)}</b><small>${i.id}</small></td><td style="min-width:130px">${prog(c.pct, c.pct > 80 ? 'Verde' : c.pct > 60 ? 'Ámbar' : 'Rojo', 6)}<small>${c.pct}%</small></td><td class="${c.crit.length ? 'neg' : ''}">${esc(c.crit.join(', ') || '—')}</td><td>${esc(c.rec.join(', ') || '—')}</td><td>${esc(c.opt.join(', ') || '—')}</td></tr>`).join('')}</tbody></table></div></div>`;
     } else if (f.tab === 'dat') {
       const sz = Math.round(JSON.stringify(St).length / 1024), cnt = St.ini.length + St.hitos.length + St.riesgos.length + St.decisiones.length + St.bitacora.length + St.comites.length;
-      b = `<div class="grid12"><section class="card c6"><header><h2>Exportación y respaldo</h2><small>${cnt} registros · ${sz} KB</small></header><p class="desc">${DataService.svc ? 'Los datos se guardan automáticamente en las listas de SharePoint.' : '<b>Modo demo:</b> los datos viven solo en memoria. Exporte un respaldo antes de cerrar o conecte SharePoint.'} El Excel completo replica el diseño de columnas de cada lista SharePoint (útil para carga masiva).</p><div class="chips">${btn('Excel completo (6 hojas)', 'xlsxall', { ic: 'down', cls: 'pri' })}${btn('Respaldo JSON', 'expjson', { ic: 'down' })}${btn('Importar respaldo', 'impjson', { ic: 'refresh' })}${btn('Portfolio CSV', 'pcsv', { ic: 'down' })}${btn('Riesgos CSV', 'riskcsv', { ic: 'down' })}${btn('Hitos CSV', 'hitocsv', { ic: 'down' })}${btn('Bitácora CSV', 'bitcsv', { ic: 'down' })}</div><input type="file" id="impfile" accept="application/json" style="display:none" data-chg="impfile"></section>
+      b = `<div class="grid12"><section class="card c6"><header><h2>Exportación y respaldo</h2><small>${cnt} registros · ${sz} KB</small></header><p class="desc">${DataService.svc ? 'Los datos se guardan automáticamente en las listas de SharePoint.' : '<b>Modo demo:</b> los datos viven solo en memoria. Exporte un respaldo antes de cerrar o conecte SharePoint.'} El Excel completo replica el diseño de columnas de cada lista SharePoint (útil para carga masiva).</p><div class="chips">${btn('Excel completo (6 hojas)', 'xlsxall', { ic: 'down', cls: 'pri' })}${btn('Respaldo JSON', 'expjson', { ic: 'down' })}${btn('Importar respaldo', 'impjson', { ic: 'refresh' })}${btn('Importar iniciativas', 'impini', { ic: 'down' })}${btn('Plantilla iniciativas', 'inipl', { ic: 'down' })}${btn('Portfolio CSV', 'pcsv', { ic: 'down' })}${btn('Riesgos CSV', 'riskcsv', { ic: 'down' })}${btn('Hitos CSV', 'hitocsv', { ic: 'down' })}${btn('Bitácora CSV', 'bitcsv', { ic: 'down' })}</div><input type="file" id="impfile" accept="application/json" style="display:none" data-chg="impfile"><input type="file" id="impinifile" accept="application/json" style="display:none" data-chg="impinifile"></section>
       <section class="card c6"><header><h2>Origen de los datos</h2></header><p class="desc">Datos cargados <b>solo desde el archivo Iniciativas IT ARAMARK</b> (iniciativas, propuestas, hitos, riesgos, decisiones pendientes, bitácora, ciclos del calendario, presentaciones y usuarios con su rol y área). No hay estimaciones ni iniciativas de ejemplo: lo que el archivo no trae (presupuesto, beneficio, sponsor de proyectos, fechas, responsable de hitos, mitigaciones) queda vacío y se completa desde la plataforma.</p>
       <div class="chips">${btn(DataService.svc ? 'Restablecer a los datos del archivo (reescribe SharePoint)' : 'Restaurar datos del archivo', 'reset', { ic: 'undo', cls: 'danger' })}</div></section></div>`;
     } else if (f.tab === 'sp') {
@@ -3793,6 +3793,26 @@ Chg.impfile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
     const msg = 'Se reemplazarán TODOS los datos actuales por el respaldo' + (DataService.svc ? ' y el cambio se sincronizará para todos los usuarios' : '') + '.<br><br>Actual → Respaldo<br>' + cmp + (loss ? '<br><br>⚠ El respaldo tiene menos de la mitad de las iniciativas actuales.' : '') + '<br><br>Antes de importar se descargará una copia de los datos actuales. ¿Continuar?';
     confirmBox(msg, () => { try { download('APIH_antes_de_importar_' + hoy() + '.json', JSON.stringify(St, null, 1), 'application/json'); } catch (e) { }
       St = migrateV5(o); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; toast('Respaldo importado (copia previa descargada)'); shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true);
+  } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
+/* V22.50: importar iniciativas (suma registros, no reemplaza) */
+const INI_PLANTILLA = () => ({ formato: 'apih-iniciativas', v: 1, iniciativas: [
+  { tipo: 'Proyecto', titulo: 'APIH Prototipo', desc: 'Prototipo de APIH sobre SPA + Supabase (interino). Fuente de verdad de las reglas de negocio y las vistas.', area: 'BISE', lider: St.cfg.usuario || '', sponsor: '', fase: 'Ejecución', estado: 'En curso', rag: 'Verde', prioridad: 'Alta', avance: 70, inicioPlan: hoy(), finPlan: addD(hoy(), 120), presupuesto: 0 },
+  { tipo: 'Proyecto', titulo: 'APIH Corporativo', desc: 'APIH conforme a los requisitos de TI: SPA con Entra ID, API y Azure SQL (3 capas). Reutiliza el núcleo del prototipo.', area: 'BISE', lider: St.cfg.usuario || '', sponsor: '', fase: 'Planificación', estado: 'En curso', rag: 'Verde', prioridad: 'Alta', avance: 5, inicioPlan: hoy(), finPlan: addD(hoy(), 240), presupuesto: 0 }] });
+Acts.inipl = () => { download('APIH_iniciativas_plantilla.json', JSON.stringify(INI_PLANTILLA(), null, 1), 'application/json'); toast('Plantilla descargada'); };
+Acts.impini = () => $('#impinifile').click();
+Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
+  if (!esGasto() || FL.verComo) { toast('Solo el perfil Gasto puede importar iniciativas', 'err'); return; }
+  const r = new FileReader(); r.onload = () => { try {
+    const o = JSON.parse(r.result), L = Array.isArray(o) ? o : (o && Array.isArray(o.iniciativas) ? o.iniciativas : null);
+    if (!L || !L.length) throw new Error('Formato inválido: se espera { "iniciativas": [...] }');
+    const k = t => _nrm(t), ex = new Set(St.ini.map(i => k(i.titulo))), nuevas = [], omit = [];
+    L.forEach(x => { if (!x || !String(x.titulo || '').trim()) { omit.push('(sin título)'); return; } if (ex.has(k(x.titulo))) { omit.push(x.titulo); return; } ex.add(k(x.titulo)); nuevas.push(x); });
+    if (!nuevas.length) { toast('Nada que importar: todas ya existen (' + omit.join(', ') + ')', 'err'); return; }
+    confirmBox('Se agregarán <b>' + nuevas.length + '</b> iniciativa(s): ' + nuevas.map(x => esc(x.titulo)).join(', ') + '.' + (omit.length ? '<br>Omitidas por existir o sin título: ' + omit.map(esc).join(', ') + '.' : '') + '<br>Los datos actuales no se modifican. ¿Continuar?', () => {
+      nuevas.forEach(x => { const PR = x.tipo === 'Propuesta', pre = PR ? 'PROP' : 'PRJ', T = PR ? 'Propuesta' : 'Proyecto';
+        const n = Object.assign({ id: nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))), tipo: T, legacy: '', creada: hoy(), faseDesde: hoy(), origen: 'importación', est: [], hist: [[hoy(), +x.avance || 0]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, estado: PR ? 'Vigente' : 'En curso', propuestaOrigen: null, estadoMotivo: '', estadoRev: null, rag: 'Verde', avance: 0, gastado: 0, proyecto: null, deps: [], area: 'BISE', fase: PR ? FASES_PROP[0] : 'Planificación', prioridad: 'Media', presupuesto: 0, logros: '', proximos: '', sponsor: '', lider: '', desc: '' }, x, { id: undefined, actualizada: hoy() });
+        n.id = nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))); n.finEst = n.finEst || n.finPlan || null; St.ini.push(n); log('Cambio', n.id, T + ' importada: ' + n.titulo); });
+      toast(nuevas.length + ' iniciativa(s) importada(s)'); refresh(); }, 'Importar');
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 Acts.reset = () => confirmBox(DataService.svc ? 'Se reemplazarán TODOS los datos de ' + BK() + ' por los datos del archivo original. ¿Continuar?' : 'Se perderán los cambios y se restaurarán los datos de demostración. ¿Continuar?', () => { St = seedState(); UI.sel = null; shell(); toast('Datos restaurados'); refresh(); }, 'Restaurar', true);
 
@@ -5066,7 +5086,7 @@ function areaDeAccion(d, el) {
   return null;
 }
 const ACT_ADMIN = ['catadd', 'catdel', 'expjson', 'impjson', 'reset', 'sptest', 'spconnect', 'spprov', 'spsync', 'splogout', 'sppnp', 'spcopy', 'spseed', 'spretry', 'xlsxall', 'atab', 'syncgo'];
-const CHG_ADMIN = ['cfg', 'spc', 'impfile'];
+const CHG_ADMIN = ['cfg', 'spc', 'impfile', 'impinifile'];
 const ACT_EDIT = ['advance', 'advgo', 'applyrag', 'hitotoggle', 'resolvedec', 'aprobar', 'aprobargo', 'estado', 'reopen', 'edit'];
 const CHG_EDIT = ['advto', 'hitotoggle'];
 const ACT_COM = ['csug', 'cdel', 'cpart', 'ctema', 'cacc', 'cdec', 'cclose'];
@@ -9589,7 +9609,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.49', b: '15-10-2026 17:30' };
+  const VER = { v: 'V22.50', b: '15-10-2026 18:10' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
