@@ -17,5 +17,8 @@ Dos productos sobre un núcleo compartido:
 | `db/supabase`, `db/azure-sql` | Esquemas y migraciones |
 | `tests` | Unitarios, contrato y e2e |
 
+## Prototipo congelado
+APIH Prototipo está **congelado desde V22.52 (15-10-2026)**: tag `prototipo-v22.52-congelado`. Solo se aceptan correcciones críticas (errores y seguridad) y la gestión de accesos. Las funciones pendientes (Pronóstico financiero, Ruta crítica, Escenarios) se construyen una sola vez en APIH Corporativo sobre `packages/core`.
+
 ## Estado
 Fase 1 del plan (dividir `index.html` en `core` + `ui`) pendiente. Mientras tanto `/index.html`, `/apih-config.js` y `/supabase` siguen siendo la fuente y no se mueven, para no romper GitHub Pages.
