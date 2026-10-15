@@ -2261,7 +2261,7 @@ function panelIni(i) {
   }
   const fin = isDone(i), canAprobar = PR && !fin && i.fase === 'Aprobación' && i.estado === 'Vigente';
   return pnHead(`${tipoLbl(i)} ${i.id} · ${esc(i.area)}`, esc(i.titulo), `${tipoPill(i)} ${PR ? '' : ragPill(i.rag)} ${fasePill(i.fase)} ${estPill(i.estado)} ${prioPill(i.prioridad)} ${PR ? '' : starsMini(i)}`,
-    `${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' }) + btn('Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm' })}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
+    `${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' }) + btn('Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm' })}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
     `<div class="tabs sm">${tabs.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="ptab" data-tab="${k}">${n}</button>`).join('')}</div><div class="pn-b">${b}</div>`;
 }
 function panelRisk(r) {
@@ -3818,6 +3818,85 @@ Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
         log('Cambio', n.id, T + ' importada: ' + n.titulo + (x.hitos ? ' (' + x.hitos.length + ' hitos' + (x.riesgos ? ', ' + x.riesgos.length + ' riesgos' : '') + ')' : '')); });
       toast(nuevas.length + ' iniciativa(s) importada(s), ' + nh + ' hitos, ' + nr + ' riesgos'); refresh(); }, 'Importar');
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
+/* V22.52: proyecto <-> IA (exportar con instrucciones, importar con vista previa) */
+const IAP_TXT = ['titulo', 'desc', 'bc', 'sponsor', 'lider', 'negocio', 'categoria', 'resumen', 'logros', 'proximos', 'issue', 'riesgoTxt'], IAP_NUM = ['avance', 'presupuesto', 'gastado', 'beneficio'], IAP_DATE = ['inicioPlan', 'finPlan', 'finEst'];
+const iapFecha = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v));
+function iapPendientes(i) {
+  const p = [], hs = hitosDe(i.id), rs = riesgosDe(i.id), um = cfgI(i, 'umbralCritico');
+  [['desc', 'Descripción / objetivo'], ['sponsor', 'Sponsor'], ['lider', 'Líder'], ['negocio', 'Responsable de negocio'], ['inicioPlan', 'Inicio plan'], ['finPlan', 'Fin plan'], ['logros', 'Logros del período'], ['proximos', 'Próximos pasos']].forEach(([k, n]) => { if (!String(i[k] || '').trim()) p.push('Falta: ' + n); });
+  if (!(i.presupuesto > 0)) p.push('Falta: presupuesto (si es transversal o sin costo, confirmarlo con el usuario)');
+  if (hs.length < 2) p.push('Hitos insuficientes: hay ' + hs.length + ', se requieren al menos 2 (idealmente 3 a 6 por fase)');
+  FASES_PRJ.forEach(f => { if (!esProp(i) && !hs.some(h => h.fase === f) && f !== 'Cierre') p.push('Sin hitos en la fase ' + f); });
+  hs.filter(h => !h.completado && h.fecha < hoy()).forEach(h => p.push('Hito vencido sin cerrar: ' + h.id + ' «' + h.nombre + '» (' + h.fecha + '): ¿se completó? ¿nueva fecha?'));
+  if (!rs.length) p.push('Sin riesgos registrados: preguntar por los 3 a 5 principales (técnico, alcance, recursos, proveedor, cronograma, financiero, regulatorio)');
+  rs.filter(r => riesgoAbierto(r) && expo(r) >= um && !String(r.mit || '').trim()).forEach(r => p.push('Riesgo crítico sin mitigación: ' + r.id + ' «' + r.desc + '»'));
+  rs.filter(r => riesgoAbierto(r) && r.fRev && r.fRev < hoy()).forEach(r => p.push('Riesgo con revisión vencida: ' + r.id + ' (' + r.fRev + ')'));
+  if (i.finPlan && i.finPlan < hoy() && i.estado === 'En curso') p.push('Fin plan vencido (' + i.finPlan + ') y sigue En curso: ¿nueva fecha o está completado?');
+  return p;
+}
+function iapExport(i) {
+  const um = cfgI(i, 'umbralCritico'), pr = {}; [...IAP_TXT, ...IAP_NUM, ...IAP_DATE, 'rag', 'prioridad', 'moneda'].forEach(k => pr[k] = i[k] == null ? (IAP_NUM.includes(k) ? 0 : '') : i[k]);
+  return { formato: 'apih-proyecto-ia', v: 1, generado: hoy(), proyecto_id: i.id, tipo: i.tipo,
+    instrucciones: {
+      que_es_esto: 'APIH (Aramark Portfolio Intelligence Hub) gestiona el portafolio de iniciativas de TI de Aramark Chile. Este archivo contiene UN proyecto con sus hitos y riesgos. Tu tarea es ayudar al usuario a completar lo que falta y devolver un JSON que APIH pueda importar.',
+      que_es_un_proyecto: 'Un proyecto tiene objetivo, sponsor, líder, presupuesto, fechas plan (inicioPlan, finPlan), avance 0-100, salud RAG, hitos y riesgos. Fases: ' + FASES_PRJ.join(' → ') + '. Estados: ' + ESTADOS_PRJ.join(', ') + '. Un hito es un entregable o punto de control con fecha y responsable. Un riesgo es un evento incierto con probabilidad e impacto (1 a 5); exposición = prob × imp; es crítico si exposición ≥ ' + um + ' y entonces exige plan de mitigación.',
+      como_trabajar: ['1) Lee «pendientes»: es la lista de datos que faltan o están inconsistentes.', '2) PREGUNTA al usuario antes de escribir: pide cada dato faltante (objetivo, sponsor, presupuesto, fechas), los hitos por fase con fecha y responsable, y los riesgos principales con probabilidad, impacto, dueño y mitigación. Pregunta por varios a la vez, no uno por uno.', '3) NO inventes cifras, fechas ni nombres. Si el usuario no sabe un dato, déjalo sin cambios y dilo.', '4) Para hitos vencidos pregunta si se completaron (y su fecha real) o si cambia la fecha.', '5) Cuando el usuario confirme, entrega el JSON de vuelta.'],
+      formato_de_vuelta: 'Responde SOLO con un bloque JSON válido (sin comentarios ni texto dentro), con esta forma: { "formato": "apih-proyecto-ia", "v": 1, "proyecto_id": "' + i.id + '", "proyecto": { SOLO los campos que cambian }, "hitos": [ ... ], "riesgos": [ ... ] }. Omite lo que no cambia. No incluyas «instrucciones», «pendientes» ni «catalogos».',
+      reglas: ['Fechas en formato YYYY-MM-DD. Números sin separadores ni unidades (presupuesto y gastado en ' + (MONEDAS[i.moneda] || MONEDAS.CLP).n + ').', 'Hito existente: incluye su «id» y solo los campos que cambian. Hito nuevo: sin «id», con «nombre», «fase» y «fecha» obligatorios; «resp» y «completado» opcionales. Si completado=true agrega «fechaReal».', 'Riesgo existente: incluye «id». Riesgo nuevo: sin «id», con «desc», «cat», «prob», «imp», «dueno», «mit».', 'No elimines ni renombres ids. Nunca cambies «fase» ni «estado» del proyecto: se cambian en la app porque tienen compuertas de validación.', 'Un riesgo abierto con exposición ≥ ' + um + ' debe traer «mit» no vacío o será rechazado.', 'avance debe ser coherente con los hitos completados.']
+    },
+    catalogos: { rag: RAGS, prioridad: PRIOS, moneda: Object.keys(MONEDAS), fases: FASES_PRJ, riesgo_cat: RISK_CATS, riesgo_estado: RISK_ESTADOS },
+    pendientes: iapPendientes(i),
+    solo_lectura: { fase: i.fase, estado: i.estado, area: i.area, id: i.id },
+    proyecto: pr,
+    hitos: hitosDe(i.id).sort(by('fecha')).map(h => ({ id: h.id, nombre: h.nombre, fase: h.fase, fecha: h.fecha, completado: !!h.completado, fechaReal: h.fechaReal || null, resp: h.resp || '' })),
+    riesgos: riesgosDe(i.id).map(r => ({ id: r.id, desc: r.desc, cat: r.cat, prob: r.prob, imp: r.imp, estado: r.estado, dueno: r.dueno || '', fIdent: r.fIdent || '', fRev: r.fRev || '', mit: r.mit || '' })),
+    contexto_decisiones: St.decisiones.filter(d => d.ini === i.id).map(d => ({ id: d.id, titulo: d.titulo, estado: d.estado }))
+  };
+}
+Acts.proyia = d => { const i = byId(d.id); if (!i) return;
+  Modal.open({ title: 'Completar con IA · ' + i.id, body: `<p class="desc" style="margin:0 0 8px"><b>${esc(i.titulo)}</b>. 1) Descargue el archivo (incluye instrucciones para la IA y la lista de datos pendientes). 2) Súbalo a la IA y responda sus preguntas. 3) Suba aquí el JSON que devuelva: verá una vista previa antes de aplicar.</p><div class="chips" style="margin:0 0 8px">${btn('Descargar para IA', 'proyiaget', { d: { id: i.id }, ic: 'down', cls: 'pri' })}${btn('Subir respuesta de la IA', 'proyiaup', { d: { id: i.id }, ic: 'up' })}</div><p class="mut">Pendientes hoy: ${iapPendientes(i).length}. La fase y el estado no se modifican por esta vía.</p><input type="file" id="iapfile" accept="application/json,.json,.txt" style="display:none" data-chg="proyiaf" data-id="${i.id}">` }); };
+Acts.proyiaget = d => { const i = byId(d.id); if (!i) return; download('APIH_' + i.id + '_para_IA_' + hoy() + '.json', JSON.stringify(iapExport(i), null, 1), 'application/json'); toast('Archivo para IA descargado'); };
+Acts.proyiaup = d => { const f = $('#iapfile'); if (f) { f.dataset.id = d.id; f.value = ''; f.click(); } };
+Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = ''; if (!fl) return;
+  const i = byId(id); if (!i) return;
+  if (soloLectura() || !puedeEditarIni(i)) { toast('Tu rol no permite editar este proyecto', 'err'); return; }
+  const r = new FileReader(); r.onload = () => { try {
+    let t = String(r.result).trim(); const m = t.match(/```(?:json)?\s*([\s\S]*?)```/); if (m) t = m[1].trim();
+    const o = JSON.parse(t); if (!o || o.formato !== 'apih-proyecto-ia') throw new Error('No es un archivo apih-proyecto-ia');
+    if (o.proyecto_id !== i.id) throw new Error('El archivo es de ' + o.proyecto_id + ', no de ' + i.id);
+    const ch = [], err = [], ap = [], um = cfgI(i, 'umbralCritico'), P = o.proyecto || {}, L = (a, b, c) => ch.push(a + ': ' + b + ' → ' + c);
+    const ver = x => x === '' || x == null ? '—' : String(x).slice(0, 70);
+    Object.keys(P).forEach(k => { const v = P[k], a = i[k];
+      if (IAP_TXT.includes(k)) { if (typeof v !== 'string') return err.push(k + ': debe ser texto'); if (k === 'titulo' && !v.trim()) return err.push('titulo vacío'); if (v !== (a || '')) { L(k, ver(a), ver(v)); ap.push(() => { i[k] = v; }); } }
+      else if (IAP_NUM.includes(k)) { if (typeof v !== 'number' || !isFinite(v) || v < 0 || (k === 'avance' && v > 100)) return err.push(k + ': número inválido (' + v + ')'); if (v !== (a || 0)) { L(k, ver(a || 0), v); ap.push(() => { i[k] = v; if (k === 'avance') i.hist.push([hoy(), v]); }); } }
+      else if (IAP_DATE.includes(k)) { if (v !== null && v !== '' && !iapFecha(v)) return err.push(k + ': fecha inválida (' + v + ')'); const nv = v || null; if (nv !== (a || null)) { L(k, ver(a), ver(nv)); ap.push(() => { i[k] = nv; }); } }
+      else if (k === 'rag' || k === 'prioridad' || k === 'moneda') { const cat = k === 'rag' ? RAGS : k === 'prioridad' ? PRIOS : Object.keys(MONEDAS); if (!cat.includes(v)) return err.push(k + ': valor inválido (' + v + ')'); if (v !== a) { L(k, ver(a), v); ap.push(() => { i[k] = v; }); } }
+      else err.push('Campo no editable por esta vía: ' + k); });
+    const ip = P.inicioPlan !== undefined ? P.inicioPlan : i.inicioPlan, fp = P.finPlan !== undefined ? P.finPlan : i.finPlan; if (ip && fp && fp < ip) err.push('finPlan anterior a inicioPlan: se omiten cambios de fechas plan');
+    const bloqueo = ip && fp && fp < ip;
+    (o.hitos || []).forEach(h => { if (!h || typeof h !== 'object') return;
+      if (h.id) { const x = St.hitos.find(y => y.id === h.id); if (!x || x.ini !== i.id) return err.push('Hito ' + h.id + ' no pertenece a este proyecto'); const c = [];
+        ['nombre', 'fase', 'resp'].forEach(k => { if (h[k] !== undefined && h[k] !== x[k]) { if (typeof h[k] !== 'string' || (k === 'nombre' && !h[k].trim())) return err.push(h.id + '.' + k + ' inválido'); if (k === 'fase' && h[k] && !FASES.includes(h[k])) return err.push(h.id + ': fase inválida'); c.push(k + ' ' + ver(x[k]) + ' → ' + ver(h[k])); } });
+        ['fecha', 'fechaReal'].forEach(k => { if (h[k] !== undefined && h[k] !== (x[k] || null)) { if (h[k] !== null && !iapFecha(h[k])) return err.push(h.id + '.' + k + ' fecha inválida'); if (k === 'fecha' && !h[k]) return err.push(h.id + '.fecha vacía'); c.push(k + ' ' + ver(x[k]) + ' → ' + ver(h[k])); } });
+        if (h.completado !== undefined && !!h.completado !== !!x.completado) c.push('completado ' + !!x.completado + ' → ' + !!h.completado);
+        if (c.length) { ch.push('Hito ' + h.id + ': ' + c.join('; ')); ap.push(() => { ['nombre', 'fase', 'resp', 'fecha'].forEach(k => { if (h[k] !== undefined) x[k] = h[k]; }); if (h.completado !== undefined) { x.completado = !!h.completado; x.fechaReal = x.completado ? (h.fechaReal || x.fechaReal || hoy()) : null; } else if (h.fechaReal !== undefined && x.completado) x.fechaReal = h.fechaReal; }); } }
+      else { if (!String(h.nombre || '').trim() || !iapFecha(h.fecha)) return err.push('Hito nuevo sin nombre o con fecha inválida: ' + JSON.stringify(h).slice(0, 60)); if (h.fase && !FASES.includes(h.fase)) return err.push('Hito nuevo «' + h.nombre + '»: fase inválida');
+        if (St.hitos.some(y => y.ini === i.id && _nrm(y.nombre) === _nrm(h.nombre))) return err.push('Hito nuevo «' + h.nombre + '» ya existe (se omite)');
+        ch.push('Hito NUEVO: ' + h.nombre + ' · ' + (h.fase || i.fase) + ' · ' + h.fecha); ap.push(() => { const ok = !!h.completado; St.hitos.push({ id: nextId('HIT', St.hitos), ini: i.id, nombre: h.nombre, fase: h.fase || i.fase, fecha: h.fecha, completado: ok, fechaReal: ok ? (h.fechaReal || h.fecha) : null, resp: h.resp || i.lider || '' }); }); } });
+    (o.riesgos || []).forEach(q => { if (!q || typeof q !== 'object') return; const x = q.id ? St.riesgos.find(y => y.id === q.id) : null; if (q.id && (!x || x.ini !== i.id)) return err.push('Riesgo ' + q.id + ' no pertenece a este proyecto');
+      const v = Object.assign({}, x || { cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: i.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '' }, q); delete v.id;
+      if (!x && !String(q.desc || '').trim()) return err.push('Riesgo nuevo sin descripción'); if (!RISK_CATS.includes(v.cat)) return err.push((q.id || 'Riesgo nuevo') + ': categoría inválida'); if (!RISK_ESTADOS.includes(v.estado)) return err.push((q.id || 'Riesgo nuevo') + ': estado inválido');
+      if (![v.prob, v.imp].every(n => Number.isInteger(n) && n >= 1 && n <= 5)) return err.push((q.id || 'Riesgo nuevo') + ': prob e imp deben ser enteros 1-5');
+      if (['fIdent', 'fRev'].some(k => v[k] && !iapFecha(v[k]))) return err.push((q.id || 'Riesgo nuevo') + ': fecha inválida');
+      if (riesgoAbierto(v) && v.prob * v.imp >= um && !String(v.mit || '').trim()) return err.push((q.id || 'Riesgo nuevo «' + String(v.desc).slice(0, 30) + '»') + ': crítico sin mitigación (se omite)');
+      if (x) { const c = ['desc', 'cat', 'prob', 'imp', 'estado', 'dueno', 'fRev', 'mit'].filter(k => v[k] !== (x[k] || (typeof v[k] === 'number' ? 0 : ''))).map(k => k + ' ' + ver(x[k]) + ' → ' + ver(v[k])); if (c.length) { ch.push('Riesgo ' + q.id + ': ' + c.join('; ')); ap.push(() => Object.assign(x, v)); } }
+      else { ch.push('Riesgo NUEVO: ' + v.desc + ' · ' + v.prob + '×' + v.imp); ap.push(() => St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: i.id, ...v })); } });
+    if (!ch.length) { Modal.close && Modal.close(); toast(err.length ? 'Sin cambios válidos. ' + err.slice(0, 3).join(' | ') : 'El archivo no trae cambios', 'err'); return; }
+    const lst = ch.slice(0, 40).map(x => '• ' + esc(x)).join('<br>') + (ch.length > 40 ? '<br>… y ' + (ch.length - 40) + ' más' : '');
+    confirmBox('<b>' + ch.length + ' cambio(s)</b> en ' + esc(i.titulo) + ':<br><br>' + lst + (err.length ? '<br><br><b style="color:var(--red)">Se omiten ' + err.length + ':</b><br>' + err.slice(0, 15).map(x => '✕ ' + esc(x)).join('<br>') : '') + '<br><br>¿Aplicar?', () => {
+      if (bloqueo) { toast('finPlan anterior a inicioPlan: corrija el archivo', 'err'); return; }
+      ap.forEach(f => f()); i.actualizada = hoy(); log('Cambio', i.id, 'Completado con IA: ' + ch.length + ' cambio(s) aplicados desde archivo'); toast(ch.length + ' cambio(s) aplicados'); refresh(); }, 'Aplicar');
+  } catch (e) { toast('No se pudo leer: ' + e.message, 'err'); } }; r.readAsText(fl); };
 Acts.reset = () => confirmBox(DataService.svc ? 'Se reemplazarán TODOS los datos de ' + BK() + ' por los datos del archivo original. ¿Continuar?' : 'Se perderán los cambios y se restaurarán los datos de demostración. ¿Continuar?', () => { St = seedState(); UI.sel = null; shell(); toast('Datos restaurados'); refresh(); }, 'Restaurar', true);
 
 
@@ -9613,7 +9692,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.51', b: '15-10-2026 18:40' };
+  const VER = { v: 'V22.52', b: '15-10-2026 19:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
