@@ -3406,6 +3406,7 @@ Acts.bmore = () => { F('bit', {}).n += 60; render(); };
 Acts.bitcsv = () => { download('APIH_bitacora_' + hoy() + '.csv', toCSV(St.bitacora, [{ h: 'Fecha', f: b => b.ts }, { h: 'Tipo', f: b => b.tipo }, { h: 'Iniciativa', f: b => nameOf(b.ini) }, { h: 'Autor', f: b => b.autor }, { h: 'Texto', f: b => b.texto }, { h: 'Detalle', f: b => b.meta }]), 'text/csv'); toast('Bitácora exportada'); };
 
 /* ======================= ADMINISTRACIÓN ======================= */
+const umbralNote = () => `<div class="note" style="margin-top:12px">${icon('info', 14)}<span>Los umbrales de alerta (desviación, días sin actualización, riesgo crítico, semáforo de propuestas y meta de «Mi cocina») se ajustan en <button class="lnk" data-act="go" data-v="miconfig">Mi configuración</button>, donde Gasto los fija para todos y cada líder puede personalizarlos.</span></div>` + (esGasto() && window.V22 && V22.MENU ? menuRolCard() : '');
 Views.admin = {
   render() {
     const f = F('adm', { tab: 'param' }); const tabs = [['param', 'Parámetros'], ['cat', 'Catálogos'], ['met', 'Metodología'], ['usr', 'Usuarios y roles'], ['cal', 'Calidad de datos'], ['dat', 'Datos y exportación'], ['sp', 'SharePoint']];
@@ -3414,9 +3415,6 @@ Views.admin = {
       const c = St.cfg;
       b = `<div class="card"><header><h2>Parámetros de negocio</h2><small>Alimentan reglas de agentes, semáforos y KPIs</small></header><div class="fgrid">
         <div class="fld"><label>Unidad monetaria</label><input value="${esc(c.unidad)}" data-chg="cfg" data-k="unidad" data-key="c-unidad"><small>Los montos del portafolio se expresan en esta unidad</small></div>
-        <div class="fld"><label>Días sin actualización (alerta)</label><input type="number" min="1" value="${c.diasSinUpdate}" data-chg="cfg" data-k="diasSinUpdate" data-num="1" data-key="c-dias"><small>Regla “Sin actualización” del Agente PMO</small></div>
-        <div class="fld"><label>Tolerancia de desviación (días)</label><input type="number" min="0" value="${c.tolDesv}" data-chg="cfg" data-k="tolDesv" data-num="1" data-key="c-tol"><small>Sobre este valor se considera “atrasado”</small></div>
-        <div class="fld"><label>Umbral de riesgo crítico (exposición)</label><input type="number" min="5" max="25" value="${c.umbralCritico}" data-chg="cfg" data-k="umbralCritico" data-num="1" data-key="c-umb"><small>Probabilidad × impacto ≥ umbral</small></div>
         <div class="fld"><label>Plazo máximo de una decisión (días)</label><input type="number" min="1" value="${c.decMaxDias || 30}" data-chg="cfg" data-k="decMaxDias" data-num="1" data-key="c-dmax"><small>No se puede registrar una decisión con fecha límite más lejana</small></div>
         <div class="fld"><label>Escalar decisiones tras (días de atraso)</label><input type="number" min="1" value="${c.decEscalaDias || 7}" data-chg="cfg" data-k="decEscalaDias" data-num="1" data-key="c-desc"><small>Pasan a «escalada a Gasto», quedan en bitácora y generan alerta del Agente PMO</small></div>
         <div class="fld"><label>Capacidad máx. de proyectos por líder</label><input type="number" min="1" value="${c.capacidadMax}" data-chg="cfg" data-k="capacidadMax" data-num="1" data-key="c-cap"><small>Agente Roadmap: sobrecarga de líderes</small></div>
@@ -3424,7 +3422,7 @@ Views.admin = {
         <div class="fld"><label>Usuario actual</label><input value="${esc(c.usuario)}" disabled><small>Viene del inicio de sesión Microsoft. Para probar como otra persona usa «Ver como» en la barra superior.</small></div>
         <div class="fld"><label class="chk"><input type="checkbox" ${c.readOnly ? 'checked' : ''} data-chg="cfg" data-k="readOnly" data-bool="1"> <span>Modo solo lectura (presentación)</span></label><small>Oculta controles de edición</small></div>
         <div class="fld"><label class="chk"><input type="checkbox" ${c.cieloOn !== false ? 'checked' : ''} data-chg="cfg" data-k="cieloOn" data-bool="1"> <span>Activar «Mi cocina» (tenedores y estrellas Michelin)</span></label><small>Sin ranking de personas: solo vista propia y colectiva</small></div>
-        <div class="fld"><label>Meta mensual del salón de chefs (%)</label><input type="number" min="10" max="100" value="${c.cieloMeta || 80}" data-chg="cfg" data-k="cieloMeta" data-num="1" data-key="c-cielo"><small>Porcentaje de tenedores encendidos del portafolio</small></div></div></div>`;
+        </div></div>`+umbralNote();
     } else if (f.tab === 'cat') {
       const lst = (k, t) => `<div class="card"><header><h2>${t}</h2></header><div class="chips">${St.cfg[k].map((x, n) => `<span class="chip on" style="--c:#0D446A">${esc(x)} <button class="x" data-act="catdel" data-k="${k}" data-n="${n}" aria-label="Quitar">×</button></span>`).join('')}</div><div class="composer" style="margin-top:10px"><input id="new_${k}" placeholder="Agregar…"><button class="btn sm pri" data-act="catadd" data-k="${k}">${icon('plus', 13)}</button></div></div>`;
       b = `<div class="grid12"><div class="c6">${lst('areas', 'Áreas')}</div><div class="c6">${lst('categorias', 'Categorías')}</div></div><div class="card"><header><h2>Workflow de portafolio</h2><small>Se edita en la pestaña Metodología</small></header><div class="flow big">${FASES.map(x => `<span class="done"><i></i>${x}</span>`).join('')}</div><p class="mut" style="margin-top:8px">Compuertas: Evaluación (problema + sponsor) → Caso Negocio (valoración + líder) → Aprobación (presupuesto + beneficio + business case) → Planificación (decisión “Iniciar” aprobada) → Ejecución (fechas + hitos) → Transición (≥80% y sin hitos vencidos) → Cierre (100%, hitos completos, sin riesgos críticos).</p></div>`;
@@ -4181,7 +4179,7 @@ Views.miconfig = {
     const tp = !g && cfgUOf(me).ptema;
     return pageHead('Mi configuración', g ? 'Perfil Gasto: tus cambios valen para todo el portafolio · «Fijar» impide que los líderes cambien un parámetro' : 'Tus cambios valen solo para las ' + n + ' iniciativas que lideras', '') + `
     <div class="grid12"><section class="card c12 mc-card"><header><h2>Umbrales de alerta</h2><small>${g ? 'Reemplazan los valores personales de cada usuario' : 'El resto del portafolio sigue con los valores generales'}</small></header><div class="mc-grid">${rows}</div></section>
-    <section class="card c12"><header><h2>Presentaciones</h2></header><p class="desc">Tema: <b>${fijo('tema') ? 'fijado por Gasto' : g ? 'global' : tp ? 'personal' : 'general'}</b>. Las plantillas que guardes ${g ? 'son para todos' : 'son solo tuyas'}. ${g ? 'Los decks incluyen todo el portafolio.' : 'Tus decks incluyen solo las iniciativas que lideras.'}</p><div class="chips">${btn('Ir a Presentaciones', 'go', { d: { v: 'presentaciones' } })}${g ? btn(fijo('tema') ? 'Liberar tema' : 'Fijar tema', 'myfix', { d: { k: 'tema' } }) : ''}${tp && !fijo('tema') ? btn('Volver al tema general', 'myreset', { d: { k: '_tema' } }) : ''}</div></section></div>` + (g && window.V22 && V22.MENU ? menuRolCard() : '');
+    <section class="card c12"><header><h2>Presentaciones</h2></header><p class="desc">Tema: <b>${fijo('tema') ? 'fijado por Gasto' : g ? 'global' : tp ? 'personal' : 'general'}</b>. Las plantillas que guardes ${g ? 'son para todos' : 'son solo tuyas'}. ${g ? 'Los decks incluyen todo el portafolio.' : 'Tus decks incluyen solo las iniciativas que lideras.'}</p><div class="chips">${btn('Ir a Presentaciones', 'go', { d: { v: 'presentaciones' } })}${g ? btn(fijo('tema') ? 'Liberar tema' : 'Fijar tema', 'myfix', { d: { k: 'tema' } }) : ''}${tp && !fijo('tema') ? btn('Volver al tema general', 'myreset', { d: { k: '_tema' } }) : ''}</div></section></div>`;
   }
 };
 function menuRolCard() {
@@ -9168,7 +9166,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.37', b: '15-10-2026 09:40' };
+  const VER = { v: 'V22.38', b: '15-10-2026 10:10' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
