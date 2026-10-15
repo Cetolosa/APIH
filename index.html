@@ -556,6 +556,20 @@ body{font:13px/1.45 var(--font)}
 @media (min-width:1100px){#main .ph>.p2-bar.in-ph{flex:1 1 auto;min-width:0;margin:0 12px;padding:0;border:0;background:none;flex-wrap:nowrap;align-items:center}#main .ph:has(>.p2-bar.in-ph)>div:first-child{flex:none}#main .ph>.p2-bar.in-ph .fld:has(input[data-k=titulo]){flex:1 1 180px;min-width:140px}#main .ph>.p2-bar.in-ph .btn,#main .ph>.p2-bar.in-ph .seg button{white-space:nowrap}}
 .pg-bar{display:flex;align-items:center;gap:10px;justify-content:center;padding:10px;color:var(--tx3);font-size:13px}
 @media (pointer:coarse){.btn,.icon-btn,.tabs button,.seg button,.chip .x,.pop button{min-height:40px}.icon-btn{min-width:40px}.chk input,input[type=checkbox],input[type=radio]{width:20px;height:20px}}
+/* V22.42: tarjetas compactas con plan vs avance */
+.kcol .icard{position:relative;padding:8px 11px 7px;display:flex;flex-direction:column;gap:4px}.kcol .icard h3{margin:0;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kcol .icard .ic-t{margin:0;line-height:1.1}
+.pvs{display:grid;gap:4px}.pv,.pv *{text-transform:none;letter-spacing:normal}.pv{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:8px;color:var(--tx3);font-size:11px;margin:0}
+.pv .bar{position:relative;border-radius:4px;background:var(--bd2)}.pv .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}.pv .bar u{position:absolute;background:var(--tx);border-radius:1px;text-decoration:none}
+.pv .val{display:flex;align-items:baseline;justify-content:flex-end;gap:5px;white-space:nowrap}.pv .dl{font-weight:600;font-size:10.5px}.pv .dl.neg{color:#B4262B}.pv .dl.pos{color:#0B6A0B}.pv .dl.eq{color:var(--tx3)}
+.pv.main .bar{height:8px}.pv.main .bar u{top:-3px;bottom:-3px;width:2px}.pv.main>span:first-child{font-weight:600;color:var(--tx2);font-size:11.5px}.pv.main .val b{font-size:14px;line-height:1.1;color:var(--tx)}
+.pv.sub{margin-left:14px;grid-template-columns:30px 1fr auto;position:relative}.pv.sub::before{content:'';position:absolute;left:-8px;top:-8px;height:calc(50% + 8px);width:6px;border-left:1.5px solid var(--bd);border-bottom:1.5px solid var(--bd);border-bottom-left-radius:4px}
+.pv.sub .bar{height:4px}.pv.sub .bar u{top:-2px;bottom:-2px;width:1.5px}.pv.sub .bar i{opacity:.75}.pv.sub .val b{font-size:11.5px;font-weight:600;color:var(--tx2)}
+.kcol .icard .ic-f{margin:0;padding:5px 24px 0 0;border-top:1px solid var(--bd2);justify-content:flex-start;line-height:1.1}.kcol .icard .ic-f .av{width:18px!important;height:18px!important;font-size:7.5px!important}
+.ic-f .xtra{margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--tx3)}.sk-cnt{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.kcol .icard .inc-mini{position:absolute;right:10px;bottom:7px;margin:0;padding:0}.kcol .icard .inc-mini label{display:inline-flex;gap:0}.kcol .icard .inc-mini label span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.kcol .icard .ic-sc>span:first-child{width:34px;height:34px}.kcol .icard .ic-sc{margin-bottom:0}.kcol .icard .ic-f .mut{margin-left:auto}
+.v22-row.one{flex-wrap:nowrap!important;gap:8px}.v22-row.one label.flt select{width:124px}.v22-row.one .search{width:140px;flex:0 1 140px}.v22-row.one .search input{width:100%}.v22-row.one .btn,.v22-row.one label.chk,.v22-row.one .seg,.v22-row.one .seg button,.v22-row.one .lnk{white-space:nowrap;flex:none}
+.cards .icard .ic-f{margin-top:8px;padding-top:6px;border-top:1px solid var(--bd2);justify-content:flex-start}.cards .icard .pvs{margin-top:2px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -3026,23 +3040,36 @@ Acts.pdens = () => { const f = F('portfolio', {}); f.dens = f.dens === 'c' ? 'n'
 Acts.pcsv = () => { const f = F('portfolio', {}); const rows = portfolioRows(); const cols = pcols(); download('APIH_portfolio_' + hoy() + '.csv', toCSV(rows, cols.map(c => ({ h: c.h, f: c.f }))), 'text/csv'); toast(rows.length + ' filas exportadas'); };
 
 /* ======================= INICIATIVAS ======================= */
+const planFase = i => { const hs = hitosDe(i.id).filter(h => h.fase === i.fase); return hs.length ? hs.filter(h => h.fecha <= hoy()).length / hs.length * 100 : esperado(i); };
+const clamp100 = v => Math.max(0, Math.min(100, Math.round(v || 0)));
+function pvRow(l, real, plan, rag, tip, cls) {
+  const r = clamp100(real), pl = clamp100(plan), d = r - pl, c = d <= -10 ? 'neg' : d >= 5 ? 'pos' : 'eq', col = RAG_C[rag] || 'var(--pri)';
+  return `<div class="pv ${cls}" title="${esc(tip)}"><span>${l}</span><span class="bar" role="img" aria-label="${esc(tip)}"><i style="width:${r}%;background:${col}"></i><u style="left:calc(${pl}% - 1px)"></u></span><span class="val"><b>${r}%</b><span class="dl ${c}">${d > 0 ? '▲ +' + d : d < 0 ? '▼ ' + d : '● plan'}</span></span></div>`;
+}
+const planBars = i => `<div class="pvs">${pvRow('Total', i.avance, esperado(i), i.rag, 'Total: real ' + clamp100(i.avance) + '% · plan ' + clamp100(esperado(i)) + '% (según fechas del proyecto)', 'main')}${pvRow('Fase', avFase(i).v, planFase(i), i.rag, avFaseTip(i) + ' · real ' + avFase(i).v + '% · plan ' + clamp100(planFase(i)) + '% (hitos con fecha vencida)', 'sub')}</div>`;
+function starsCnt(i) {
+  if (!cieloOn() || esProp(i)) return '';
+  const act = isLive(i) && FASES_ACT.includes(i.fase), n = msN(i); if (!act && !n) return '';
+  const st = act ? starsOf(i, hoyW()).filter(x => x.s !== 'na') : [], on = st.filter(x => x.s === 'on').length;
+  return `<span class="sk-cnt" title="Tenedores de la semana: ${on} de ${st.length}${n ? ' · ' + n + ' estrella(s) Michelin' : ''}">${act ? STAR_SVG('on', 12) + ' ' + on + '/' + st.length : ''}${n ? ' ★' + n : ''}</span>`;
+}
 Views.proyectos = {
   render() {
     const f = F('prj', { q: '', mode: 'board', resp: '', hideDone: true });
     let rows = scope(); if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.id).toLowerCase().includes(q)); } if (f.resp) rows = rows.filter(i => i.lider === f.resp); if (f.hideDone) rows = rows.filter(isLive);
     const card = i => { const hs = hitosDe(i.id), hd = hs.filter(h => h.completado).length, nh = nextHito(i); return `<article tabindex="0" role="button" class="icard ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini">
-      <div class="ic-t"><span class="mono">${i.id}</span>${i.estado !== 'En curso' ? estPill(i.estado) : ''}${ragPill(i.rag)}</div><h3>${esc(i.titulo)}</h3>${(g => g ? `<div class="ic-g">${g}</div>` : '')(starsMini(i))}
+      <div class="ic-t"><span class="mono">${i.id}</span>${i.estado !== 'En curso' ? estPill(i.estado) : ''}${ragPill(i.rag)}</div><h3>${esc(i.titulo)}</h3>
       ${f.mode === 'cards' ? `<p class="ic-d">${esc((i.resumen || i.desc || '').slice(0, 150))}</p>` : ''}
-      <div class="ic-m" title="${esc(avFaseTip(i))}"><small style="width:46px">Fase</small>${prog(avFase(i).v, i.rag, 5)}<b>${avFase(i).v}%</b></div><div class="ic-m"><small style="width:46px">Total</small>${prog(i.avance, i.rag, 3)}<b>${pct(i.avance)}</b></div>
-      <div class="ic-f"><span class="pp">${avatar(i.lider, 20)}<small>${esc(i.lider.split(' ')[0])}</small></span>${prioPill(i.prioridad)}${desv(i) > cfgI(i,'tolDesv') ? `<span class="pill bad">+${desv(i)} d</span>` : ''}</div>
+      ${planBars(i)}
+      <div class="ic-f"><span class="pp">${avatar(i.lider, 20)}<small>${esc(i.lider.split(' ')[0])}</small></span>${prioPill(i.prioridad)}${desv(i) > cfgI(i,'tolDesv') ? `<span class="pill bad">+${desv(i)} d</span>` : ''}${starsCnt(i) ? `<span class="xtra">${starsCnt(i)}</span>` : ''}</div>
       ${f.mode === 'cards' ? `<div class="ic-x"><span>${icon('flag', 13)} ${hd}/${hs.length} hitos</span><span>${icon('shield', 13)} ${riesgosDe(i.id).filter(riesgoAbierto).length}</span><span>${icon('money', 13)} ${fmtMon(i.presupuesto, monOf(i))}</span><span>${icon('cal', 13)} ${fmtD(forecast(i))}</span></div>${nh ? `<small class="mut">Próx. hito: ${esc(nh.nombre)} · ${fmtD(nh.fecha)}</small>` : ''}` : ''}</article>`; };
     const body = f.mode === 'board'
       ? `<div class="kanban k4c" data-keep="kb" style="grid-template-columns:repeat(${FASES_PRJ.length},minmax(200px,1fr))">${FASES_PRJ.map(fs => { const it = rows.filter(i => i.fase === fs); return `<div class="kcol" data-fase="${fs}"><div class="k-h"><i style="background:${FASE_COLOR[fs]}"></i><b>${fs}</b><em>${it.length}</em>${it.length ? `<small class="mut" style="margin-left:auto" title="Promedio de avance de la fase activa">fase ${Math.round(it.reduce((s, x) => s + avFase(x).v, 0) / it.length)}%</small>` : ''}</div><div class="k-b">${it.map(card).join('') || '<div class="k-e">Arrastra aquí</div>'}</div></div>`; }).join('')}</div>`
       : `<div class="cards">${rows.sort(by(i => -critScore(i))).map(card).join('') || empty('Sin proyectos')}</div>`;
     return pageHead('Proyectos', `${rows.length} proyectos · Planificación → Ejecución → Transición → Cierre, con compuertas de gobierno. Arrastra una tarjeta para cambiar de fase. Los proyectos nacen al aprobar una propuesta.`, `<span class="edit-only">${btn('Ir a Propuestas', 'go', { d: { v: 'propuestas' }, ic: 'bulb', cls: 'pri' })}${btn('Alta directa', 'new', { d: { t: 'prj' }, ic: 'plus' })}</span>`) + `
-    <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="in-q" data-chg="flt" data-v="prj" data-f="q" type="search" placeholder="Buscar proyecto…" value="${esc(f.q)}"></div>
+    <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="in-q" data-chg="flt" data-v="prj" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div>
       
-      <label class="chk tb-c"><input type="checkbox" ${f.hideDone ? 'checked' : ''} data-chg="flt" data-v="prj" data-f="hideDone" data-bool="1"> <span>Ocultar completados/cancelados</span></label>
+      <label class="chk tb-c"><input type="checkbox" ${f.hideDone ? 'checked' : ''} data-chg="flt" data-v="prj" data-f="hideDone" data-bool="1"> <span>Ocultar cerrados</span></label>
       <div class="seg" style="margin-left:auto"><button class="${f.mode === 'board' ? 'on' : ''}" data-act="imode" data-m="board">${icon('board', 14)} Tablero</button><button class="${f.mode === 'cards' ? 'on' : ''}" data-act="imode" data-m="cards">${icon('list2', 14)} Tarjetas</button></div></div>${body}`;
   },
   after() { bindDnD(); }
@@ -3078,7 +3105,7 @@ Views.propuestas = {
       <div class="kpi"><div class="k-top"><span class="k-ic">${icon('money', 16)}</span><span class="k-l">Costo estimado</span></div><div class="k-v">${fmtBig(total.p)}</div><div class="k-s">${restTxt(total.p)}<sup class="est">est.</sup></div></div>
       <div class="kpi good"><div class="k-top"><span class="k-ic">${icon('target', 16)}</span><span class="k-l">Valor potencial</span></div><div class="k-v">${fmtBig(total.b)}</div><div class="k-s">${restTxt(total.b)}Beneficio esperado <sup class="est">est.</sup></div></div>
       <div class="kpi"><div class="k-top"><span class="k-ic">${icon('trend', 16)}</span><span class="k-l">ROI potencial</span></div><div class="k-v">${roiTxt(total.b, total.p)}</div><div class="k-s">(beneficio − costo) / costo</div></div></section>
-    <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="pp-q" data-chg="flt" data-v="prop" data-f="q" type="search" placeholder="Buscar propuesta…" value="${esc(f.q)}"></div><label class="chk tb-c"><input type="checkbox" ${f.showEnd ? 'checked' : ''} data-chg="flt" data-v="prop" data-f="showEnd" data-bool="1"> <span>Mostrar finalizadas (${allP.filter(isDone).length})</span></label></div>
+    <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="pp-q" data-chg="flt" data-v="prop" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div><label class="chk tb-c"><input type="checkbox" ${f.showEnd ? 'checked' : ''} data-chg="flt" data-v="prop" data-f="showEnd" data-bool="1"> <span>Mostrar finalizadas (${allP.filter(isDone).length})</span></label></div>
     <div class="kanban k4c" data-keep="kb2" style="grid-template-columns:repeat(${FASES_PIPE.length},minmax(200px,1fr))">${FASES_PIPE.map(fs => { const it = rows.filter(i => i.fase === fs).sort(by(i => -priorScore(i))); return `<div class="kcol" data-fase="${fs}"><div class="k-h"><i style="background:${FASE_COLOR[fs]}"></i><b>${fs}</b><em>${it.length}</em></div><div class="k-b">${it.map(card).join('') || '<div class="k-e">Sin propuestas</div>'}</div></div>`; }).join('')}</div>
     ${f.showEnd ? `<section class="card" style="margin-top:14px"><header><h2>Propuestas finalizadas</h2><small>Aprobadas generan un proyecto · Rechazadas y Retiradas pueden reabrirse</small></header><table class="mini"><thead><tr><th>Propuesta</th><th>Estado</th><th>Motivo / resultado</th><th></th></tr></thead><tbody>${allP.filter(isDone).map(i => `<tr><td><button class="lnk0" data-act="sel" data-t="ini" data-id="${i.id}"><b>${esc(i.titulo)}</b></button><small>${i.id}</small></td><td>${estPill(i.estado)}</td><td>${i.estado === 'Aprobada' && i.proyecto ? `Proyecto ${iniLink(i.proyecto, i.proyecto)}` : esc(i.estadoMotivo || '—')}</td><td class="n">${['Rechazada', 'Retirada'].includes(i.estado) ? `<span class="edit-only">${btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' })}</span>` : ''}</td></tr>`).join('') || '<tr><td colspan="4" class="mut">Sin propuestas finalizadas</td></tr>'}</tbody></table></section>` : ''}
     <div class="grid12" style="margin-top:14px"><section class="card c7"><header><h2>Matriz valor / esfuerzo</h2><small>Tamaño = costo estimado · color = fase</small></header>${matrix}</section>
@@ -3115,7 +3142,7 @@ Views.roadmap = {
     <div class="toolbar"><div class="seg"><button data-act="rshift" data-d="-1" aria-label="Trimestre anterior">${icon('chevl', 14)}</button><span class="seg-l" style="min-width:150px">Q${W[0].q} ${W[0].y} – Q${W[3].q} ${W[3].y}</span><button data-act="rshift" data-d="1" aria-label="Trimestre siguiente">${icon('chev', 14)}</button></div>${btn('Hoy', 'rshift', { d: { d: 0 } })}
       <div class="search"><span>${icon('search', 14)}</span><input data-key="rd-q" data-chg="flt" data-v="road" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div>
       <label class="tb-l">Carriles<select data-chg="flt" data-v="road" data-f="lane">${selOpts([{ v: 'area', t: 'Por área' }, { v: 'categoria', t: 'Por categoría' }, { v: 'lider', t: 'Por responsable' }, { v: 'fase', t: 'Por fase' }, { v: '', t: 'Sin carriles' }], f.lane)}</select></label>
-      <label class="chk tb-c"><input type="checkbox" ${f.hideDone ? 'checked' : ''} data-chg="flt" data-v="road" data-f="hideDone" data-bool="1"> <span>Ocultar cerradas</span></label>
+      <label class="chk tb-c"><input type="checkbox" ${f.hideDone ? 'checked' : ''} data-chg="flt" data-v="road" data-f="hideDone" data-bool="1"> <span>Ocultar cerrados</span></label>
       <span class="mut" style="margin-left:auto;font-size:12px">${before ? before + ' entregadas antes · ' : ''}${after ? after + ' después de la ventana' : ''}</span></div>
     <div class="road" data-keep="rd"><div class="r-head"><div class="r-lh">Carril</div>${W.map(w => `<div class="${w.n === curN ? 'cur' : ''}"><b>Q${w.q} ${w.y}</b><small>${MES3[(w.q - 1) * 3]}–${MES3[w.q * 3 - 1]} · ${rows.filter(i => endN(i) === w.n).length} entregas</small></div>`).join('')}</div>${grid}</div>`;
   }
@@ -3396,7 +3423,7 @@ Views.bitacora = {
     <div class="composer big edit-only"><select id="bt-ini">${selOpts(iniOpts(), '', 'General (sin proyecto)')}</select><input id="bt-tema" list="bt-temas" data-key="bt-tema" placeholder="Tema o persona" data-chg="noop" data-live="no" style="max-width:190px"><datalist id="bt-temas">${temas.map(t => `<option value="${esc(t)}">`).join('')}</datalist><input id="bt-txt" data-key="bt-txt" placeholder="Escribe un comentario o nota para la bitácora…" data-chg="noop" data-live="no"><label class="chk" title="Solo aplica a notas ligadas a un proyecto o propuesta"><input type="checkbox" id="bt-pres" checked> <span>En presentación</span></label><button class="btn pri" data-act="bitadd">${icon('send', 14)}<span>Publicar</span></button></div>
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="b-q" data-chg="flt" data-v="bit" data-f="q" type="search" placeholder="Buscar en la bitácora…" value="${esc(f.q)}"></div>
       <div class="chips">${BIT_TIPOS.map(t => `<button class="chip ${f.tipos.includes(t) ? 'on' : ''}" style="--c:${BIT_C[t]}" data-act="btipo" data-t="${t}"><i></i>${t}</button>`).join('')}</div>
-      <select data-chg="flt" data-v="bit" data-f="ini">${selOpts([{ v: '__gen', t: 'Solo generales (sin proyecto)' }, ...iniOpts()], f.ini, 'Todos los proyectos y propuestas')}</select>${temas.length ? `<select data-chg="flt" data-v="bit" data-f="tema">${selOpts(temas, f.tema, 'Todos los temas')}</select>` : ''}<span class="mut" style="margin-left:auto;font-size:12px">${rows.length} entradas</span></div>
+      <select data-chg="flt" data-v="bit" data-f="ini">${selOpts([{ v: '__gen', t: 'Solo generales (sin proyecto)' }, ...iniOpts()], f.ini, 'Todos los proyectos y propuestas')}</select>${temas.length ? `<select data-chg="flt" data-v="bit" data-f="tema">${selOpts(temas, f.tema, 'Todos los temas')}</select>` : ''}<span class="mut" style="margin-left:auto;font-size:12px">${rows.length} ${rows.length === 1 ? 'entrada' : 'entradas'}</span></div>
     <div class="feed">${days.map(g => `<div class="f-day"><h3>${dl(g.d)}</h3>${g.items.map(b => `<div class="f-i"><span class="f-dot" style="background:${BIT_C[b.tipo]}">${icon({ 'Cambio': 'edit', 'Actualización': 'refresh', 'Riesgo': 'shield', 'Comentario': 'users', 'Decisión': 'gavel' }[b.tipo] || 'edit', 12)}</span><div class="f-c"><div class="f-m"><b>${esc(b.autor)}</b><span class="pill" style="--c:${BIT_C[b.tipo]}">${b.tipo}</span>${b.ini ? iniLink(b.ini) : ''}${b.tema ? `<span class="pill soft">${esc(b.tema)}</span>` : ''}${b.tipo === 'Comentario' && b.ini ? `<label class="chk edit-only" title="Incluir esta nota en las presentaciones" style="margin-left:auto"><input type="checkbox" data-chg="bitpres" data-id="${esc(b.id)}" ${b.inPres === false ? '' : 'checked'}> <span>En presentación</span></label>` : ''}<small>${b.ts.length > 10 ? b.ts.slice(11, 16) : ''}</small></div><p>${esc(b.texto)}</p>${b.meta ? `<small class="meta">${esc(b.meta)}</small>` : ''}</div></div>`).join('')}</div>`).join('') || empty('Sin entradas para estos filtros', 'book')}
     ${rows.length > f.n ? `<div style="text-align:center;margin:14px"><button class="btn" data-act="bmore">Cargar más (${rows.length - f.n})</button></div>` : ''}</div>`;
   }
@@ -9179,7 +9206,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.41', b: '15-10-2026 11:20' };
+  const VER = { v: 'V22.42', b: '15-10-2026 12:10' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9271,7 +9298,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       const row = document.createElement('div'); row.className = 'v22-row'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Filtros y búsqueda');
       [fb, ...tbs].forEach(c => { if (c) { [...c.childNodes].forEach(n => row.appendChild(n)); c.remove(); } });
       const tabs = UI.view === 'cielo' ? sr(':scope>.seg', m) : null; if (tabs) { tabs.style.margin = '0 0 0 auto'; row.appendChild(tabs); }
+      { const sg = sra(':scope>.seg', row).pop(), gd = sr('.flt-guia', row); if (sg && UI.view !== 'cielo') { sg.style.margin = '0 0 0 auto'; row.appendChild(sg); } if (gd) { if (!sg || UI.view === 'cielo') gd.style.marginLeft = 'auto'; row.appendChild(gd); } }
       ph.insertAdjacentElement('afterend', row);
+      sra('.search input', row).forEach(inp => { const t = inp.getAttribute('placeholder') || ''; if (t && !inp.getAttribute('aria-label')) inp.setAttribute('aria-label', t.replace(/…$/, '')); inp.setAttribute('placeholder', 'Buscar…'); });
+      if (innerWidth >= 1100) { row.classList.add('one'); if (row.scrollWidth > row.clientWidth + 1 || row.offsetHeight > 52) row.classList.remove('one'); }
     }
   }
   const presLayout0 = presLayout;
