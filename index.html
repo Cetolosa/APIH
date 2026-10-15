@@ -3450,7 +3450,17 @@ Acts.catadd = d => { const el = $('#new_' + d.k), v = el.value.trim(); if (!v) r
 Acts.catdel = d => { St.cfg[d.k].splice(+d.n, 1); refresh(); };
 Acts.expjson = () => { download('APIH_respaldo_' + hoy() + '.json', JSON.stringify(St, null, 1), 'application/json'); toast('Respaldo exportado'); };
 Acts.impjson = () => $('#impfile').click();
-Chg.impfile = el => { const fl = el.files[0]; if (!fl) return; const r = new FileReader(); r.onload = () => { try { const o = JSON.parse(r.result); if (!o || o.v !== 3 || !Array.isArray(o.ini)) throw new Error('Formato inválido'); confirmBox('Se reemplazarán todos los datos actuales por el respaldo. ¿Continuar?', () => { St = migrateV5(o); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; toast('Respaldo importado'); shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true); } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
+Chg.impfile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
+  if (!esGasto() || FL.verComo) { toast('Solo el perfil Gasto puede importar un respaldo', 'err'); return; }
+  const r = new FileReader(); r.onload = () => { try {
+    const o = JSON.parse(r.result); if (!o || o.v !== 3 || !Array.isArray(o.ini)) throw new Error('Formato inválido');
+    const ks = [['ini', 'Iniciativas'], ['hitos', 'Hitos'], ['riesgos', 'Riesgos'], ['decisiones', 'Decisiones']], len = (x, k) => Array.isArray(x[k]) ? x[k].length : 0;
+    const bad = ks.filter(([k]) => o[k] != null && !Array.isArray(o[k])).map(x => x[1]); if (bad.length) throw new Error('Datos dañados en: ' + bad.join(', '));
+    const cmp = ks.map(([k, n]) => n + ': ' + len(St, k) + ' → ' + len(o, k)).join(' · '), loss = len(o, 'ini') < len(St, 'ini') * 0.5 && len(St, 'ini') >= 4;
+    const msg = 'Se reemplazarán TODOS los datos actuales por el respaldo' + (DataService.svc ? ' y el cambio se sincronizará para todos los usuarios' : '') + '.<br><br>Actual → Respaldo<br>' + cmp + (loss ? '<br><br>⚠ El respaldo tiene menos de la mitad de las iniciativas actuales.' : '') + '<br><br>Antes de importar se descargará una copia de los datos actuales. ¿Continuar?';
+    confirmBox(msg, () => { try { download('APIH_antes_de_importar_' + hoy() + '.json', JSON.stringify(St, null, 1), 'application/json'); } catch (e) { }
+      St = migrateV5(o); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; toast('Respaldo importado (copia previa descargada)'); shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true);
+  } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 Acts.reset = () => confirmBox(DataService.svc ? 'Se reemplazarán TODOS los datos de ' + BK() + ' por los datos del archivo original. ¿Continuar?' : 'Se perderán los cambios y se restaurarán los datos de demostración. ¿Continuar?', () => { St = seedState(); UI.sel = null; shell(); toast('Datos restaurados'); refresh(); }, 'Restaurar', true);
 
 
@@ -9166,7 +9176,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.38', b: '15-10-2026 10:10' };
+  const VER = { v: 'V22.39', b: '15-10-2026 10:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
