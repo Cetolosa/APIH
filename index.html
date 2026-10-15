@@ -551,6 +551,9 @@ body{font:13px/1.45 var(--font)}
 .menu-tabs a{padding:8px 14px;font-weight:600;color:var(--tx2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:6px}
 .menu-tabs a:hover{color:var(--tx)}.menu-tabs a.on{color:var(--pri);border-bottom-color:var(--pri)}
 .menu-tabs em{font-style:normal;font-size:11px;background:var(--red);color:#fff;border-radius:9px;padding:0 6px}
+/* V22.37: barra de Presentaciones dentro de la cabecera */
+@media (min-width:1100px){#main .pres-s>.deck{max-width:max(380px,calc((100vh - 318px) * 1.78 + 16px))!important}}
+@media (min-width:1100px){#main .ph>.p2-bar.in-ph{flex:1 1 auto;min-width:0;margin:0 12px;padding:0;border:0;background:none;flex-wrap:nowrap;align-items:center}#main .ph:has(>.p2-bar.in-ph)>div:first-child{flex:none}#main .ph>.p2-bar.in-ph .fld:has(input[data-k=titulo]){flex:1 1 180px;min-width:140px}#main .ph>.p2-bar.in-ph .btn,#main .ph>.p2-bar.in-ph .seg button{white-space:nowrap}}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -8208,7 +8211,9 @@ function presLayout() {
   const pw = document.createElement('div'); pw.className = 'popw'; pw.innerHTML = `<button class="btn" data-act="pop" data-id="pop-p2" title="Comité, área y plantilla">${icon('settings', 15)}<span>Opciones</span></button><div class="pop p2-pop" id="pop-p2"></div>`;
   flds.filter(f => !keep(f)).forEach(f => pw.querySelector('.pop').appendChild(f)); bar.appendChild(pw);
   const b = document.createElement('button'); b.className = 'btn'; b.dataset.act = 'pdrawer'; b.title = 'Lista de diapositivas, qué entra, estilo e historial'; b.innerHTML = `${icon('list2', 15)}<span>Diapositivas y contenido</span>`; bar.appendChild(b);
-  w.insertBefore(bar, cfg); cfg.remove();
+  const phh = m.querySelector('.ph'), pha = phh && phh.querySelector('.ph-act');
+  if (phh && pha && window.innerWidth >= 1100 && !bar.querySelector('[data-chg=padd]')) { bar.classList.add('in-ph'); phh.insertBefore(bar, pha); } else w.insertBefore(bar, cfg);
+  cfg.remove();
   const dr = [...s.children].filter(e => e.matches('section.card')).pop();
   if (dr && !dr.classList.contains('notes')) { dr.classList.add('p2-dr'); if (UI.pdr) dr.classList.add('open'); dr.insertAdjacentHTML('afterbegin', `<button class="icon-btn sm p2-x" data-act="pdrawer" aria-label="Cerrar" title="Cerrar">${icon('x', 15)}</button>`); }
   const pre = s.querySelector('.card.notes .pre'); if (pre) { pre.dataset.act = 'xtext'; pre.title = 'Clic para ver la nota completa'; }
@@ -9163,7 +9168,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.36', b: '15-10-2026 03:00' };
+  const VER = { v: 'V22.37', b: '15-10-2026 09:40' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
