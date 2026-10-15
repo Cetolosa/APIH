@@ -554,6 +554,7 @@ body{font:13px/1.45 var(--font)}
 /* V22.37: barra de Presentaciones dentro de la cabecera */
 @media (min-width:1100px){#main .pres-s>.deck{max-width:max(380px,calc((100vh - 318px) * 1.78 + 16px))!important}}
 @media (min-width:1100px){#main .ph>.p2-bar.in-ph{flex:1 1 auto;min-width:0;margin:0 12px;padding:0;border:0;background:none;flex-wrap:nowrap;align-items:center}#main .ph:has(>.p2-bar.in-ph)>div:first-child{flex:none}#main .ph>.p2-bar.in-ph .fld:has(input[data-k=titulo]){flex:1 1 180px;min-width:140px}#main .ph>.p2-bar.in-ph .btn,#main .ph>.p2-bar.in-ph .seg button{white-space:nowrap}}
+.pg-bar{display:flex;align-items:center;gap:10px;justify-content:center;padding:10px;color:var(--tx3);font-size:13px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -9176,7 +9177,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.39', b: '15-10-2026 10:30' };
+  const VER = { v: 'V22.40', b: '15-10-2026 10:50' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9278,10 +9279,25 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     /* compactar() mueve los filtros a otra fila y eso quita el foco del campo que se está escribiendo: se restaura al final */
     const act = document.activeElement, key = act && act.dataset ? act.dataset.key : null, ss = act && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
     render0.apply(this, arguments);
-    try { primaria(); compactar(); contrasta(); menuTabs(); } catch (e) { console.error(e); }
+    try { primaria(); compactar(); contrasta(); menuTabs(); paginar(); } catch (e) { console.error(e); }
     if (key) { const el = $(`[data-key="${key}"]`); if (el && el !== document.activeElement) { el.focus(); if (ss && el.setSelectionRange) try { el.setSelectionRange(ss[0], ss[1]); } catch (e) { } } }
   };
   /* texto oscuro sobre fondos claros (celdas de la matriz y exposición) */
+  /* V22.40: tablas largas — primeras 100 filas y «Ver más» (genérico, sin tocar los datos) */
+  const PG = 100, pgOpen = {};
+  function paginar() {
+    const m = document.getElementById('main'); if (!m) return;
+    m.querySelectorAll('table.tbl:not(.mini)').forEach((t, n) => {
+      const tb = t.tBodies[0]; if (!tb) return; const rows = [...tb.rows]; if (rows.length <= PG + 20) return;
+      const key = UI.view + ':' + n, lim = Math.max(PG, pgOpen[key] || PG);
+      const apply = l => { rows.forEach((r, k) => { r.hidden = k >= l; }); const left = rows.length - l; let bar = t.parentNode.querySelector(':scope > .pg-bar[data-k="' + key + '"]');
+        if (left <= 0) { if (bar) bar.remove(); return; }
+        if (!bar) { bar = document.createElement('div'); bar.className = 'pg-bar'; bar.dataset.k = key; t.after(bar); }
+        bar.innerHTML = '<span>Mostrando ' + l + ' de ' + rows.length + '</span><button class="btn sm" type="button">Ver ' + Math.min(PG, left) + ' más</button><button class="btn sm" type="button">Ver todas</button>';
+        const [b1, b2] = bar.querySelectorAll('button'); b1.onclick = () => { pgOpen[key] = l + PG; apply(l + PG); }; b2.onclick = () => { pgOpen[key] = rows.length; apply(rows.length); }; };
+      apply(lim);
+    });
+  }
   function contrasta() {
     document.querySelectorAll('.expo,.h-c').forEach(e => {
       const m = (e.style.background || e.style.backgroundColor || '').match(/#([0-9a-f]{6})|rgb\((\d+),\s*(\d+),\s*(\d+)/i); if (!m) return;
