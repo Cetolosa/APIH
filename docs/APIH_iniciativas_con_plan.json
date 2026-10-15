@@ -1,0 +1,217 @@
+{
+ "formato": "apih-iniciativas",
+ "v": 1,
+ "iniciativas": [
+  {
+   "tipo": "Proyecto",
+   "titulo": "APIH Prototipo",
+   "desc": "Prototipo de APIH sobre SPA + Supabase (interino). Congelado en V22.52 (15-10-2026): solo correcciones críticas. Sirve de referencia y demo hasta que APIH Corporativo entre a producción.",
+   "area": "BISE",
+   "lider": "Christian Tolosa",
+   "sponsor": "",
+   "fase": "Transición",
+   "estado": "En curso",
+   "rag": "Verde",
+   "prioridad": "Alta",
+   "avance": 90,
+   "inicioPlan": "2026-09-01",
+   "finPlan": "2026-12-22",
+   "presupuesto": 0,
+   "logros": "Congelado en V22.52 con 22 vistas, historial, notificaciones, calendario, capacidad, importador y Completar con IA.",
+   "proximos": "Contraseñas individuales y retiro de la clave de equipo. Funciones pendientes pasan a Corporativo.",
+   "hitos": [
+    {
+     "nombre": "Núcleo del portafolio y 22 vistas operativas",
+     "fase": "Planificación",
+     "fecha": "2026-09-30",
+     "completado": true
+    },
+    {
+     "nombre": "Historial por registro y auditoría (V22.43)",
+     "fase": "Ejecución",
+     "fecha": "2026-10-12",
+     "completado": true
+    },
+    {
+     "nombre": "Notificaciones parametrizables (V22.44)",
+     "fase": "Ejecución",
+     "fecha": "2026-10-13",
+     "completado": true
+    },
+    {
+     "nombre": "Calendario, panel contextual y menú contraíble (V22.45–48)",
+     "fase": "Ejecución",
+     "fecha": "2026-10-14",
+     "completado": true
+    },
+    {
+     "nombre": "Capacidad de equipos (V22.49)",
+     "fase": "Ejecución",
+     "fecha": "2026-10-15",
+     "completado": true
+    },
+    {
+     "nombre": "Contraseñas individuales y retiro de la clave de equipo",
+     "fase": "Ejecución",
+     "fecha": "2026-10-23"
+    },
+    {
+     "nombre": "Importador de iniciativas y Completar con IA (V22.50–52)",
+     "fase": "Ejecución",
+     "fecha": "2026-10-15",
+     "completado": true
+    },
+    {
+     "nombre": "Prototipo congelado en V22.52",
+     "fase": "Transición",
+     "fecha": "2026-10-15",
+     "completado": true
+    },
+    {
+     "nombre": "Retiro del prototipo tras salida de Corporativo",
+     "fase": "Cierre",
+     "fecha": "2026-12-22"
+    }
+   ],
+   "riesgos": [
+    {
+     "desc": "Datos reales en Supabase, fuera de la infraestructura de Aramark",
+     "cat": "Regulatorio",
+     "prob": 3,
+     "imp": 4,
+     "mit": "Usar solo datos de demostración o no sensibles hasta migrar a Corporativo; no cargar datos personales."
+    },
+    {
+     "desc": "Configuración compartida con última escritura gana (cfg/cfgU) puede pisar cambios",
+     "cat": "Técnico",
+     "prob": 3,
+     "imp": 2,
+     "mit": "Aplicar control de versión a la configuración antes de ampliar usuarios."
+    }
+   ]
+  },
+  {
+   "tipo": "Proyecto",
+   "titulo": "APIH Corporativo",
+   "desc": "APIH conforme a requisitos de TI: SPA con Entra ID, API y Azure SQL (3 capas). Reutiliza el núcleo del prototipo mediante monorepo. Incluye las funciones diferidas del prototipo: Pronóstico financiero, Ruta crítica y Escenarios.",
+   "area": "BISE",
+   "lider": "Christian Tolosa",
+   "sponsor": "",
+   "fase": "Planificación",
+   "estado": "En curso",
+   "rag": "Ámbar",
+   "prioridad": "Alta",
+   "avance": 5,
+   "inicioPlan": "2026-10-15",
+   "finPlan": "2026-12-22",
+   "presupuesto": 0,
+   "logros": "Plan y análisis de brechas redactado; estructura de monorepo creada. Arquitectura de 3 capas confirmada por TI (14-10).",
+   "proximos": "Enviar correo a José Curihuinca pidiendo reunión y acceso al Catálogo CMDB. Backlog diferido del prototipo: Pronóstico financiero, Ruta crítica, Escenarios.",
+   "hitos": [
+    {
+     "nombre": "Plan y análisis de brechas redactado",
+     "fase": "Planificación",
+     "fecha": "2026-10-15",
+     "completado": true
+    },
+    {
+     "nombre": "Plan aprobado",
+     "fase": "Planificación",
+     "fecha": "2026-10-16"
+    },
+    {
+     "nombre": "Reunión con J. Curihuinca: Catálogo CMDB como plantilla; stack, hosting, Entra ID y Teams definidos",
+     "fase": "Planificación",
+     "fecha": "2026-10-23"
+    },
+    {
+     "nombre": "Contrato de API de Iniciativa revisado por TI",
+     "fase": "Planificación",
+     "fecha": "2026-10-30"
+    },
+    {
+     "nombre": "App registration Entra ID y ambiente dev",
+     "fase": "Ejecución",
+     "fecha": "2026-11-06"
+    },
+    {
+     "nombre": "Fase 1: núcleo (core) + ui + DataPort con pruebas en CI",
+     "fase": "Ejecución",
+     "fecha": "2026-11-20"
+    },
+    {
+     "nombre": "Corte vertical Iniciativa (API + Azure SQL + Entra ID)",
+     "fase": "Ejecución",
+     "fecha": "2026-11-27"
+    },
+    {
+     "nombre": "Resto de colecciones y reglas de servidor",
+     "fase": "Ejecución",
+     "fecha": "2026-12-04"
+    },
+    {
+     "nombre": "Auditoría y avisos en servidor",
+     "fase": "Ejecución",
+     "fecha": "2026-12-08"
+    },
+    {
+     "nombre": "Endurecimiento: CSP, monitoreo, respaldo, pentest",
+     "fase": "Ejecución",
+     "fecha": "2026-12-11"
+    },
+    {
+     "nombre": "Piloto con usuarios",
+     "fase": "Transición",
+     "fecha": "2026-12-15"
+    },
+    {
+     "nombre": "Migración de datos y publicación como Teams tab",
+     "fase": "Transición",
+     "fecha": "2026-12-18"
+    },
+    {
+     "nombre": "Salida a producción y cierre",
+     "fase": "Cierre",
+     "fecha": "2026-12-22"
+    }
+   ],
+   "riesgos": [
+    {
+     "desc": "TI define un stack que impide reutilizar el núcleo en servidor",
+     "cat": "Técnico",
+     "prob": 3,
+     "imp": 3,
+     "mit": "Pruebas de contrato compartidas; mantener el núcleo como lógica pura y documentada."
+    },
+    {
+     "desc": "Plan agresivo (10 semanas): cualquier demora de TI desplaza la salida a 2027",
+     "cat": "Cronograma",
+     "prob": 4,
+     "imp": 4,
+     "mit": "Hito de control el 27-11 (corte vertical de Iniciativa): si no está, recortar alcance del piloto a Iniciativas, Hitos y Riesgos."
+    },
+    {
+     "desc": "Respuestas de TI tardan y bloquean el corte vertical",
+     "cat": "Cronograma",
+     "prob": 4,
+     "imp": 3,
+     "mit": "Fases 1 y 2 no dependen del stack; escalar con fecha límite en el comité."
+    },
+    {
+     "desc": "Dividir el archivo único introduce regresiones",
+     "cat": "Técnico",
+     "prob": 3,
+     "imp": 3,
+     "mit": "Fase 1 sin cambios funcionales; pruebas Playwright como red de seguridad."
+    },
+    {
+     "desc": "Datos personales (Ley 21.719) y retención sin definir",
+     "cat": "Regulatorio",
+     "prob": 2,
+     "imp": 4,
+     "mit": "Definir con TI y cumplimiento antes del piloto."
+    }
+   ]
+  }
+ ]
+}
