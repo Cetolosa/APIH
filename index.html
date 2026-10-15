@@ -570,6 +570,23 @@ body{font:13px/1.45 var(--font)}
 .kcol .icard .ic-sc>span:first-child{width:34px;height:34px}.kcol .icard .ic-sc{margin-bottom:0}.kcol .icard .ic-f .mut{margin-left:auto}
 .v22-row.one{flex-wrap:nowrap!important;gap:8px}.v22-row.one label.flt select{width:124px}.v22-row.one .search{width:140px;flex:0 1 140px}.v22-row.one .search input{width:100%}.v22-row.one .btn,.v22-row.one label.chk,.v22-row.one .seg,.v22-row.one .seg button,.v22-row.one .lnk{white-space:nowrap;flex:none}
 .cards .icard .ic-f{margin-top:8px;padding-top:6px;border-top:1px solid var(--bd2);justify-content:flex-start}.cards .icard .pvs{margin-top:2px}
+/* ---------- V22.43: Historial por registro ---------- */
+ .hs-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+ .hs-bar .chip{height:26px;font-size:12px}.hs-bar .sp{margin-left:auto;font-size:12px;color:var(--tx3)}
+ .hs-day{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 6px}
+ .hs-i{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd2)}
+ .hs-i:last-child{border-bottom:0}
+  .hs-h{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12.5px}.hs-h b{font-size:13px}.hs-h time{margin-left:auto;font-size:11.5px;color:var(--tx3)}
+ .hs-tag{font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:10px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+ .hs-d{display:grid;gap:3px;margin-top:5px}
+ .hs-r{display:grid;grid-template-columns:150px 1fr;gap:8px;font-size:12.5px;align-items:baseline}
+ .hs-r>span:first-child{color:var(--tx3)}
+ .hs-r s{color:var(--tx3);text-decoration-color:#D13438}.hs-r .ar{color:var(--tx3);margin:0 5px}.hs-r em{font-style:normal;font-weight:600;color:var(--tx)}
+ .hs-t{font-size:12.5px;color:var(--tx2);margin-top:4px}
+ .hs-ent{font-size:11.5px;color:var(--tx3)}
+ .hs-more{margin-top:8px;text-align:center}
+ `;document.head.appendChild(st);
+
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -835,8 +852,8 @@ const DEC_ICON = { Iniciar: 'play', Acelerar: 'fast', Mantener: 'pause2', Pausar
 const DEC_C = { Iniciar: '#107C10', Acelerar: '#0D446A', Mantener: '#605E5C', Pausar: '#CA5010', Cancelar: '#D13438' };
 const RISK_CATS = ['Técnico', 'Alcance', 'Recursos', 'Proveedor', 'Cronograma', 'Financiero', 'Regulatorio', 'Otro'];
 const RISK_ESTADOS = ['Abierto', 'En mitigación', 'Materializado', 'Cerrado'];
-const BIT_TIPOS = ['Cambio', 'Actualización', 'Riesgo', 'Comentario', 'Decisión'];
-const BIT_C = { 'Cambio': '#0D446A', 'Actualización': '#107C10', 'Riesgo': '#D13438', 'Comentario': '#8764B8', 'Decisión': '#CA5010' };
+const BIT_TIPOS = ['Cambio', 'Actualización', 'Riesgo', 'Comentario', 'Decisión', 'Edición'];
+const BIT_C = { 'Cambio': '#0D446A', 'Actualización': '#107C10', 'Riesgo': '#D13438', 'Comentario': '#8764B8', 'Decisión': '#CA5010', 'Edición': '#5a6b7d' };
 const AREAS_DEF = ['BISE', 'MINERÍA', 'FINANZAS', 'SUPPLY CHAIN', 'Transversal'];
 const CATS_DEF = ['Transformación Operacional', 'Innovación', 'Arquitectura', 'Transversal', 'Retail', 'Próximos Desafíos'];
 
@@ -918,7 +935,7 @@ function seedState() {
   return migrateV5({ v: 3, cfg: Object.assign(defaultCfg(), { comiteParts: s.comiteParts || [] }), ini: s.iniciativas, compromisos: s.compromisos || [], cambios: s.cambios || [], notas: [], documentos: [], hitos: s.hitos, riesgos: s.riesgos, decisiones: s.decisiones, comites: s.comites, bitacora: s.bitacora, ptpl: [], psnap: {}, pres: s.presentaciones, usuarios: s.usuarios, eventos: [], iaLog: [], seq: {} });
 }
 /* V4: sin localStorage. El estado inicial lo entrega DataService.init() (SharePoint o demo en memoria). */
-function save() { _ixGen++; ppInval(); DataService.commit(); }
+function save() { _ixGen++; ppInval(); try { audit(); } catch (e) { } DataService.commit(); }
 function nextId(prefix, list) {
   const mx = Math.max(0, ...list.map(x => parseInt(String(x.id).split('-')[1], 10) || 0));
   return prefix + '-' + String(mx + 1).padStart(3, '0');
@@ -927,6 +944,66 @@ const byId = id => St.ini.find(i => i.id === id);
 const nameOf = id => { const i = byId(id); return i ? i.titulo : '—'; };
 function log(tipo, ini, texto, meta) {
   St.bitacora.unshift({ id: 'BIT-' + String(St.bitacora.length + 1).padStart(4, '0') + Math.random().toString(36).slice(2, 4), ts: hoy() + 'T' + pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()), tipo, ini: ini || null, autor: St.cfg.usuario, texto, meta: meta || null });
+}
+
+/* ---------- V22.43: Historial por registro (auditoría por diferencias) ----------
+   Al guardar se compara cada registro con su foto anterior y se escribe UNA entrada «Edición» por registro con los campos que cambiaron.
+   Formato de texto (legible también en la Bitácora): «[Hito «nombre» — ]Campo: antes → después | Campo: antes → después». */
+const AUD = {
+  ini: { lbl: 'Iniciativa', f: { titulo: 'Nombre', lider: 'Responsable', sponsor: 'Sponsor', negocio: 'Resp. negocio', area: 'Área', categoria: 'Categoría', prioridad: 'Prioridad', rag: 'Salud (RAG)', estado: 'Estado', fase: 'Fase', avance: 'Avance', presupuesto: 'Presupuesto', gastado: 'Consumido', inicioPlan: 'Inicio plan', finPlan: 'Fin plan', finEst: 'Fin estimado', moneda: 'Moneda' }, nom: r => r.titulo },
+  hito: { lbl: 'Hito', f: { nombre: 'Nombre', fecha: 'Fecha', completado: 'Completado', fechaReal: 'Fecha real', resp: 'Responsable' }, nom: r => r.nombre, ini: r => r.ini },
+  riesgo: { lbl: 'Riesgo', f: { desc: 'Descripción', prob: 'Probabilidad', imp: 'Impacto', estado: 'Estado', dueno: 'Dueño', mit: 'Mitigación' }, nom: r => r.desc, ini: r => r.ini },
+  decision: { lbl: 'Decisión', f: { titulo: 'Título', tipo: 'Tipo', estado: 'Estado', limite: 'Fecha límite', resolucion: 'Resolución', solicita: 'Solicita' }, nom: r => r.titulo, ini: r => r.ini },
+  compromiso: { lbl: 'Compromiso', f: { texto: 'Descripción', resp: 'Responsable', limite: 'Fecha límite', estado: 'Estado' }, nom: r => r.texto, ini: r => r.ini },
+  cambio: { lbl: 'Cambio', f: { tipo: 'Tipo', desc: 'Descripción', estado: 'Estado', fNue: 'Nueva fecha', pNue: 'Nuevo presupuesto', aprobador: 'Aprobador' }, nom: r => r.desc || r.id, ini: r => r.ini }
+};
+const AUD_COL = { ini: 'ini', hito: 'hitos', riesgo: 'riesgos', decision: 'decisiones', compromiso: 'compromisos', cambio: 'cambios' };
+const AUD_SEM = ['fase', 'estado', 'rag'];      /* campos que ya registra la bitácora con su propio texto («Cambio de fase», «RAG»…) */
+let _audSt = null, _audSnap = {}, _audTop = null;
+function audVal(k, v, r) {
+  if (v == null || v === '') return '—';
+  if (typeof v === 'boolean') return v ? 'Sí' : 'No';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(v))) return fmtD(v);
+  if (k === 'avance') return Math.round(v) + '%';
+  if (k === 'presupuesto' || k === 'gastado') return fmtMon(v, r.moneda || 'CLP');
+  if (k === 'pNue') return fmtN(v);
+  return String(v).replace(/\s+/g, ' ').slice(0, 80);
+}
+function audSnap() {
+  const S = {};
+  Object.keys(AUD).forEach(t => (St[AUD_COL[t]] || []).forEach(r => { const d = {}; Object.keys(AUD[t].f).forEach(k => { d[k] = r[k] == null ? null : r[k]; }); S[t + ':' + r.id] = d; }));
+  _audSt = St; _audSnap = S; _audTop = St.bitacora && St.bitacora[0] ? St.bitacora[0].id : null;
+}
+function audit() {
+  if (!St) return;
+  if (St !== _audSt) { audSnap(); return; }        /* St reemplazado (carga remota, importación, restauración): solo se toma la foto base */
+  const nuevos = []; for (const b of St.bitacora) { if (b.id === _audTop) break; nuevos.push(b); }
+  const conCambio = new Set(nuevos.filter(b => b.tipo === 'Cambio' && b.ini).map(b => b.ini));
+  const out = [], S = {};
+  Object.keys(AUD).forEach(t => {
+    const A = AUD[t];
+    (St[AUD_COL[t]] || []).forEach(r => {
+      const key = t + ':' + r.id, cur = {}, prev = _audSnap[key];
+      Object.keys(A.f).forEach(k => { cur[k] = r[k] == null ? null : r[k]; });
+      S[key] = cur; if (!prev) return;
+      const ini = t === 'ini' ? r.id : A.ini(r), diffs = [];
+      Object.keys(A.f).forEach(k => {
+        if (JSON.stringify(prev[k]) === JSON.stringify(cur[k])) return;
+        if (AUD_SEM.includes(k) && conCambio.has(ini)) return;
+        diffs.push(A.f[k] + ': ' + audVal(k, prev[k], r) + ' → ' + audVal(k, cur[k], r));
+      });
+      if (diffs.length && ini) out.push({ ini, texto: (t === 'ini' ? '' : A.lbl + ' «' + String(A.nom(r) || r.id).replace(/[«»]/g, '').slice(0, 60) + '» — ') + diffs.join(' | ') });
+    });
+  });
+  if (out.length > 30) { log('Edición', null, 'Edición en lote: ' + out.length + ' registros modificados (detalle no registrado por campo)'); }
+  else out.slice().reverse().forEach(o => log('Edición', o.ini, o.texto));
+  _audSnap = S; _audTop = St.bitacora[0] ? St.bitacora[0].id : null;
+}
+function audParse(texto) {
+  const m = /^(Hito|Riesgo|Decisión|Compromiso|Cambio) «(.*?)» — /.exec(texto || '');
+  const ent = m ? m[2] : '', body = m ? texto.slice(m[0].length) : (texto || '');
+  const rows = body.split(' | ').map(x => { const a = x.indexOf(': '), b = x.indexOf(' → '); return a > 0 && b > a ? [x.slice(0, a), x.slice(a + 2, b), x.slice(b + 3)] : null; });
+  return { ent, kind: m ? m[1] : 'Iniciativa', rows: rows.every(Boolean) ? rows : null, raw: body };
 }
 
 /* ---------- cálculos de dominio ---------- */
@@ -3412,7 +3489,7 @@ Acts.dest = d => { F('dec', {}).estado = d.e; render(); };
 /* ======================= BITÁCORA ======================= */
 Views.bitacora = {
   render() {
-    const f = F('bit', { q: '', tipos: BIT_TIPOS.slice(), ini: '', tema: '', n: 60 });
+    const f = F('bit', { q: '', tipos: BIT_TIPOS.filter(t => t !== 'Edición'), ini: '', tema: '', n: 60 });
     let rows = St.bitacora.filter(b => !b.ini || (byId(b.ini) ? inArea(byId(b.ini)) : true)).filter(b => f.tipos.includes(b.tipo));
     if (f.ini === '__gen') rows = rows.filter(b => !b.ini); else if (f.ini) rows = rows.filter(b => b.ini === f.ini); if (f.tema) rows = rows.filter(b => b.tema === f.tema); if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(b => (b.texto + b.autor + (b.tema || '') + nameOf(b.ini)).toLowerCase().includes(q)); }
     const temas = uniq(St.bitacora.map(b => b.tema).filter(Boolean)).sort();
@@ -8963,7 +9040,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   const SECS = [
     ['res', 'Resumen', 'list', true], ['cif', 'Cifras, fechas y responsables', 'money'], ['sal', 'Salud y recomendación', 'target'], ['dep', 'Dependencias', 'link'], ['log', 'Logros y próximos pasos', 'check'], ['cal', 'Calidad de datos', 'shield'],
-    ['hit', 'Hitos', 'flag', true, 'prj'], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Actividad', 'book', true], ['ia', 'IA', 'spark'], ['doc', 'Documentación', 'book'], ['int', 'Notas internas del PMO', 'lock', true], ['nota', 'Comentarios del área', 'comment', true]
+    ['hit', 'Hitos', 'flag', true, 'prj'], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Historial', 'book', true], ['ia', 'IA', 'spark'], ['doc', 'Documentación', 'book'], ['int', 'Notas internas del PMO', 'lock', true], ['nota', 'Comentarios del área', 'comment', true]
   ];
   const SIMPLE_OPEN = ['res', 'cif', 'hit', 'rie', 'doc', 'int'];
   const fh = () => (UI.fh = UI.fh || (() => { try { return JSON.parse(lsGet('apih_fh') || '{}'); } catch (e) { return {}; } })());
@@ -9073,6 +9150,34 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     if (!ns.length) return [0, V.emptyRich({ ic: 'comment', title: 'Sin comentarios pendientes', line: 'Si ves algo que corregir o aclarar, déjalo aquí: lo verá el área y un administrador lo abordará.', p: ['Dejar un comentario', 'notanew', {}, 'comment'] })];
     return [ns.length, `<div class="v22-nl">${ns.map(n => notaItem(n, gob)).join('')}</div>`];
   }
+  /* ---- V22.43: Historial por registro ---- */
+  UI.hs = UI.hs || { f: 'todo', n: 15 };
+  const HS_F = [['todo', 'Todo'], ['campos', 'Campos'], ['fase', 'Fase y estado'], ['coment', 'Comentarios'], ['hr', 'Hitos y riesgos']];
+  function hsItem(b) {
+    let tag = b.tipo, g = 'otros', P = null;
+    if (b.tipo === 'Edición') { P = audParse(b.texto); tag = P.kind === 'Iniciativa' ? 'Edición' : P.kind; g = /^(Hito|Riesgo)$/.test(P.kind) ? 'hr' : 'campos'; }
+    else if (b.tipo === 'Comentario') g = 'coment';
+    else if (b.tipo === 'Riesgo') g = 'hr';
+    else if (b.tipo === 'Cambio' && /fase|Estado:|RAG |Línea base|reabierta/i.test(b.texto)) { tag = 'Fase'; g = 'fase'; }
+    else if (b.tipo === 'Cambio' && /^(Hito|Riesgo)/.test(b.texto)) { tag = b.texto.startsWith('Hito') ? 'Hito' : 'Riesgo'; g = 'hr'; }
+    return { b, tag, g, P };
+  }
+  const HS_TC = { 'Edición': '#0D446A', 'Fase': '#CA5010', 'Hito': '#107C10', 'Riesgo': '#D13438', 'Comentario': '#8764B8', 'Decisión': '#CA5010', 'Compromiso': '#0D446A', 'Cambio': '#0D446A', 'Actualización': '#107C10' };
+  function histHTML(i) {
+    const all = St.bitacora.filter(x => x.ini === i.id && !/^Hito actualizado: /.test(x.texto || '')).map(hsItem);
+    const cnt = k => k === 'todo' ? all.length : all.filter(x => x.g === k).length;
+    const f = UI.hs.f, L = all.filter(x => f === 'todo' || x.g === f), V = L.slice(0, UI.hs.n);
+    const dl = d => { const k = diffD(d, hoy()); return k === 0 ? 'Hoy' : k === -1 ? 'Ayer' : fmtDL(d); };
+    const days = []; V.forEach(x => { const d = String(x.b.ts).slice(0, 10); let g = days[days.length - 1]; if (!g || g.d !== d) { g = { d, it: [] }; days.push(g); } g.it.push(x); });
+    const row = r => `<div class="hs-r"><span>${esc(r[0])}</span><span><s>${esc(r[1])}</s><span class="ar">→</span><em>${esc(r[2])}</em></span></div>`;
+    const it = x => `<div class="hs-i">${avatar(x.b.autor || '?', 28)}<div><div class="hs-h"><b>${esc(x.b.autor || '—')}</b><span class="hs-tag" style="--c:${HS_TC[x.tag] || '#0D446A'}">${esc(x.tag)}</span>${x.P && x.P.ent ? `<span class="hs-ent">${esc(x.P.ent)}</span>` : ''}<time>${esc(String(x.b.ts).length > 10 ? String(x.b.ts).slice(11, 16) : '')}</time></div>${x.P && x.P.rows ? `<div class="hs-d">${x.P.rows.map(row).join('')}</div>` : `<div class="hs-t">${esc(x.P ? x.P.raw : x.b.texto)}</div>`}</div></div>`;
+    return `<div class="pn-sec"><div class="composer"><input id="cmt" placeholder="Agregar comentario…" data-key="cmt"><button class="btn pri sm" data-act="comment" data-id="${i.id}" aria-label="Enviar comentario">${icon('send', 13)}</button></div>
+      <div class="hs-bar">${HS_F.map(([k, l]) => `<button class="chip ${f === k ? 'on' : ''}" style="--c:#0D446A" data-act="hsfil" data-k="${k}"><i></i>${l} · ${cnt(k)}</button>`).join('')}</div>
+      ${days.map(g => `<div class="hs-day">${esc(dl(g.d))}</div>${g.it.map(it).join('')}`).join('') || '<p class="mut">Sin registros para este filtro.</p>'}
+      ${L.length > V.length ? `<div class="hs-more"><button class="btn sm" data-act="hsmas">Ver ${Math.min(15, L.length - V.length)} más · quedan ${L.length - V.length}</button></div>` : ''}</div>`;
+  }
+  Acts.hsfil = d => { UI.hs.f = d.k; UI.hs.n = 15; render(); };
+  Acts.hsmas = () => { UI.hs.n += 15; render(); };
   function fichaHTML(i) {
     const PR = esProp(i), R = parsePanel(i, 'resumen'), G = {};
     [...R.body.children].forEach(el => { const k = PR ? 'res' : grupoResumen(el); (G[k] = G[k] || []).push(el.outerHTML); });
@@ -9080,7 +9185,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     ['res', 'cif', 'sal', 'dep', 'log', 'cal'].forEach(k => { if (G[k]) sec[k] = [null, G[k].join('')]; });
     if (!PR) sec.hit = secHitos(i);
     sec.rie = secRiesgos(i); sec.dec = secDec(i); sec.com = secCom(i); if (!PR) sec.cam = secCam(i);
-    sec.act = [null, parsePanel(i, 'actividad').body.innerHTML];
+    sec.act = [St.bitacora.filter(x => x.ini === i.id).length, histHTML(i)];
     if (APIH_CONFIG.ia !== false) sec.ia = [null, parsePanel(i, 'ia').body.innerHTML];
     sec.doc = secDoc(i);
     sec.int = secInt(i);
@@ -9206,7 +9311,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.42', b: '15-10-2026 12:10' };
+  const VER = { v: 'V22.43', b: '15-10-2026 13:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9311,7 +9416,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     /* compactar() mueve los filtros a otra fila y eso quita el foco del campo que se está escribiendo: se restaura al final */
     const act = document.activeElement, key = act && act.dataset ? act.dataset.key : null, ss = act && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
     render0.apply(this, arguments);
-    try { primaria(); compactar(); contrasta(); menuTabs(); paginar(); a11y(); } catch (e) { console.error(e); }
+    try { if (St !== _audSt) audSnap(); primaria(); compactar(); contrasta(); menuTabs(); paginar(); a11y(); } catch (e) { console.error(e); }
     if (key) { const el = $(`[data-key="${key}"]`); if (el && el !== document.activeElement) { el.focus(); if (ss && el.setSelectionRange) try { el.setSelectionRange(ss[0], ss[1]); } catch (e) { } } }
   };
   /* texto oscuro sobre fondos claros (celdas de la matriz y exposición) */
