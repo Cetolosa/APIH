@@ -3808,11 +3808,15 @@ Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
     const k = t => _nrm(t), ex = new Set(St.ini.map(i => k(i.titulo))), nuevas = [], omit = [];
     L.forEach(x => { if (!x || !String(x.titulo || '').trim()) { omit.push('(sin título)'); return; } if (ex.has(k(x.titulo))) { omit.push(x.titulo); return; } ex.add(k(x.titulo)); nuevas.push(x); });
     if (!nuevas.length) { toast('Nada que importar: todas ya existen (' + omit.join(', ') + ')', 'err'); return; }
-    confirmBox('Se agregarán <b>' + nuevas.length + '</b> iniciativa(s): ' + nuevas.map(x => esc(x.titulo)).join(', ') + '.' + (omit.length ? '<br>Omitidas por existir o sin título: ' + omit.map(esc).join(', ') + '.' : '') + '<br>Los datos actuales no se modifican. ¿Continuar?', () => {
+    let nh = 0, nr = 0; const th = nuevas.reduce((a, x) => a + (x.hitos || []).length, 0);
+    confirmBox('Se agregarán <b>' + nuevas.length + '</b> iniciativa(s) con ' + th + ' hitos: ' + nuevas.map(x => esc(x.titulo)).join(', ') + '.' + (omit.length ? '<br>Omitidas por existir o sin título: ' + omit.map(esc).join(', ') + '.' : '') + '<br>Los datos actuales no se modifican. ¿Continuar?', () => {
       nuevas.forEach(x => { const PR = x.tipo === 'Propuesta', pre = PR ? 'PROP' : 'PRJ', T = PR ? 'Propuesta' : 'Proyecto';
         const n = Object.assign({ id: nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))), tipo: T, legacy: '', creada: hoy(), faseDesde: hoy(), origen: 'importación', est: [], hist: [[hoy(), +x.avance || 0]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, estado: PR ? 'Vigente' : 'En curso', propuestaOrigen: null, estadoMotivo: '', estadoRev: null, rag: 'Verde', avance: 0, gastado: 0, proyecto: null, deps: [], area: 'BISE', fase: PR ? FASES_PROP[0] : 'Planificación', prioridad: 'Media', presupuesto: 0, logros: '', proximos: '', sponsor: '', lider: '', desc: '' }, x, { id: undefined, actualizada: hoy() });
-        n.id = nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))); n.finEst = n.finEst || n.finPlan || null; St.ini.push(n); log('Cambio', n.id, T + ' importada: ' + n.titulo); });
-      toast(nuevas.length + ' iniciativa(s) importada(s)'); refresh(); }, 'Importar');
+        n.id = nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))); n.finEst = n.finEst || n.finPlan || null; delete n.hitos; delete n.riesgos; St.ini.push(n);
+        (x.hitos || []).forEach(h => { const f = h.fecha || addD(n.inicioPlan || hoy(), +h.dias || 0), ok = !!h.completado; St.hitos.push({ id: nextId('HIT', St.hitos), ini: n.id, nombre: h.nombre, fase: h.fase || n.fase, fecha: f, completado: ok, fechaReal: ok ? (h.fechaReal || f) : null, resp: h.resp || n.lider || '' }); nh++; });
+        (x.riesgos || []).forEach(r => { St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: n.id, cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: n.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '', ...r }); nr++; });
+        log('Cambio', n.id, T + ' importada: ' + n.titulo + (x.hitos ? ' (' + x.hitos.length + ' hitos' + (x.riesgos ? ', ' + x.riesgos.length + ' riesgos' : '') + ')' : '')); });
+      toast(nuevas.length + ' iniciativa(s) importada(s), ' + nh + ' hitos, ' + nr + ' riesgos'); refresh(); }, 'Importar');
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 Acts.reset = () => confirmBox(DataService.svc ? 'Se reemplazarán TODOS los datos de ' + BK() + ' por los datos del archivo original. ¿Continuar?' : 'Se perderán los cambios y se restaurarán los datos de demostración. ¿Continuar?', () => { St = seedState(); UI.sel = null; shell(); toast('Datos restaurados'); refresh(); }, 'Restaurar', true);
 
@@ -9609,7 +9613,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.50', b: '15-10-2026 18:10' };
+  const VER = { v: 'V22.51', b: '15-10-2026 18:40' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
