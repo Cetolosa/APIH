@@ -595,6 +595,12 @@ body{font:13px/1.45 var(--font)}
 .pop-f2{display:flex;justify-content:space-between;gap:8px;padding:6px 8px;border-top:1px solid var(--bd2)}.pop-f2 button{border:0;background:none;color:var(--pri-d);font-size:12px;font-weight:600;cursor:pointer;padding:4px 6px;border-radius:6px}.pop-f2 button:hover{background:var(--pri-l)}
 .notif-t td{vertical-align:middle;white-space:normal;overflow:visible;text-overflow:clip;max-width:none}.notif-t .dst{display:flex;flex-wrap:wrap;gap:2px 12px}.notif-t .dst .chk{margin:0!important}.notif-t tr.grp td{background:var(--bg2,#f3f4f6);font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--tx3)}.notif-t small{color:var(--tx3)}
 
+/* ---------- V22.45: calendario ajustado a la pantalla + mes completo ---------- */
+.cal.fit{display:flex;flex-direction:column;height:max(400px,calc(100vh - 235px));height:max(400px,calc(100dvh - 235px))}.cal.fit .cal-g{flex:1;grid-auto-rows:minmax(0,1fr);min-height:0}
+.cal .cd{padding:3px 5px}.cal.fit .ce{margin-top:2px;padding:0 5px;line-height:1.35}
+.cal-tipos{min-width:170px;padding:8px 10px;gap:6px}.cal-tipos.open{display:grid}.cal-tipos .ctype{display:flex}.cal-flt small{white-space:nowrap}
+.modal.cal-m{width:min(1180px,100%)}.cal-mh{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.cal-mh small{color:var(--tx3);margin-left:auto}
+.cal-big{height:calc(100vh - 250px);height:calc(100dvh - 250px);min-height:380px;display:flex;flex-direction:column}.cal-big .cal-g{flex:1;grid-auto-rows:minmax(0,1fr);min-height:0}.cal-big .ce{font-size:11.5px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -3363,22 +3369,48 @@ function calEvents() {
   St.eventos.forEach(e => ev.push({ f: e.fecha, t: e.tipo, l: e.titulo, s: e.nota || '', ref: ['evt', e.id], ini: e.ini, resp: e.resp }));
   return ev;
 }
+/* V22.45: celdas del mes (compartidas por la vista y por la ventana «Mes completo») */
+function calCells(f, map, start, nmax, noSel) {
+  let cells = '';
+  for (let k = 0; k < 42; k++) {
+    const d = new Date(start); d.setDate(start.getDate() + k); const s = toISO(d), es = map[s] || [], other = d.getMonth() !== f.m;
+    if (k === 35 && other) break;
+    cells += `<div class="cd ${other ? 'oth' : ''} ${s === hoy() ? 'today' : ''} ${!noSel && f.day === s ? 'sel' : ''}" data-act="${noSel ? 'cmday' : 'cday'}" data-d="${s}"><span class="cn">${d.getDate()}</span>${es.slice(0, nmax).map(e => `<i class="ce" style="--c:${e.c || EV_C[e.t]}" title="${esc(e.t + ': ' + e.l)}"><em>${esc(e.l)}</em></i>`).join('')}${es.length > nmax ? `<small class="more">+${es.length - nmax} más</small>` : ''}</div>`;
+  }
+  return cells;
+}
+function calMesData() {
+  const f = F('cal', {}), first = new Date(f.y, f.m, 1, 12), off = (first.getDay() + 6) % 7, start = new Date(f.y, f.m, 1 - off, 12);
+  const ev = calEvents().filter(e => f.types[e.t]).filter(e => calMatch(e, f)), map = {}; ev.forEach(e => (map[e.f] = map[e.f] || []).push(e));
+  return { f, start, map, n: ev.filter(e => e.f >= toISO(first) && e.f <= toISO(new Date(f.y, f.m + 1, 0, 12))).length };
+}
+function calModalBody() {
+  const { f, start, map, n } = calMesData();
+  return `<div class="cal-mh"><div class="seg"><button data-act="cmnav" data-d="-1" aria-label="Mes anterior">${icon('chevl', 14)}</button><span class="seg-l" style="min-width:150px">${MESES[f.m]} ${f.y}</span><button data-act="cmnav" data-d="1" aria-label="Mes siguiente">${icon('chev', 14)}</button></div><button class="btn" data-act="cmtoday">Hoy</button><small>${n} eventos en el mes · clic en un día para ver su detalle</small></div>
+    <div class="cal cal-big"><div class="cal-h">${DIAS.map(d => `<div>${d}</div>`).join('')}</div><div class="cal-g">${calCells(f, map, start, 4, true)}</div></div>`;
+}
+function calModal() {
+  const f = F('cal', {}); Modal.open({ title: 'Calendario · mes completo', wide: true, body: `<div id="cal-mbody">${calModalBody()}</div>`, footer: '<button class="btn" data-act="mclose">Cerrar</button>' });
+  const m = $('#modal .modal'); if (m) m.classList.add('cal-m');
+}
+const calModalRefresh = () => { const b = $('#cal-mbody'); if (b) b.innerHTML = calModalBody(); };
+Acts.calmodal = () => calModal();
+Acts.cmnav = d => { const f = F('cal', {}); let m = f.m + +d.d, y = f.y; if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; } f.m = m; f.y = y; f.day = ''; calModalRefresh(); };
+Acts.cmtoday = () => { const t = pD(hoy()), f = F('cal', {}); f.y = t.getFullYear(); f.m = t.getMonth(); calModalRefresh(); };
+Acts.cmday = d => { Modal.close(); Acts.cday(d); };
 Views.calendario = {
   render() {
     const t0 = pD(hoy()); const f = F('cal', { y: t0.getFullYear(), m: t0.getMonth(), types: { 'Hito': 1, 'Comité': 1, 'Entrega': 1, 'Vencimiento': 1, 'Ciclo': 1, 'Otro': 1 }, day: '', area: '', ini: '', resp: '' });
     const first = new Date(f.y, f.m, 1, 12), off = (first.getDay() + 6) % 7, start = new Date(f.y, f.m, 1 - off, 12);
     const evAll = calEvents().filter(e => f.types[e.t]), opt = calOpts(evAll), ev = evAll.filter(e => calMatch(e, f)), nflt = ['ini'].filter(k => f[k]).length + (St.cfg.areaGlobal !== 'Todas' ? 1 : 0) + (respSel() ? 1 : 0); const map = {}; ev.forEach(e => (map[e.f] = map[e.f] || []).push(e));
-    let cells = ''; for (let k = 0; k < 42; k++) { const d = new Date(start); d.setDate(start.getDate() + k); const s = toISO(d), es = map[s] || [], other = d.getMonth() !== f.m;
-      if (k === 35 && other) break;
-      cells += `<div class="cd ${other ? 'oth' : ''} ${s === hoy() ? 'today' : ''} ${f.day === s ? 'sel' : ''}" data-act="cday" data-d="${s}"><span class="cn">${d.getDate()}</span>${es.slice(0, 3).map(e => `<i class="ce" style="--c:${e.c || EV_C[e.t]}" title="${esc(e.t + ': ' + e.l)}"><em>${esc(e.l)}</em></i>`).join('')}${es.length > 3 ? `<small class="more">+${es.length - 3} más</small>` : ''}</div>`; }
+    const cells = calCells(f, map, start, 2);
     const dayEv = f.day ? (map[f.day] || []) : ev.filter(e => e.f >= toISO(first) && e.f <= toISO(new Date(f.y, f.m + 1, 0, 12))).sort(by('f'));
-    return pageHead('Calendario', 'Hitos, comités, entregas, vencimientos y ciclos de presentación.', `<span class="edit-only">${btn('Nuevo evento', 'newevt', { ic: 'plus', cls: 'pri' })}</span>`) + `
-    <div class="toolbar"><div class="seg"><button data-act="cnav" data-d="-1" aria-label="Mes anterior">${icon('chevl', 14)}</button><span class="seg-l" style="min-width:140px">${MESES[f.m]} ${f.y}</span><button data-act="cnav" data-d="1" aria-label="Mes siguiente">${icon('chev', 14)}</button></div>${btn('Hoy', 'ctoday')}
-      <div class="legend-row" style="margin-left:auto">${Object.keys(EV_C).map(t => `<label class="chk ctype" style="--c:${EV_C[t]}"><input type="checkbox" ${f.types[t] ? 'checked' : ''} data-chg="ctype" data-t="${t}"><span><i></i>${t}</span></label>`).join('')}</div></div>
-    <div class="toolbar cal-flt" role="group" aria-label="Filtros del calendario"><span class="tb-l">${icon('filter', 14)} Proyecto</span>
+    const tipos = Object.keys(EV_C), ntip = tipos.filter(t => f.types[t]).length;
+    return pageHead('Calendario', 'Hitos, comités, entregas, vencimientos y ciclos de presentación.', `<div class="seg"><button data-act="cnav" data-d="-1" aria-label="Mes anterior">${icon('chevl', 14)}</button><span class="seg-l" style="min-width:128px">${MESES[f.m]} ${f.y}</span><button data-act="cnav" data-d="1" aria-label="Mes siguiente">${icon('chev', 14)}</button></div>${btn('Hoy', 'ctoday', { cls: 'v22-main' })}<button class="btn v22-main" data-act="calmodal" title="Ver el mes completo en una ventana">${icon('expand', 15)}<span>Mes completo</span></button><span class="edit-only">${btn('Nuevo evento', 'newevt', { ic: 'plus', cls: 'pri' })}</span>`) + `
+    <div class="toolbar cal-flt" role="group" aria-label="Filtros del calendario"><span class="popw"><button class="btn" data-act="pop" data-id="pop-ctipos" aria-haspopup="menu">${icon('filter', 14)}<span>Tipos${ntip < tipos.length ? ' (' + ntip + '/' + tipos.length + ')' : ''}</span></button><div class="pop cal-tipos" id="pop-ctipos" style="left:0">${tipos.map(t => `<label class="chk ctype" style="--c:${EV_C[t]}"><input type="checkbox" ${f.types[t] ? 'checked' : ''} data-chg="ctype" data-t="${t}"><span><i></i>${t}</span></label>`).join('')}</div></span>
       <select data-chg="cflt" data-f="ini" aria-label="Proyecto">${selOpts(opt.inis, f.ini, 'Todos los proyectos y propuestas')}</select>
-      ${f.ini ? btn('Quitar proyecto', 'cclear', { ic: 'x', cls: 'sm' }) : ''}<small style="display:inline;margin-left:auto">${nflt ? `${ev.length} de ${evAll.length} eventos · los eventos sin proyecto (comités, ciclos) se ocultan al filtrar` : `${ev.length} eventos`}</small></div>
-    <div class="cal-w"><div class="cal"><div class="cal-h">${DIAS.map(d => `<div>${d}</div>`).join('')}</div><div class="cal-g">${cells}</div></div>
+      ${f.ini ? btn('Quitar proyecto', 'cclear', { ic: 'x', cls: 'sm' }) : ''}<small style="display:inline;margin-left:auto" ${nflt ? 'title="Los eventos sin proyecto (comités, ciclos) se ocultan al filtrar"' : ''}>${nflt ? `${ev.length} de ${evAll.length} eventos` : `${ev.length} eventos`}</small></div>
+    <div class="cal-w"><div class="cal fit"><div class="cal-h">${DIAS.map(d => `<div>${d}</div>`).join('')}</div><div class="cal-g">${cells}</div></div>
     <aside class="card cal-side"><header><h2>${f.day ? fmtDL(f.day) : 'Eventos del mes'}</h2>${f.day ? `<button class="lnk" data-act="cday" data-d="${f.day}">Ver mes</button>` : `<small>${dayEv.length}</small>`}</header>
       ${dayEv.map(e => `<button class="row" data-act="cev" data-r="${e.ref[0]}" data-id="${esc(e.ref[1])}"><span class="cdot" style="background:${e.c || EV_C[e.t]}"></span><span class="r-m"><b class="${e.done ? 'strike' : ''}">${esc(e.l)}</b><small>${f.day ? '' : fmtD(e.f) + ' · '}${e.t}${e.s ? ' · ' + esc(e.s) : ''}</small></span></button>`).join('') || empty('Sin eventos', 'cal')}</aside></div>`;
   }
@@ -3396,7 +3428,7 @@ const calAreas = e => { const i = e.ini && byId(e.ini); return ((i && i.area) ||
 const calMatch = (e, f) => { const A = St.cfg.areaGlobal, R = respSel(); return (A === 'Todas' || calAreas(e).includes(A)) && (!f.ini || e.ini === f.ini) && (!R || (e.resp ? e.resp === R : !!(e.ini && personProjects(R).has(e.ini)))); };
 Chg.cflt = el => { const f = F('cal', {}); f[el.dataset.f] = el.value; f.day = ''; render(); };
 Acts.cclear = () => { F('cal', {}).ini = ''; render(); };
-Chg.ctype = el => { F('cal', {}).types[el.dataset.t] = el.checked ? 1 : 0; render(); };
+Chg.ctype = el => { F('cal', {}).types[el.dataset.t] = el.checked ? 1 : 0; render(); setTimeout(() => { const e = $('#pop-ctipos'); if (e) { e.classList.add('open'); UI.pop = 'pop-ctipos'; syncPop(); } }, 0); };
 function evtForm(e) {
   const nw = !e; openForm({ title: nw ? 'Nuevo evento' : 'Editar evento', values: e || { fecha: F('cal', {}).day || hoy(), tipo: 'Otro' }, saveLabel: nw ? 'Crear' : 'Guardar', danger: nw ? null : 'Eliminar', onDanger: () => { St.eventos = St.eventos.filter(x => x.id !== e.id); toast('Evento eliminado'); refresh(); },
     fields: [{ k: 'titulo', l: 'Título', req: true, w: 3 }, { k: 'fecha', l: 'Fecha', t: 'date', req: true }, { k: 'tipo', l: 'Tipo', t: 'select', opts: ['Otro', 'Entrega', 'Vencimiento', 'Comité', 'Hito'] }, { k: 'ini', l: 'Proyecto / propuesta (opcional)', t: 'select', opts: [{ v: '', t: '— ninguno —' }, ...St.ini.map(i => ({ v: i.id, t: i.id + ' · ' + i.titulo }))] }, { k: 'resp', l: 'Responsable (opcional)' }, { k: 'nota', l: 'Nota', w: 3 }],
@@ -9458,7 +9490,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.44', b: '15-10-2026 14:00' };
+  const VER = { v: 'V22.45', b: '15-10-2026 14:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
