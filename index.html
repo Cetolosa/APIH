@@ -601,6 +601,24 @@ body{font:13px/1.45 var(--font)}
 .cal-tipos{min-width:170px;padding:8px 10px;gap:6px}.cal-tipos.open{display:grid}.cal-tipos .ctype{display:flex}.cal-flt small{white-space:nowrap}
 .modal.cal-m{width:min(1180px,100%)}.cal-mh{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.cal-mh small{color:var(--tx3);margin-left:auto}
 .cal-big{height:calc(100vh - 250px);height:calc(100dvh - 250px);min-height:380px;display:flex;flex-direction:column}.cal-big .cal-g{flex:1;grid-auto-rows:minmax(0,1fr);min-height:0}.cal-big .ce{font-size:11.5px}
+/* ---------- V22.46: panel contextual (tarjetas, jerarquía y tipografía unificadas) ---------- */
+#panel .pn-h{padding:16px 18px 12px;border-bottom:0}
+#panel .pn-k{font-size:11px;letter-spacing:.6px;color:var(--tx3)}
+#panel .pn-h h3{font-size:19px;font-weight:700;margin:6px 0 10px;letter-spacing:-.1px}
+#panel .pn-a{padding-top:12px;margin-top:12px!important;border-top:1px solid var(--bd2)}
+#panel .pn-b{padding:6px 18px 24px;background:var(--bg2,#f6f7f9)}
+#panel .pn-b .pn-sec{background:var(--card);border:1px solid var(--bd2);border-radius:12px;padding:14px 16px;margin:10px 0}
+#panel .pn-b .pn-sec:last-child{border-bottom:1px solid var(--bd2)}
+#panel .pn-b .pn-sec h4{font-size:12px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--tx);margin:0 0 8px}
+#panel .pn-b .kvs{gap:14px 18px}
+#panel .pn-b .kv span{font-size:11.5px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--tx3);margin-bottom:2px}
+#panel .pn-b .kv b{font-size:14px;font-weight:600}
+#panel .pn-b .kv:has(a,.lnk,.il){grid-column:1/-1}
+#panel .pn-b .kv a,#panel .pn-b .kv .lnk{font-size:14px;font-weight:600}
+#panel .pn-b .chk{font-size:13px;font-weight:500;color:var(--tx2)}
+
+/* con el panel abierto el encabezado de página es angosto: las acciones bajan en vez de pisar el título */
+#main>.ph{flex-wrap:wrap!important}#main>.ph>div:first-child{min-width:min-content!important}#main>.ph>div:first-child p{flex:1 1 60px;min-width:60px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -9490,7 +9508,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.45', b: '15-10-2026 14:30' };
+  const VER = { v: 'V22.46', b: '15-10-2026 15:10' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
