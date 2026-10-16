@@ -1,0 +1,31 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "{{VERSION}}",
+  "id": "{{APP_ID}}",
+  "developer": {
+    "name": "Aramark Chile · Sistemas BISE",
+    "websiteUrl": "https://{{SWA_HOST}}/",
+    "privacyUrl": "https://{{SWA_HOST}}/",
+    "termsOfUseUrl": "https://{{SWA_HOST}}/"
+  },
+  "name": { "short": "APIH", "full": "APIH · Portafolio de iniciativas" },
+  "description": {
+    "short": "Portafolio de propuestas y proyectos de Sistemas BISE",
+    "full": "APIH gestiona el portafolio de Sistemas BISE: propuestas, proyectos, fases, hitos, riesgos, decisiones y comités. Acceso con cuenta Aramark según los grupos de Entra ID."
+  },
+  "icons": { "color": "color.png", "outline": "outline.png" },
+  "accentColor": "#C41E3A",
+  "staticTabs": [
+    {
+      "entityId": "apih",
+      "name": "APIH",
+      "contentUrl": "https://{{SWA_HOST}}/?teams=1",
+      "websiteUrl": "https://{{SWA_HOST}}/",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity"],
+  "validDomains": ["{{SWA_HOST}}"],
+  "webApplicationInfo": { "id": "{{ENTRA_CLIENT_ID}}", "resource": "api://{{SWA_HOST}}/{{ENTRA_CLIENT_ID}}" }
+}

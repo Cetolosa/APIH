@@ -11,6 +11,8 @@ param ambiente string = 'dev'
 param ubicacion string = resourceGroup().location
 @description('Región de la Static Web App (no disponible en todas las regiones).')
 param ubicacionSwa string = 'eastus2'
+@minLength(3)
+@maxLength(6)
 param prefijo string = 'apih'
 @description('Grupo de Entra ID administrador de Azure SQL (nombre y objectId).')
 param sqlAdminGrupoNombre string
@@ -45,6 +47,7 @@ resource ai 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 resource st 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+  #disable-next-line BCP334 // nombreSt siempre tiene ≥ 15 caracteres (st + prefijo + uniqueString)
   name: take(nombreSt, 24)
   location: ubicacion
   kind: 'StorageV2'
