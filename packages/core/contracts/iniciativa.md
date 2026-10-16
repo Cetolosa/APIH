@@ -28,8 +28,8 @@ Todas son asíncronas (devuelven `Promise`).
 7. Crear un Proyecto directo (sin propuesta) con `origen` = `usuario` (o vacío) exige `motivoAlta`. Las importaciones (`origen` = `importación`) están exentas, igual que en V22.52.
 8. Concurrencia optimista: si `version` no coincide con la actual → `CONFLICTO` (hoy: columna `actualizado` en Supabase).
 9. `modificadoPor`, `actualizada`, `version` los sella el servidor con la identidad del token (Entra ID).
-11. (C2.6) Migración desde el Prototipo: `crear` con `x-apih-migracion: 1`, solo Admin, conserva `creada`, `faseDesde`, `hist` y `actualizada`, no exige `propuestaOrigen` vigente y marca `origenMigracion = prototipo`. El resto de reglas se valida igual.
 10. Estados finales (`Aprobada`, `Rechazada`, `Retirada`, `Completado`, `Cancelado`) no admiten más cambios de estado.
+11. (C2.6) Migración desde el Prototipo: `crear` con `x-apih-migracion: 1`, solo Admin, conserva `creada`, `faseDesde`, `hist` y `actualizada`, no exige `propuestaOrigen` vigente y marca `origenMigracion = prototipo`. El resto de reglas se valida igual.
 
 ## Errores
 `{ codigo, mensaje, detalles?: [{ campo, regla }] }` — `codigo` ∈ `NO_ENCONTRADA` (404), `INVALIDA` (422), `CONFLICTO` (409), `SIN_PERMISO` (403), `COMPUERTA` (422, `detalles` = compuertas no cumplidas).
