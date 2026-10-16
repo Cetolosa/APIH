@@ -19,10 +19,10 @@ Datos: [`iniciativa.schema.json`](iniciativa.schema.json). Reglas entre campos: 
 Todas son asíncronas (devuelven `Promise`).
 
 ## Reglas (las aplica el servidor; la UI las repite para avisar antes)
-1. `id` lo asigna el servidor: `PROP-n` o `PRJ-n` según `tipo`. `tipo` no cambia después de crear.
+1. `id`: si no viene, lo asigna el servidor (`PROP-n` o `PRJ-n` según `tipo`); si el cliente lo propone (C2.2, compatibilidad con la SPA), debe tener el prefijo del tipo y no existir (si existe → `CONFLICTO`). `tipo` no cambia después de crear.
 2. Fase y estado deben ser del tipo (Propuesta / Proyecto).
 3. Estados `En espera`, `Pausado`, `Rechazada`, `Retirada`, `Cancelado` exigen `estadoMotivo`; `En espera` y `Pausado` exigen `estadoRev`.
-4. `Completado` solo en fase `Cierre`. `Aprobada` solo vía `aprobarPropuesta` (crea `PRJ` con `propuestaOrigen`).
+4. `Completado` solo en fase `Cierre`. `Aprobada` vía `aprobarPropuesta`, o (C2.2) creando primero el `PRJ` con `propuestaOrigen` (exige propuesta vigente en fase Aprobación) y luego `cambiarEstado` a `Aprobada`.
 5. `finPlan >= inicioPlan`; `finReal >= inicioReal`.
 6. `deps` sin ciclos ni referencia a sí misma.
 7. Crear un Proyecto directo (sin propuesta) con `origen` = `usuario` (o vacío) exige `motivoAlta`. Las importaciones (`origen` = `importación`) están exentas, igual que en V22.52.

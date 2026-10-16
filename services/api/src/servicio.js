@@ -22,6 +22,7 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
   const ctxGates = async (s, id) => ({ hitos: await s.listar('hitos', h => h.ini === id), riesgos: await s.listar('riesgos', r => r.ini === id), hoy: hoy(), umbral: umbral() });
   const verificarVersion = (x, version) => { if (version == null || x.version !== String(version)) throw errorApi('CONFLICTO', 'Otro usuario modificó ' + x.id + ' (versión ' + x.version + ')'); };
   const EST = core.INICIATIVA;
+  const listaOk = l => { if (!/^[A-Za-z0-9_]{1,60}$/.test(l || '')) throw errorApi('INVALIDA', 'Lista inválida', [{ campo: 'lista', regla: 'A-Z, 0-9, _' }]); };
 
   const api = {
     /* ---------- Iniciativas ---------- */
@@ -35,9 +36,12 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
       escribe(u);
       return store.tx(async s => {
         const x = quitar(datos, RO_INI); x.area = x.area || ['BISE']; x.avance = x.avance || 0; x.origen = x.origen || 'usuario';
+        const pre = x.tipo === 'Propuesta' ? 'PROP' : 'PRJ';
+        if (datos && datos.id != null) { if (!new RegExp('^' + pre + '-\\d+$').test(datos.id)) throw errorApi('INVALIDA', 'Id inválido', [{ campo: 'id', regla: pre + '-n' }]); x.id = datos.id; }
         await validarIni(s, x, { nueva: true });
+        if (x.propuestaOrigen) { const p = await s.obtener('iniciativas', x.propuestaOrigen); if (!p || p.tipo !== 'Propuesta' || p.fase !== 'Aprobación' || EST.EST_FINAL.includes(p.estado)) throw errorApi('COMPUERTA', 'La propuesta de origen no está aprobable', [{ campo: 'propuestaOrigen', regla: 'Propuesta vigente en fase Aprobación' }]); }
         x.creada = x.faseDesde = hoy(); x.hist = [[hoy(), x.avance]];
-        return s.insertar('iniciativas', sello(x, u), x.tipo === 'Propuesta' ? 'PROP' : 'PRJ');
+        return s.insertar('iniciativas', sello(x, u), pre);
       });
     },
     async actualizar(u, id, cambios, version) {
@@ -57,7 +61,9 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
       escribe(u);
       return store.tx(async s => {
         const a = await leerIni(s, id); verificarVersion(a, version);
-        const e = core.validarCambioEstado(a, c || {}); if (e.length) throw errorApi('INVALIDA', 'Cambio de estado inválido', e);
+        /* Compatibilidad con la SPA (C2.2): «Aprobada» se acepta si ya existe el proyecto creado desde esta propuesta */
+        const viaProyecto = c && c.estado === 'Aprobada' && a.tipo === 'Propuesta' && !EST.EST_FINAL.includes(a.estado) && (await s.listar('iniciativas', y => y.propuestaOrigen === a.id)).length > 0;
+        const e = viaProyecto ? [] : core.validarCambioEstado(a, c || {}); if (e.length) throw errorApi('INVALIDA', 'Cambio de estado inválido', e);
         const n = Object.assign(copia(a), { estado: c.estado, estadoMotivo: EST.EST_MOTIVO.includes(c.estado) ? c.motivo : '', estadoRev: EST.EST_REVISION.includes(c.estado) ? c.rev : null });
         if (c.estado === 'Completado') { n.finReal = hoy(); if (n.avance < 100) { n.avance = 100; n.hist = [...(n.hist || []), [hoy(), 100]]; } }
         return s.actualizar('iniciativas', sello(n, u), version);
@@ -108,12 +114,12 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
     async listarHitos(u, ini) { lee(u); await leerIni(store, ini); return (await store.listar('hitos', h => h.ini === ini)).map(h => Object.assign(h, { semaforo: core.hitoEstado(h, hoy()) })); },
     async crearHito(u, ini, datos) {
       escribe(u);
-      return store.tx(async s => { await leerIni(s, ini); const h = Object.assign(quitar(datos, RO_SUB), { ini }); h.completado = !!h.completado; if (h.completado && !h.fechaReal) h.fechaReal = hoy(); if (!h.completado) h.fechaReal = null;
+      return store.tx(async s => { await leerIni(s, ini); const h = Object.assign(quitar(datos, RO_SUB), { ini }); if (datos && datos.id != null) { if (!/^HIT-\d+$/.test(datos.id)) throw errorApi('INVALIDA', 'Id inválido', [{ campo: 'id', regla: 'HIT-n' }]); h.id = datos.id; } h.completado = !!h.completado; if (h.completado && !h.fechaReal) h.fechaReal = hoy(); if (!h.completado) h.fechaReal = null;
         const e = core.validarHito(h); if (e.length) throw errorApi('INVALIDA', 'Hito inválido', e); return s.insertar('hitos', sello(h, u), 'HIT'); });
     },
     async actualizarHito(u, id, cambios, version) {
       escribe(u);
-      return store.tx(async s => { const a = await leerSub(s, 'hitos', id); verificarVersion(a, version); const c = quitar(cambios, RO_SUB.concat('ini'));
+      return store.tx(async s => { const a = await leerSub(s, 'hitos', id); verificarVersion(a, version); const c = quitar(cambios, RO_SUB); if (c.ini && c.ini !== a.ini) await leerIni(s, c.ini);
         const h = Object.assign(copia(a), c); h.completado = !!h.completado; if (h.completado && !h.fechaReal) h.fechaReal = hoy(); if (!h.completado) h.fechaReal = null;
         const e = core.validarHito(h); if (e.length) throw errorApi('INVALIDA', 'Hito inválido', e); return s.actualizar('hitos', sello(h, u), version); });
     },
@@ -124,14 +130,32 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
     async listarRiesgos(u, ini) { lee(u); await leerIni(store, ini); return (await store.listar('riesgos', r => r.ini === ini)).map(r => Object.assign(r, { exposicion: core.expo(r), nivel: core.nivelRiesgo(core.expo(r), umbral()).n })); },
     async crearRiesgo(u, ini, datos) {
       escribe(u);
-      return store.tx(async s => { await leerIni(s, ini); const r = Object.assign({ cat: 'Técnico', estado: 'Abierto', fIdent: hoy(), fRev: core.addD(hoy(), 30), mit: '', dueno: u.nombre || u.email }, quitar(datos, RO_SUB), { ini });
+      return store.tx(async s => { await leerIni(s, ini); const r = Object.assign({ cat: 'Técnico', estado: 'Abierto', fIdent: hoy(), fRev: core.addD(hoy(), 30), mit: '', dueno: u.nombre || u.email }, quitar(datos, RO_SUB), { ini }); if (datos && datos.id != null) { if (!/^RSK-\d+$/.test(datos.id)) throw errorApi('INVALIDA', 'Id inválido', [{ campo: 'id', regla: 'RSK-n' }]); r.id = datos.id; }
         const e = core.validarRiesgo(r, umbral()); if (e.length) throw errorApi('INVALIDA', 'Riesgo inválido', e); return s.insertar('riesgos', sello(r, u), 'RSK'); });
     },
     async actualizarRiesgo(u, id, cambios, version) {
       escribe(u);
-      return store.tx(async s => { const a = await leerSub(s, 'riesgos', id); verificarVersion(a, version); const r = Object.assign(copia(a), quitar(cambios, RO_SUB.concat('ini')));
+      return store.tx(async s => { const a = await leerSub(s, 'riesgos', id); verificarVersion(a, version); const c = quitar(cambios, RO_SUB); if (c.ini && c.ini !== a.ini) await leerIni(s, c.ini); const r = Object.assign(copia(a), c);
         const e = core.validarRiesgo(r, umbral()); if (e.length) throw errorApi('INVALIDA', 'Riesgo inválido', e); return s.actualizar('riesgos', sello(r, u), version); });
     },
+    async todosHitos(u) { lee(u); return store.listar('hitos'); },
+    async todosRiesgos(u) { lee(u); return store.listar('riesgos'); },
+    async sello(u) { lee(u); return { sello: store.sello ? await store.sello() : String(Date.now()) }; },
+
+    /* ---------- Registros genéricos (C2.2): resto de colecciones de la SPA mientras no tengan contrato propio ----------
+     * Decisiones, bitácora, comités, compromisos, cambios, notas, documentos y parámetros. Texto opaco; solo acceso por rol.
+     * APIH_Roles (usuarios y permisos de la interfaz) solo lo escribe Admin. */
+    async listarRegistros(u, lista) { lee(u); listaOk(lista); return (await store.listar('reg:' + lista)).map(x => ({ id: x.id, datos: x.datos, version: x.version })); },
+    async guardarRegistro(u, lista, id, datos, version) {
+      escribe(u); listaOk(lista); if (/^APIH_Roles$/i.test(lista) && u.rol !== 'Admin') throw errorApi('SIN_PERMISO', 'Solo Admin modifica roles');
+      if (!id || String(id).length > 100) throw errorApi('INVALIDA', 'Id inválido', [{ campo: 'id', regla: '1 a 100 caracteres' }]);
+      if (typeof datos !== 'string') throw errorApi('INVALIDA', 'datos debe ser texto', [{ campo: 'datos', regla: 'texto' }]);
+      const col = 'reg:' + lista, x = { id: String(id), datos, modificadoPor: u.email, actualizada: hoy() };
+      const r = version == null ? await store.insertar(col, x) : await store.actualizar(col, x, version);
+      return { id: r.id, version: r.version };
+    },
+    async eliminarRegistro(u, lista, id, version) { escribe(u); listaOk(lista); if (/^APIH_Roles$/i.test(lista) && u.rol !== 'Admin') throw errorApi('SIN_PERMISO', 'Solo Admin modifica roles'); await store.eliminar('reg:' + lista, String(id), version); },
+
     async eliminarRiesgo(u, id, version) { escribe(u); return store.tx(async s => { const a = await leerSub(s, 'riesgos', id); verificarVersion(a, version); await s.eliminar('riesgos', id, version); }); }
   };
   return api;

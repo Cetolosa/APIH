@@ -7,7 +7,7 @@ const crearStoreMemoria = require('../../services/api/src/store-memoria');
 const crearApp = require('../../services/api/src/app');
 const HOY = '2026-10-16';
 const usuario = o => ({ email: 'prueba@aramark.cl', nombre: 'Prueba', rol: o && o.puedeEscribir === false ? 'Lectura' : 'Editor' });
-const OPS = ['listar', 'obtener', 'crear', 'actualizar', 'cambiarEstado', 'cambiarFase', 'aprobarPropuesta', 'eliminar', 'compuerta', 'fases', 'listarHitos', 'crearHito', 'actualizarHito', 'completarHito', 'eliminarHito', 'listarRiesgos', 'crearRiesgo', 'actualizarRiesgo', 'eliminarRiesgo'];
+const OPS = ['listar', 'obtener', 'crear', 'actualizar', 'cambiarEstado', 'cambiarFase', 'aprobarPropuesta', 'eliminar', 'compuerta', 'fases', 'listarHitos', 'crearHito', 'actualizarHito', 'completarHito', 'eliminarHito', 'listarRiesgos', 'crearRiesgo', 'actualizarRiesgo', 'eliminarRiesgo', 'listarRegistros', 'guardarRegistro', 'eliminarRegistro', 'sello'];
 
 function servicio(o, store) {
   const s = crearServicio({ store: store || crearStoreMemoria(), hoy: () => HOY, config: { umbralCritico: 15 } }), u = usuario(o);
@@ -35,6 +35,8 @@ function http(o, store) {
     actualizarHito: (id, c, v) => call('PATCH', '/api/hitos/' + id, c, v), completarHito: (id, f, v) => call('POST', '/api/hitos/' + id + '/completar', f ? { fechaReal: f } : {}, v), eliminarHito: (id, v) => call('DELETE', '/api/hitos/' + id, null, v),
     listarRiesgos: id => call('GET', '/api/iniciativas/' + id + '/riesgos'), crearRiesgo: (id, d) => call('POST', '/api/iniciativas/' + id + '/riesgos', d),
     actualizarRiesgo: (id, c, v) => call('PATCH', '/api/riesgos/' + id, c, v), eliminarRiesgo: (id, v) => call('DELETE', '/api/riesgos/' + id, null, v),
+    listarRegistros: l => call('GET', '/api/registros/' + l), guardarRegistro: (l, id, datos, v) => call('PUT', '/api/registros/' + l + '/' + encodeURIComponent(id), { datos }, v),
+    eliminarRegistro: (l, id, v) => call('DELETE', '/api/registros/' + l + '/' + encodeURIComponent(id), null, v), sello: () => call('GET', '/api/sello'),
     _handle: handle
   };
 }

@@ -5,7 +5,7 @@
   "private": true,
   "main": "functions/api.js",
   "engines": { "node": ">=20" },
-  "scripts": { "start": "APIH_AUTH=dev node server.js", "test": "node ../../tests/contract/run.js" },
+  "scripts": { "start": "APIH_DEV_USER=dev@aramark.cl APIH_DEV_ROL=Admin node server.js", "test": "node ../../tests/contract/run.js" },
   "dependencies": { "@azure/functions": "^4.5.0" },
   "optionalDependencies": { "mssql": "^11.0.1" }
 }

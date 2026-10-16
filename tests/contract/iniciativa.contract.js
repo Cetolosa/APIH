@@ -10,8 +10,10 @@ module.exports = async function contratoIniciativa(fabrica, log = console.log) {
   const prj = (x = {}) => Object.assign({ tipo: 'Proyecto', titulo: 'Prj A', fase: 'Planificación', estado: 'En curso', lider: 'ana@aramark.cl', motivoAlta: 'Urgente', area: ['BISE'], inicioPlan: '2026-11-01', finPlan: '2027-02-01' }, x);
 
   await caso('crear asigna id, version y campos del servidor', async () => {
-    const d = fabrica(); const a = await d.crear(prop({ id: 'PROP-999', modificadoPor: 'falso' })); const b = await d.crear(prj());
-    assert.match(a.id, /^PROP-\d+$/); assert.match(b.id, /^PRJ-\d+$/); assert.notStrictEqual(a.id, 'PROP-999');
+    const d = fabrica(); const a = await d.crear(prop({ modificadoPor: 'falso' })); const b = await d.crear(prj());
+    assert.match(a.id, /^PROP-\d+$/); assert.match(b.id, /^PRJ-\d+$/);
+    const c = await d.crear(prop({ id: 'PROP-050' })); assert.strictEqual(c.id, 'PROP-050', 'id propuesto por el cliente');
+    await falla(d.crear(prop({ id: 'PROP-050' })), 'CONFLICTO'); await falla(d.crear(prop({ id: 'PRJ-051' })), 'INVALIDA', 'id');
     assert.ok(a.version && a.creada && a.actualizada && a.faseDesde); assert.notStrictEqual(a.modificadoPor, 'falso');
   });
   await caso('obtener y listar con filtros', async () => {
@@ -121,6 +123,26 @@ module.exports = async function contratoIniciativa(fabrica, log = console.log) {
   await caso('rol Lectura: lee pero no escribe (SIN_PERMISO)', async () => {
     const d = fabrica({ puedeEscribir: false });
     await falla(d.crear(prop()), 'SIN_PERMISO'); assert.deepStrictEqual(await d.listar(), []);
+  });
+  await caso('registros genéricos: crear, actualizar con versión, conflicto, eliminar; sello cambia', async () => {
+    const d = fabrica(); const s0 = (await d.sello()).sello;
+    let r = await d.guardarRegistro('APIH_Decisiones', 'DEC-001', '{"a":1}'); assert.ok(r.version);
+    await falla(d.guardarRegistro('APIH_Decisiones', 'DEC-001', '{"a":2}'), 'CONFLICTO');
+    r = await d.guardarRegistro('APIH_Decisiones', 'DEC-001', '{"a":2}', r.version);
+    await falla(d.guardarRegistro('APIH_Decisiones', 'DEC-001', '{"a":3}', 'vieja'), 'CONFLICTO');
+    assert.deepStrictEqual((await d.listarRegistros('APIH_Decisiones')).map(x => x.datos), ['{"a":2}']);
+    assert.notStrictEqual((await d.sello()).sello, s0);
+    await falla(d.guardarRegistro('APIH_Roles', 'usuarios', '[]'), 'SIN_PERMISO');
+    await falla(d.guardarRegistro('mala lista', 'x', '1'), 'INVALIDA', 'lista');
+    await d.eliminarRegistro('APIH_Decisiones', 'DEC-001', r.version); assert.strictEqual((await d.listarRegistros('APIH_Decisiones')).length, 0);
+  });
+  await caso('aprobación al estilo de la SPA: PRJ con propuestaOrigen y luego propuesta «Aprobada»', async () => {
+    const d = fabrica(); let p = await d.crear(prop({ sponsor: 'Luis', desc: 'd', score: { estrategia: 3, valor: 3, esfuerzo: 3, riesgo: 2 }, presupuesto: 10, beneficio: 5, bc: 'bc' }));
+    await falla(d.crear(prj({ id: 'PRJ-077', propuestaOrigen: p.id, motivoAlta: '' })), 'COMPUERTA');
+    for (const f of ['Evaluación', 'Caso de Negocio', 'Aprobación']) p = await d.cambiarFase(p.id, f, p.version);
+    await falla(d.cambiarEstado(p.id, { estado: 'Aprobada' }, p.version), 'INVALIDA', 'estado');
+    const n = await d.crear(prj({ id: 'PRJ-077', propuestaOrigen: p.id, motivoAlta: '' })); assert.strictEqual(n.id, 'PRJ-077');
+    p = await d.cambiarEstado(p.id, { estado: 'Aprobada' }, p.version); assert.strictEqual(p.estado, 'Aprobada');
   });
   return ok;
 };

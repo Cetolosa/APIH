@@ -12,6 +12,12 @@ module.exports = function crearApp({ servicio, env = process.env }) {
   const b = req => req.body || {};
   ruta('GET', '/api/salud', async () => ({ ok: true, core: core.VERSION.v }));
   ruta('GET', '/api/yo', async u => u);
+  ruta('GET', '/api/sello', u => servicio.sello(u));
+  ruta('GET', '/api/hitos', u => servicio.todosHitos(u));
+  ruta('GET', '/api/riesgos', u => servicio.todosRiesgos(u));
+  ruta('GET', '/api/registros/{lista}', (u, p) => servicio.listarRegistros(u, p.lista));
+  ruta('PUT', '/api/registros/{lista}/{id}', (u, p, req) => servicio.guardarRegistro(u, p.lista, decodeURIComponent(p.id), b(req).datos, ver(req)));
+  ruta('DELETE', '/api/registros/{lista}/{id}', (u, p, req) => servicio.eliminarRegistro(u, p.lista, decodeURIComponent(p.id), ver(req)));
   ruta('GET', '/api/iniciativas', (u, p, req) => servicio.listar(u, req.query));
   ruta('POST', '/api/iniciativas', (u, p, req) => servicio.crear(u, b(req)));
   ruta('GET', '/api/iniciativas/{id}', (u, p) => servicio.obtener(u, p.id));
@@ -44,7 +50,7 @@ module.exports = function crearApp({ servicio, env = process.env }) {
     if (u && !u.rol && path !== '/api/yo') return json(403, { codigo: 'SIN_PERMISO', mensaje: 'Tu cuenta no tiene un rol de APIH asignado' });
     try {
       const out = await r[2](u, r[1].groups || {}, req);
-      const st = req.method === 'POST' && /\/api\/(iniciativas|iniciativas\/[^/]+\/(hitos|riesgos))\/?$/.test(path) ? 201 : out === undefined ? 204 : 200;
+      const st = (req.method === 'PUT' && /\/api\/registros\//.test(path) && !ver(req)) ? 201 : req.method === 'POST' && /\/api\/(iniciativas|iniciativas\/[^/]+\/(hitos|riesgos))\/?$/.test(path) ? 201 : out === undefined ? 204 : 200;
       return json(st, out, out && out.version ? { etag: '"' + out.version + '"' } : null);
     } catch (e) {
       if (e.codigo && HTTP[e.codigo]) return json(HTTP[e.codigo], { codigo: e.codigo, mensaje: e.message, detalles: e.detalles });

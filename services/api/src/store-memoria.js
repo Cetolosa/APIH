@@ -10,7 +10,13 @@ module.exports = function crearStoreMemoria() {
   const store = {
     async listar(col, filtro) { return [...C(col).values()].filter(x => !filtro || filtro(x)).map(copia); },
     async obtener(col, id) { return copia(C(col).get(id) || null); },
-    async insertar(col, obj, prefijo) { const k = prefijo || col; seq[k] = (seq[k] || 0) + 1; const x = copia(obj); x.id = prefijo + '-' + String(seq[k]).padStart(3, '0'); x.version = String(++rev); C(col).set(x.id, x); return copia(x); },
+    async insertar(col, obj, prefijo) {
+      const x = copia(obj);
+      if (x.id) { if (C(col).has(x.id)) throw errorApi('CONFLICTO', 'El id «' + x.id + '» ya existe'); }
+      else { const k = prefijo || col; do { seq[k] = (seq[k] || 0) + 1; x.id = prefijo + '-' + String(seq[k]).padStart(3, '0'); } while (C(col).has(x.id)); }
+      x.version = String(++rev); C(col).set(x.id, x); return copia(x);
+    },
+    async sello() { return String(rev) + '|' + Object.values(cols).reduce((n, m) => n + m.size, 0); },
     async actualizar(col, obj, version) { const a = C(col).get(obj.id); if (!a) throw errorApi('NO_ENCONTRADA', 'No existe ' + obj.id); if (a.version !== version) throw errorApi('CONFLICTO', 'Otro usuario modificó ' + obj.id); const x = copia(obj); x.version = String(++rev); C(col).set(x.id, x); return copia(x); },
     async eliminar(col, id, version) { const a = C(col).get(id); if (!a) throw errorApi('NO_ENCONTRADA', 'No existe ' + id); if (version != null && a.version !== version) throw errorApi('CONFLICTO', 'Otro usuario modificó ' + id); C(col).delete(id); },
     async tx(fn) { const snap = JSON.stringify([...Object.entries(cols)].map(([k, m]) => [k, [...m.entries()]])), s0 = JSON.stringify(seq), r0 = rev;

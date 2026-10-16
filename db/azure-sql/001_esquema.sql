@@ -100,3 +100,17 @@ SELECT r.id, r.ini, JSON_VALUE(r.doc, '$.desc') AS descripcion, JSON_VALUE(r.doc
        JSON_VALUE(r.doc, '$.dueno') AS dueno, JSON_VALUE(r.doc, '$.mit') AS mitigacion
 FROM apih.riesgos r;
 GO
+/* ---------- Registros genéricos (C2.2): resto de colecciones de la SPA mientras no tengan contrato propio ---------- */
+IF OBJECT_ID('apih.registros') IS NULL
+CREATE TABLE apih.registros (
+  lista          VARCHAR(60)    NOT NULL,
+  id             NVARCHAR(100)  NOT NULL,
+  datos          NVARCHAR(MAX)  NOT NULL,
+  ver            ROWVERSION     NOT NULL,
+  modificado_por NVARCHAR(256)  NOT NULL,
+  valido_desde DATETIME2(3) GENERATED ALWAYS AS ROW START HIDDEN NOT NULL,
+  valido_hasta DATETIME2(3) GENERATED ALWAYS AS ROW END   HIDDEN NOT NULL,
+  PERIOD FOR SYSTEM_TIME (valido_desde, valido_hasta),
+  CONSTRAINT pk_registros PRIMARY KEY (lista, id)
+) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = apih.registros_historial));
+GO
