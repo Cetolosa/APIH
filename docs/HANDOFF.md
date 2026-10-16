@@ -66,6 +66,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.5 | Traspaso en el repo como fuente común entre cuentas; PDF en `docs/propuesta/` |
 | C2.6 | Migración limpia de toda la historia del Prototipo: «Importar respaldo» (Admin) en la SPA corporativa + modo migración en la API (conserva historial y fechas); e2e `corp2`. Propuesta actualizada: migración completa y «Completar con IA» (exportar con instrucciones → IA corporativa → importar) |
 | C2.7 | Validación sin Azure: Bicep compila; paquete de Teams (`apps/teams`); login en Teams requiere ventana aparte (validar en dev). Funciones diferidas (Pronóstico, Ruta crítica, Escenarios): **el usuario aún no decide implementarlas** |
+| Envío | 16-10-2026: propuesta enviada a TI (versión en `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf`, sin la nota de login en Teams del punto 6). Cambios posteriores se acumulan para una v2 que se envía solo si TI la pide o al responder sus comentarios |
 
 Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con versión C** (ADR-002). Cada componente declara la última versión C en que cambió (ADR-005).
 
