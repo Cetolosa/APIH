@@ -1,6 +1,6 @@
 # APIH — Documento de traspaso
 
-> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.54 · Corporativo C2.9)
+> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.54 · Corporativo C2.10)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -68,6 +68,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.7 | Validación sin Azure: Bicep compila; paquete de Teams (`apps/teams`); login en Teams requiere ventana aparte (validar en dev). Funciones diferidas (Pronóstico, Ruta crítica, Escenarios): **el usuario aún no decide implementarlas** |
 | C2.8 | Notificaciones en servidor: motor generado desde la SPA (`tools/generar-motor-notif.js`; regenerar si cambian reglas de avisos), envío por correo (Graph) o Teams (webhook) según defina TI, ADR-011. **Para la v2 de la propuesta:** punto 9 ya construido, TI solo elige canal y remitente |
 | C2.9 | `docs/operacion/`: guion UAT, manual de usuario, runbook (punto 14), clasificación de datos (punto 15). Borradores para acordar con TI |
+| C2.10 | Power BI: `003_reportes.sql` (esquema `rpt`), `powerbi/medidas.dax` y `powerbi/README.md`. Pendiente validar en dev |
 | Envío | 16-10-2026: propuesta enviada a TI (versión en `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf`, sin la nota de login en Teams del punto 6). Cambios posteriores se acumulan para una v2 que se envía solo si TI la pide o al responder sus comentarios |
 
 Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con versión C** (ADR-002). Cada componente declara la última versión C en que cambió (ADR-005).

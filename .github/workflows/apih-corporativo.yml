@@ -22,6 +22,7 @@ jobs:
       - run: node tests/unit/teams-paquete.js
       - run: node tools/generar-motor-notif.js --check
       - run: node tests/unit/notificaciones.js
+      - run: node tests/unit/powerbi-modelo.js
       - run: az bicep build --file infra/main.bicep --stdout > /dev/null
   desplegar:
     needs: pruebas
