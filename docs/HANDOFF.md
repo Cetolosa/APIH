@@ -1,4 +1,4 @@
-# APIH — Documento de traspaso (15-10-2026 · Prototipo V22.52 · Corporativo C1.3)
+# APIH — Documento de traspaso (15-10-2026 · Prototipo V22.53 · Corporativo C1.3)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -13,7 +13,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Congelado en V22.52** (solo correcciones críticas y accesos) | En construcción, **C1.3** · producción objetivo **27-11-2026** (plan acelerado) |
+| Estado | **Congelado** (V22.52) con excepción **V22.53**: vista Planificación → Fases (ADR-006) | En construcción, **C1.3** · producción objetivo **27-11-2026** (plan acelerado) |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo, monorepo (carpetas vacías aún), luego repo de Aramark que indique TI |

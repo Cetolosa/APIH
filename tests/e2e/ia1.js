@@ -7,7 +7,7 @@ const r=await p.evaluate(async(txt)=>{celebrar=()=>{};const out={};
  [...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='Importar').click();await new Promise(r=>setTimeout(r,200));
  const i=St.ini.find(x=>x.titulo==='APIH Corporativo');out.id=i.id;
  const ex=iapExport(i);out.keys=Object.keys(ex);out.pend=ex.pendientes;out.size=JSON.stringify(ex).length;
- const hv=ex.hitos.find(h=>h.nombre.startsWith('Plan aprobado'));
+ const hv=ex.hitos.find(h=>h.nombre.startsWith('Plan aprobado')||h.nombre.startsWith('C1.3 · Plan acelerado aprobado'));
  const back={formato:'apih-proyecto-ia',v:1,proyecto_id:i.id,proyecto:{sponsor:'Gerencia TI',presupuesto:50,avance:12,finPlan:'2026-12-20',rag:'Rosado',zzz:1},
   hitos:[{id:hv.id,completado:true,fechaReal:'2026-10-16'},{nombre:'Kick-off con TI',fase:'Planificación',fecha:'2026-10-20',resp:'Ana'},{id:'HIT-001',nombre:'x'},{nombre:'malo',fecha:'31/12'}],
   riesgos:[{desc:'Sin presupuesto aprobado',cat:'Financiero',prob:5,imp:5,mit:''},{desc:'Rotación del equipo',cat:'Recursos',prob:2,imp:3,dueno:'Christian',mit:'Documentar'}]};

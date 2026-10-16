@@ -649,6 +649,37 @@ body{font:13px/1.45 var(--font)}
 #main>.cp-wrap,#main>.cp-k,#main>.cp-2{flex:none!important}.cp-wrap{overflow-x:auto;border-radius:10px}.cp-leg span{white-space:nowrap}.cp-leg{display:flex;gap:12px;white-space:nowrap;font-size:11.5px;color:var(--tx3);align-items:center}.cp-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}.cp-leg i.g{background:#8fcf8f}.cp-leg i.y{background:#f0cf85}.cp-leg i.r{background:#ee9aa0}
 .cp-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}.cp-s{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd2);font-size:12.5px}.cp-s:last-child{border:0}.cp-s .g{margin-left:auto;color:var(--green);font-weight:700;white-space:nowrap}.cp-s .lnk{border:0;background:none;text-align:left;padding:0;cursor:pointer}
 @media (max-width:900px){.cp-k{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-2{grid-template-columns:1fr}}
+/* ---------- V22.53: Fases (4 miradas) ---------- */
+.fz-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.fz-tabs button{min-height:36px;padding:0 14px;border:1px solid var(--bd3);border-radius:6px;background:var(--card);color:var(--tx);font:inherit;font-size:13px;cursor:pointer}.fz-tabs button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.fz-box{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);overflow-x:auto;box-shadow:var(--sh)}
+.fz-row{display:flex;border-bottom:1px solid var(--bd2);background:var(--card)}.fz-row.fz-sub{background:var(--bg2)}.fz-row.fz-head{background:var(--bg2)}
+.fz-lab{width:320px;flex:none;display:flex;align-items:center;gap:8px;padding:6px 12px;min-height:44px;box-sizing:border-box;position:sticky;left:0;z-index:3;background:inherit;border-right:1px solid var(--bd2);font-size:13px}.fz-lab b{font-weight:600}
+.fz-1l{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fz-sm{display:block;font-size:11px;color:var(--tx2);margin-top:1px}.fz-act{font-size:10px;color:var(--pri);text-transform:uppercase}
+.fz-trk{position:relative;flex:none;height:44px}.fz-trk i{font-style:normal}
+.fz-wk{position:absolute;top:0;bottom:0;border-left:1px solid var(--bd2);font-size:11px;color:var(--tx2);padding:11px 4px;white-space:nowrap}
+.fz-hoy{position:absolute;top:0;bottom:0;border-left:2px solid var(--red);z-index:1}
+.fz-bar{position:absolute;border-radius:4px}
+.fz-h{position:absolute;top:15px;width:12px;height:12px;transform:rotate(45deg);box-sizing:border-box;border:2px solid var(--pri);background:var(--card);z-index:2}.fz-h.done{background:var(--green);border-color:var(--green)}.fz-h.over{border-color:var(--red);background:var(--redbg)}
+.fz-r{position:absolute;top:2px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid var(--c);z-index:2}
+.fz-tg{width:28px;height:28px;border:1px solid var(--bd3);border-radius:4px;background:var(--card);cursor:pointer;flex:none;display:inline-flex;align-items:center;justify-content:center}
+.fz-sw{width:10px;height:10px;border-radius:2px;flex:none}
+.fz-leg{display:flex;flex-wrap:wrap;gap:18px;margin-top:10px;font-size:12px;color:var(--tx2);align-items:center}.fz-leg span{display:inline-flex;align-items:center;gap:8px}.fz-lg{position:relative!important;top:auto!important;left:auto!important;display:inline-block}.fz-hoy.fz-lg{height:14px}
+.fz-steps{display:grid;grid-template-columns:repeat(var(--n),minmax(150px,1fr));gap:8px;overflow-x:auto}
+.fz-step{text-align:left;border:2px solid var(--bd);border-radius:8px;padding:12px 14px;background:var(--card);color:var(--tx);cursor:pointer;font:inherit;font-size:12px;display:flex;flex-direction:column;gap:4px}.fz-step.on{border-color:var(--c)}.fz-step.act{background:var(--pri-l)}
+.fz-st{display:flex;align-items:center;font-size:14px;font-weight:600}.fz-num{width:22px;height:22px;border-radius:11px;background:var(--c);color:#fff;font-size:12px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px}
+.fz-pb{display:block;height:6px;background:var(--bd2);border-radius:3px;overflow:hidden;margin-top:4px}.fz-pb i{display:block;height:6px;background:var(--c)}
+.fz-2{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;align-items:flex-start}
+.fz-card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh)}.fz-card h3{font-size:15px;margin:0}.fz-ch{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bd2)}
+.fz-li{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--bg);font-size:13px}
+.fz-ck{width:18px;height:18px;border-radius:4px;border:2px solid;color:#fff;font-size:12px;display:inline-flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box}
+.fz-pill{font-size:11px;padding:1px 8px;border-radius:10px;white-space:nowrap;background:var(--card)}
+.fz-g{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:13px}.fz-g b{width:14px;flex:none}
+.fz-cols{display:grid;grid-template-columns:repeat(var(--n),minmax(240px,1fr));gap:12px;overflow-x:auto;align-items:start}
+.fz-col{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;overflow:hidden}.fz-colh{color:#fff;padding:10px 12px}.fz-colh small{display:block;opacity:.9;font-size:12px}
+.fz-colb{padding:10px;display:flex;flex-direction:column;gap:8px}.fz-it{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:8px 10px;font-size:13px}.fz-itm{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.fz-ri{display:flex;gap:8px;align-items:center;font-size:12px}.fz-rt{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;margin-top:4px}
+.fz-exp{min-width:24px;text-align:center;font-weight:700;border-radius:4px;padding:1px 4px;font-size:12px;flex:none}
+.fz-fb{position:absolute;top:6px;height:20px;color:#fff;font-size:11px;line-height:20px;padding-left:6px;box-sizing:border-box;overflow:hidden;white-space:nowrap;border-radius:3px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -2110,7 +2141,7 @@ function copyText(t) { try { navigator.clipboard.writeText(t).then(() => toast('
 /* ---------- navegación ---------- */
 const NAV = [
   ['dashboard', 'Dashboard', 'dashboard'], ['cielo', 'Mi cocina', 'fork'], ['portfolio', 'Portfolio', 'portfolio'], ['proyectos', 'Proyectos', 'list'], ['propuestas', 'Propuestas', 'bulb'], ['hitos', 'Hitos', 'flag'], ['riesgos', 'Riesgos', 'shield'],
-  ['roadmap', 'Roadmap', 'road'], ['gantt', 'Gantt', 'gantt'], ['comite', 'Comité', 'users'], ['decisiones', 'Decisiones', 'gavel'], ['compromisos', 'Compromisos', 'check'], ['cambios', 'Cambios', 'refresh'], ['bitacora', 'Bitácora', 'book'], ['calendario', 'Calendario', 'cal'], ['capacidad', 'Capacidad', 'users'], ['personas', 'Personas', 'person'],
+  ['roadmap', 'Roadmap', 'road'], ['gantt', 'Gantt', 'gantt'], ['fases', 'Fases', 'flag'], ['comite', 'Comité', 'users'], ['decisiones', 'Decisiones', 'gavel'], ['compromisos', 'Compromisos', 'check'], ['cambios', 'Cambios', 'refresh'], ['bitacora', 'Bitácora', 'book'], ['calendario', 'Calendario', 'cal'], ['capacidad', 'Capacidad', 'users'], ['personas', 'Personas', 'person'],
   ['presentaciones', 'Presentaciones', 'slides'], ['miconfig', 'Mi configuración', 'settings'], ['admin', 'Administración', 'settings'], ['ia', 'IA', 'spark'], ['proposito', 'Para qué sirve', 'help']
 ];
 const NAV_GRUPO = ['proyectos', 'propuestas', 'hitos', 'riesgos'];   // «Iniciativas»: un solo bloque de menú
@@ -3286,6 +3317,101 @@ Views.roadmap = {
 };
 Acts.rshift = d => { const f = F('road', {}); if (+d.d === 0) { f.y0 = +hoy().slice(0, 4); f.q0 = quarter(hoy()); } else { const n = f.y0 * 4 + (f.q0 - 1) + +d.d; f.y0 = Math.floor(n / 4); f.q0 = n % 4 + 1; } render(); };
 Acts.roadcsv = () => { const rows = scope(); download('APIH_roadmap_' + hoy() + '.csv', toCSV(rows, [{ h: 'ID', f: i => i.id }, { h: 'Iniciativa', f: i => i.titulo }, { h: 'Área', f: i => i.area }, { h: 'Fase', f: i => i.fase }, { h: 'Inicio plan', f: i => i.inicioPlan }, { h: 'Fin plan', f: i => i.finPlan }, { h: 'Fin proyectado', f: i => forecast(i) }, { h: 'Trimestre entrega', f: i => forecast(i) ? 'Q' + quarter(forecast(i)) + ' ' + forecast(i).slice(0, 4) : '' }, { h: 'RAG', f: i => i.rag }]), 'text/csv'); toast('Roadmap exportado'); };
+
+/* ======================= V22.53 · FASES: 4 miradas (Gantt por fases, Línea, Tablero, Riesgos en el tiempo) ======================= */
+const FZ_TABS = [['gantt', 'Gantt por fases'], ['linea', 'Línea de fases'], ['tablero', 'Tablero'], ['riesgos', 'Riesgos en el tiempo']];
+const fzd = s => s ? s.slice(8, 10) + '-' + s.slice(5, 7) : '—';
+const fzTx = c => c === '#F2A100' ? '#8A6100' : c;                       // texto legible sobre blanco
+const fzOn = c => c === '#F2A100' ? '#201F1E' : '#fff';                  // texto sobre fondo de color
+/* Ventana de cada fase: desde el día siguiente al fin de la anterior (la 1ª desde inicioPlan) hasta su último hito (la última hasta finPlan si no tiene hitos) */
+function fasesVentana(i) {
+  const FS = fasesDe(i), hs = hitosDe(i.id); let prev = null;
+  return FS.map((f, k) => {
+    const h = hs.filter(x => x.fase === f).sort(by('fecha'));
+    let ini = k === 0 ? (i.inicioPlan || (h[0] && h[0].fecha) || null) : (prev ? addD(prev, 1) : ((h[0] && h[0].fecha) || null));
+    let fin = h.length ? h[h.length - 1].fecha : (k === FS.length - 1 ? (i.finPlan || ini) : ini);
+    if (ini && fin && fin < ini) fin = ini; if (!ini) ini = fin; if (fin) prev = fin;
+    return { fase: f, k, ini, fin, hitos: h, done: h.filter(x => x.completado).length, color: FASE_COLOR[f] || '#605E5C', actual: i.fase === f, pasada: FS.indexOf(i.fase) > k };
+  });
+}
+const fzRiesgosFase = (i, v) => riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev && v.ini && v.fin && r.fRev >= v.ini && r.fRev <= v.fin);
+function fzEscala(d0, d1, W) {
+  const days = Math.max(1, diffD(d1, d0) + 1), ppd = W / days, x = s => Math.min(W, Math.max(0, diffD(s, d0) * ppd)), ticks = [];
+  if (days <= 130) { let d = d0; while (pD(d).getDay() !== 1) d = addD(d, 1); for (; d <= d1; d = addD(d, 7)) ticks.push({ x: x(d), t: +d.slice(8) + ' ' + MES3[+d.slice(5, 7) - 1].toLowerCase() }); }
+  else { let d = d0.slice(0, 8) + '01'; if (d < d0) d = toISO(new Date(+d0.slice(0, 4), +d0.slice(5, 7), 1, 12)); for (; d <= d1; d = toISO(new Date(+d.slice(0, 4), +d.slice(5, 7), 1, 12))) ticks.push({ x: x(d), t: MES3[+d.slice(5, 7) - 1] + ' ' + d.slice(2, 4) }); }
+  return { x, ppd, ticks, W, d0, d1 };
+}
+const fzGrid = (E, head) => E.ticks.map(t => `<i class="fz-wk" style="left:${t.x}px">${head ? esc(t.t) : ''}</i>`).join('') + (hoy() >= E.d0 && hoy() <= E.d1 ? `<i class="fz-hoy" style="left:${E.x(hoy())}px"></i>` : '');
+const fzHito = (E, h) => { const e = hitoEstado(h); return `<i class="fz-h ${h.completado ? 'done' : e.k === 'over' ? 'over' : ''}" style="left:${E.x(h.fecha) - 6}px" title="${esc(h.nombre + ' · ' + fzd(h.fecha) + ' · ' + e.t + (h.resp ? ' · ' + h.resp : ''))}"></i>`; };
+const fzRsk = (E, r) => { const n = nivelRiesgo(expo(r)); return `<i class="fz-r" style="left:${E.x(r.fRev) - 6}px;--c:${n.c}" title="${esc(r.desc + ' · ' + n.n + ' (' + expo(r) + ') · revisión ' + fzd(r.fRev))}"></i>`; };
+
+Views.fases = {
+  render() {
+    const f = F('fases', { tab: 'gantt', q: '', open: {}, riesgos: true, id: '', fk: null });
+    const pool = scopeAll().filter(i => i.estado !== 'Cancelado' && i.inicioPlan && i.finPlan);
+    if (!pool.length) return pageHead('Fases', 'Fases, hitos y riesgos de cada iniciativa') + empty('Sin iniciativas con fechas para mostrar', 'gantt');
+    if (!f.id || !pool.some(i => i.id === f.id)) f.id = (UI.sel && UI.sel.t === 'ini' && pool.some(i => i.id === UI.sel.id)) ? UI.sel.id : (pool.find(isLive) || pool[0]).id;
+    const tabs = `<div class="fz-tabs" role="tablist">${FZ_TABS.map(([k, t]) => `<button role="tab" aria-selected="${f.tab === k}" class="${f.tab === k ? 'on' : ''}" data-act="fztab" data-k="${k}">${t}</button>`).join('')}</div>`;
+    const selIni = `<label class="tb-l">Iniciativa<select data-chg="flt" data-v="fases" data-f="id">${selOpts(pool.slice().sort(by('id')).map(i => ({ v: i.id, t: i.id + ' · ' + i.titulo })), f.id)}</select></label>`;
+    const body = f.tab === 'linea' ? this.linea(byId(f.id), f) : f.tab === 'tablero' ? this.tablero(byId(f.id)) : f.tab === 'riesgos' ? this.riesgos(byId(f.id)) : this.gantt(pool, f);
+    return pageHead('Fases', 'Despliega cada iniciativa en sus fases: cronograma, línea de avance con compuerta, tablero de hitos y riesgos en el tiempo.') + tabs +
+      `<div class="toolbar">${f.tab === 'gantt' ? `<div class="search"><span>${icon('search', 14)}</span><input data-key="fz-q" data-chg="flt" data-v="fases" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div><label class="chk tb-c"><input type="checkbox" ${f.riesgos ? 'checked' : ''} data-chg="flt" data-v="fases" data-f="riesgos" data-bool="1"> <span>Riesgos en la línea</span></label>${btn(Object.keys(f.open).filter(k => f.open[k]).length ? 'Contraer todo' : 'Desplegar todo', 'fzall', { cls: 'sm' })}` : selIni}</div>` + body;
+  },
+  gantt(pool, f) {
+    let rows = pool; if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.id).toLowerCase().includes(q)); }
+    rows = rows.slice().sort(by('inicioPlan'));
+    if (!rows.length) return empty('Sin coincidencias', 'search');
+    const V = {}; rows.forEach(i => V[i.id] = fasesVentana(i));
+    const all = rows.flatMap(i => [i.inicioPlan, i.finPlan, ...V[i.id].map(v => v.fin), ...hitosDe(i.id).map(h => h.fecha)]).filter(Boolean).sort();
+    const E = fzEscala(addD(all[0], -3), addD(all[all.length - 1], 3), Math.max(900, Math.min(2400, (diffD(all[all.length - 1], all[0]) + 7) * 6)));
+    const segs = (i, top, h, op) => V[i.id].filter(v => v.ini && v.fin).map(v => `<i class="fz-bar" style="left:${E.x(v.ini)}px;width:${Math.max(3, E.x(addD(v.fin, 1)) - E.x(v.ini))}px;top:${top}px;height:${h}px;background:${v.color};opacity:${op}" title="${esc(v.fase + ' · ' + fzd(v.ini) + ' → ' + fzd(v.fin))}"></i>`).join('');
+    const out = rows.map(i => {
+      const open = !!f.open[i.id], hs = hitosDe(i.id), rk = riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev);
+      const head = `<div class="fz-row"><div class="fz-lab"><button class="fz-tg" data-act="fzopen" data-id="${i.id}" aria-expanded="${open}" aria-label="${open ? 'Contraer' : 'Desplegar'} fases de ${esc(i.titulo)}">${icon(open ? 'chevd' : 'chev', 13)}</button><span style="min-width:0"><a class="lnk" data-act="sel" data-t="ini" data-id="${i.id}"><b>${esc(i.titulo)}</b></a><small class="fz-sm">${esc(i.fase)} · ${i.avance || 0}% · ${hs.filter(h => h.completado).length}/${hs.length} hitos</small></span></div>
+        <div class="fz-trk" style="width:${E.W}px">${fzGrid(E)}${segs(i, 12, 20, 1)}${!open && f.riesgos ? rk.map(r => fzRsk(E, r)).join('') : ''}</div></div>`;
+      if (!open) return head;
+      return head + V[i.id].map(v => `<div class="fz-row fz-sub"><div class="fz-lab" style="padding-left:52px"><span class="fz-sw" style="background:${v.color}"></span><span style="min-width:0"><span>${esc(v.fase)}${v.actual ? ' <b class="fz-act">actual</b>' : ''}</span><small class="fz-sm">${fzd(v.ini)} → ${fzd(v.fin)} · ${v.done}/${v.hitos.length} hitos</small></span></div>
+        <div class="fz-trk" style="width:${E.W}px">${fzGrid(E)}${v.ini && v.fin ? `<i class="fz-bar" style="left:${E.x(v.ini)}px;width:${Math.max(3, E.x(addD(v.fin, 1)) - E.x(v.ini))}px;top:16px;height:12px;background:${v.color};opacity:.35"></i>` : ''}${v.hitos.map(h => fzHito(E, h)).join('')}${f.riesgos ? fzRiesgosFase(i, v).map(r => fzRsk(E, r)).join('') : ''}</div></div>`).join('');
+    }).join('');
+    return `<div class="fz-box" data-keep="fzg"><div style="min-width:${320 + E.W}px"><div class="fz-row fz-head"><div class="fz-lab"><b>Iniciativa / fase</b></div><div class="fz-trk" style="width:${E.W}px;height:36px">${fzGrid(E, true)}</div></div>${out}</div></div>
+      <div class="fz-leg"><span><i class="fz-h done fz-lg"></i>Hito cumplido</span><span><i class="fz-h fz-lg"></i>Hito pendiente</span><span><i class="fz-h over fz-lg"></i>Hito vencido</span><span><i class="fz-r fz-lg" style="--c:#D13438"></i>Revisión de riesgo (color = nivel)</span><span><i class="fz-hoy fz-lg"></i>Hoy</span></div>`;
+  },
+  linea(i, f) {
+    const V = fasesVentana(i), cur = Math.max(0, V.findIndex(v => v.actual)), k = f.fk != null && V[f.fk] && f.fid === i.id ? f.fk : cur, v = V[k];
+    const steps = `<div class="fz-steps" style="--n:${V.length}">${V.map(x => `<button class="fz-step ${x.k === k ? 'on' : ''} ${x.actual ? 'act' : ''}" style="--c:${x.color}" data-act="fzsel" data-k="${x.k}" data-id="${i.id}"><span class="fz-st"><span class="fz-num">${x.k + 1}</span>${esc(x.fase)}</span><small class="fz-sm">${fzd(x.ini)} → ${fzd(x.fin)}${x.ini && x.fin ? ' · ' + (diffD(x.fin, x.ini) + 1) + ' días' : ''}</small><span class="fz-pb"><i style="width:${x.hitos.length ? Math.round(x.done / x.hitos.length * 100) : 0}%"></i></span><small>${x.done}/${x.hitos.length} hitos · ${x.actual ? 'En curso' : x.pasada ? 'Completada' : 'Por iniciar'}</small></button>`).join('')}</div>`;
+    const lista = v.hitos.length ? v.hitos.map(h => { const e = hitoEstado(h); return `<div class="fz-li"><span class="fz-ck" style="border-color:${e.c};background:${h.completado ? e.c : 'transparent'}">${h.completado ? '✓' : ''}</span><span style="flex:1 1 auto">${esc(h.nombre)}</span><span class="fz-pill" style="color:${fzTx(e.c)};border:1px solid ${e.c}">${esc(e.t)}</span><small class="mut">${esc(h.resp || '')}</small><b style="width:46px;text-align:right">${fzd(h.fecha)}</b></div>`; }).join('') : '<p class="mut" style="padding:12px 16px">Sin hitos en esta fase.</p>';
+    const FS = fasesDe(i), nx = FS[FS.indexOf(i.fase) + 1];
+    let gate = '<p class="mut">Última fase: no hay compuerta siguiente.</p>';
+    if (nx) { const g = gates(i, nx), okN = g.filter(x => x.ok).length; gate = `<div class="mut" style="font-size:12px;margin-bottom:8px">${okN} de ${g.length} condiciones cumplidas</div>${g.map(x => `<div class="fz-g"><b style="color:${x.ok ? 'var(--green)' : 'var(--red)'}">${x.ok ? '✓' : '✕'}</b><span>${esc(x.t)}</span></div>`).join('') || '<p class="mut">Sin condiciones para esta fase.</p>'}<span class="edit-only">${btn('Avanzar a ' + nx, 'advance', { d: { id: i.id }, cls: okN === g.length ? 'pri' : '' })}</span>`; }
+    return steps + `<div class="fz-2"><div class="fz-card" style="flex:999 1 560px;min-width:0"><div class="fz-ch"><h3>Hitos de ${esc(v.fase)}</h3><small class="mut">${fzd(v.ini)} → ${fzd(v.fin)}</small></div>${lista}</div>
+      <div class="fz-card" style="flex:1 1 320px;min-width:0;padding:14px 16px"><h3 style="margin:0 0 4px">Compuerta${nx ? ' hacia ' + esc(nx) : ''}</h3>${gate}</div></div>`;
+  },
+  tablero(i) {
+    const V = fasesVentana(i);
+    return `<div class="fz-cols" style="--n:${V.length}">${V.map(v => { const rk = fzRiesgosFase(i, v).sort(by(r => -expo(r)));
+      return `<div class="fz-col"><div class="fz-colh" style="background:${v.color}"><b>${esc(v.fase)}${v.actual ? ' · actual' : ''}</b><small>${fzd(v.ini)} → ${fzd(v.fin)} · ${v.done}/${v.hitos.length} hitos</small></div><div class="fz-colb">
+        ${v.hitos.map(h => { const e = hitoEstado(h); return `<div class="fz-it"><div>${esc(h.nombre)}</div><div class="fz-itm"><span class="fz-pill" style="color:${fzTx(e.c)};border:1px solid ${e.c}">${esc(e.t)}</span><small class="mut">${fzd(h.fecha)}</small></div></div>`; }).join('') || '<p class="mut">Sin hitos.</p>'}
+        ${rk.length ? `<div class="fz-rt">Riesgos que se revisan en esta fase</div>${rk.map(r => { const n = nivelRiesgo(expo(r)); return `<div class="fz-it fz-ri"><span class="fz-exp" style="background:${n.c};color:${fzOn(n.c)}">${expo(r)}</span><span style="flex:1 1 auto">${esc(r.desc)}</span><small class="mut">${fzd(r.fRev)}</small></div>`; }).join('')}` : ''}</div></div>`; }).join('')}</div>`;
+  },
+  riesgos(i) {
+    const V = fasesVentana(i), rk = riesgosDe(i.id).filter(riesgoAbierto).sort(by(r => -expo(r)));
+    if (!rk.length) return empty('Esta iniciativa no tiene riesgos abiertos', 'shield');
+    const ds = [i.inicioPlan, i.finPlan, ...V.map(v => v.fin), ...rk.map(r => r.fIdent), ...rk.map(r => r.fRev)].filter(Boolean).sort();
+    const E = fzEscala(addD(ds[0], -2), addD(ds[ds.length - 1], 2), Math.max(900, Math.min(2000, (diffD(ds[ds.length - 1], ds[0]) + 5) * 16)));
+    const fase = d => (V.find(v => d && v.ini && v.fin && d >= v.ini && d <= v.fin) || {}).fase || '—';
+    const fb = V.filter(v => v.ini && v.fin).map(v => `<i class="fz-fb" style="left:${E.x(v.ini)}px;width:${Math.max(3, E.x(addD(v.fin, 1)) - E.x(v.ini))}px;background:${v.color}">${esc(v.fase)}</i>`).join('');
+    const rows = rk.map(r => { const n = nivelRiesgo(expo(r)), a = r.fIdent || i.inicioPlan, b = r.fRev || a, venc = r.fRev && r.fRev < hoy();
+      return `<div class="fz-row"><div class="fz-lab"><span class="fz-exp" style="background:${n.c};color:${fzOn(n.c)}">${expo(r)}</span><span style="min-width:0;flex:1 1 auto"><a class="lnk fz-1l" data-act="sel" data-t="risk" data-id="${r.id}" title="${esc(r.desc)}">${esc(r.desc)}</a><small class="fz-sm">${n.n} · ${esc(r.dueno || '—')} · revisa ${fzd(r.fRev)}${venc ? ' <b style="color:var(--red)">vencida</b>' : ''} · ${esc(fase(r.fRev))}</small></span></div>
+        <div class="fz-trk" style="width:${E.W}px;height:46px">${fzGrid(E)}<i class="fz-bar" style="left:${E.x(a)}px;width:${Math.max(4, E.x(addD(b, 1)) - E.x(a))}px;top:17px;height:12px;border-radius:6px;background:${n.c};opacity:.85"></i></div></div>`; }).join('');
+    return `<p class="mut" style="margin:0 0 10px">Cada barra va desde la identificación del riesgo hasta su fecha de revisión; arriba, la ventana de cada fase.</p><div class="fz-box" data-keep="fzr"><div style="min-width:${320 + E.W}px">
+      <div class="fz-row fz-head"><div class="fz-lab"><b>Fase</b></div><div class="fz-trk" style="width:${E.W}px;height:32px">${fb}</div></div>
+      <div class="fz-row fz-head"><div class="fz-lab"><b>Riesgo · exposición</b></div><div class="fz-trk" style="width:${E.W}px;height:30px">${fzGrid(E, true)}</div></div>${rows}</div></div>`;
+  }
+};
+Acts.fztab = d => { F('fases', {}).tab = d.k; render(); };
+Acts.fzopen = d => { const f = F('fases', {}); f.open = Object.assign({}, f.open || {}, { [d.id]: !(f.open || {})[d.id] }); render(); };
+Acts.fzall = () => { const f = F('fases', {}), any = Object.keys(f.open || {}).some(k => f.open[k]); f.open = {}; if (!any) scopeAll().forEach(i => f.open[i.id] = true); render(); };
+Acts.fzsel = d => { const f = F('fases', {}); f.fk = +d.k; f.fid = d.id; render(); };
 
 /* ======================= GANTT ======================= */
 const GZ = { week: { n: 'Semana', p: 11 }, month: { n: 'Mes', p: 4.2 }, quarter: { n: 'Trimestre', p: 1.5 } };
@@ -4698,7 +4824,7 @@ function escalarSync() {   // las decisiones que superan el plazo de escalamient
    ============================================================ */
 const NAV_SIMPLE = ['dashboard', 'cielo', 'proyectos', 'riesgos', 'decisiones', 'presentaciones', 'personas', 'miconfig', 'admin'];
 const COLS_SIMPLE = ['id', 'titulo', 'lider', 'rag', 'avance', 'finPlan'];
-const NAV_GRP = { dashboard: 'Portafolio', cielo: 'Portafolio', portfolio: 'Portafolio', proyectos: 'Portafolio', propuestas: 'Portafolio', hitos: 'Portafolio', riesgos: 'Portafolio', roadmap: 'Portafolio', gantt: 'Portafolio', capacidad: 'Portafolio',
+const NAV_GRP = { dashboard: 'Portafolio', cielo: 'Portafolio', portfolio: 'Portafolio', proyectos: 'Portafolio', propuestas: 'Portafolio', hitos: 'Portafolio', riesgos: 'Portafolio', roadmap: 'Portafolio', gantt: 'Portafolio', fases: 'Portafolio', capacidad: 'Portafolio',
   comite: 'Gobierno', decisiones: 'Gobierno', compromisos: 'Gobierno', cambios: 'Gobierno', bitacora: 'Gobierno', calendario: 'Gobierno', personas: 'Personas y reportes', presentaciones: 'Personas y reportes',
   miconfig: 'Sistema', admin: 'Sistema', ia: 'Sistema', proposito: 'Sistema' };
 const modoUI = () => (UI.uiOv || 'simple') === 'pro' ? 'pro' : 'simple';   // cada sesión parte en Simple
@@ -9064,6 +9190,10 @@ const GUIA = {
     ['Desplaza', 'Botones de flecha y «Hoy» para mover la ventana.'],
     ['Abre un proyecto', 'Clic en su barra para ver el detalle.'],
     ['Exporta', '«Exportar CSV» con las entregas por trimestre.']] },
+  fases: { t: 'Fases', p: [
+    ['Elige la mirada', 'Gantt por fases, Línea de fases (con compuerta), Tablero o Riesgos en el tiempo.'],
+    ['Despliega', 'En el Gantt, la flecha abre cada iniciativa en sus fases con hitos y revisiones de riesgo.'],
+    ['Ventana de fase', 'Va del día siguiente al cierre de la fase anterior hasta su último hito.']] },
   gantt: { t: 'Gantt', p: [
     ['Ubica el cronograma', '«Ir a hoy» centra la línea de tiempo en la fecha actual.'],
     ['Lee las barras', 'Color = RAG; la parte rellena es el avance real.'],
@@ -9692,7 +9822,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.52', b: '15-10-2026 19:30' };
+  const VER = { v: 'V22.53', b: '16-10-2026 01:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -9721,7 +9851,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   const MENU = [
     { k: 'inicio', t: 'Inicio', ic: 'dashboard', vs: [['dashboard', 'Dashboard'], ['cielo', 'Mi cocina']] },
     { k: 'iniciativas', t: 'Iniciativas', ic: 'list', vs: [['portfolio', 'Tabla'], ['proyectos', 'Tablero'], ['propuestas', 'Propuestas']] },
-    { k: 'planificacion', t: 'Planificación', ic: 'gantt', vs: [['gantt', 'Gantt'], ['roadmap', 'Roadmap'], ['calendario', 'Calendario'], ['hitos', 'Hitos'], ['capacidad', 'Capacidad'], ['riesgos', 'Riesgos']] },
+    { k: 'planificacion', t: 'Planificación', ic: 'gantt', vs: [['gantt', 'Gantt'], ['fases', 'Fases'], ['roadmap', 'Roadmap'], ['calendario', 'Calendario'], ['hitos', 'Hitos'], ['capacidad', 'Capacidad'], ['riesgos', 'Riesgos']] },
     { k: 'gobierno', t: 'Gobierno', ic: 'gavel', vs: [['comite', 'Comité'], ['decisiones', 'Decisiones'], ['compromisos', 'Compromisos'], ['cambios', 'Cambios']] },
     { k: 'pendientes', t: 'Mis pendientes', ic: 'check', vs: [['decisiones', 'Decisiones'], ['compromisos', 'Compromisos']] },
     { k: 'presentaciones', t: 'Presentaciones', ic: 'slides', vs: [['presentaciones', 'Presentaciones']] },
