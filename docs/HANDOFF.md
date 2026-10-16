@@ -78,7 +78,7 @@ Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con
 **Versión final de APIH Corporativo (pedido del usuario, 16-10-2026; mockup antes de implementar):**
 1. Propuestas con despliegue similar a proyectos: planificación en la ficha e hitos y riesgos en un mismo lugar.
 2. Propuestas visibles en las vistas del menú Planificación (Gantt, Fases, Roadmap, Calendario, Hitos, Capacidad, Riesgos).
-3. Categorías para hitos y riesgos, con filtro por categoría.
+3. Categorías para hitos y riesgos, con filtro por categoría, tanto en proyectos como en propuestas.
 
 **Usuario:** enviar la propuesta al arquitecto de TI; que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); importar las 2 iniciativas; (opcional) crear usuario "Bot IA" con rol Editor.
 **Camino elegido: construir y proponer a TI.** Siguiente: enviar al arquitecto de TI (mismo hilo, la Dirección de TI en copia) el correo colaborativo con el PDF; comentarios de TI esperados hacia el 21-10 (sin presión); al habilitar dev, validar en Azure (`tests/contract/run-azure-sql.js`). Pendiente en core: `pasosDe` (V22.54); contratos propios para decisiones, compromisos, cambios, bitácora y comités., con equivalencia y pruebas de contrato. Objetivo del proyecto: demostrar que la metodología acelera los plazos (medir horas por versión).
