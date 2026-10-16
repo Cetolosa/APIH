@@ -1,0 +1,49 @@
+# APIH Corporativo · pruebas y despliegue (C2.3). Pensado para el repositorio corporativo que indique TI
+# (GitHub o Azure DevOps: los pasos son los mismos). Despliegue sin secretos de larga vida: OIDC (federated credentials).
+name: apih-corporativo
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+  workflow_dispatch:
+    inputs:
+      ambiente: { description: 'dev o prod', required: true, default: 'dev' }
+permissions: { id-token: write, contents: read }
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: node tests/unit/core-equivalencia.js
+      - run: node tests/unit/core-equivalencia-c14.js
+      - run: node tests/unit/migracion.js
+      - run: node tests/contract/run.js
+  desplegar:
+    needs: pruebas
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.ambiente || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Empaquetar API (incluye packages/core)
+        run: |
+          mkdir -p services/api/core && cp packages/core/apih-core.js services/api/core/
+          cd services/api && npm ci --omit=dev || npm install --omit=dev
+      - uses: azure/login@v2
+        with: { client-id: '${{ secrets.AZURE_CLIENT_ID }}', tenant-id: '${{ secrets.AZURE_TENANT_ID }}', subscription-id: '${{ secrets.AZURE_SUBSCRIPTION_ID }}' }
+      - name: Desplegar API (Function App)
+        uses: Azure/functions-action@v1
+        with: { app-name: '${{ vars.APIH_FUNC_NOMBRE }}', package: services/api }
+      - name: Desplegar SPA (Static Web App)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.APIH_SWA_TOKEN }}
+          action: upload
+          app_location: apps/corporativo
+          skip_app_build: true
+          skip_api_build: true
+      - name: Verificar salud
+        run: curl -fsS "https://${{ vars.APIH_SWA_HOST }}/api/salud"

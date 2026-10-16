@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ambiente": { "value": "dev" },
+    "sqlAdminGrupoNombre": { "value": "<GRUPO-ADMIN-SQL>" },
+    "sqlAdminGrupoId": { "value": "<OBJECT-ID-GRUPO-ADMIN-SQL>" },
+    "grupoAdminId": { "value": "<OBJECT-ID-APIH-Admin>" },
+    "grupoEditorId": { "value": "<OBJECT-ID-APIH-Editor>" },
+    "grupoLecturaId": { "value": "<OBJECT-ID-APIH-Lectura>" }
+  }
+}

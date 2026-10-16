@@ -3,7 +3,7 @@
  * req: { method, path, query, headers, body } → { status, headers, body } */
 const { HTTP } = require('./errores');
 const { usuarioDe } = require('./auth');
-const core = require('../../../packages/core/apih-core.js');
+const core = require('./core');
 
 module.exports = function crearApp({ servicio, env = process.env }) {
   const R = [];   // [método, patrón, handler(u, params, req)]
@@ -11,6 +11,13 @@ module.exports = function crearApp({ servicio, env = process.env }) {
   const ver = req => { const v = req.headers['if-match'] || (req.body && req.body.version); return v == null ? null : String(v).replace(/^W\//, '').replace(/"/g, ''); };
   const b = req => req.body || {};
   ruta('GET', '/api/salud', async () => ({ ok: true, core: core.VERSION.v }));
+  /* rolesSource de Static Web Apps: SWA llama con los claims del usuario y recibe sus roles (grupos de Entra → roles).
+     Solo DEVUELVE roles a SWA; llamarla directamente no otorga acceso. */
+  ruta('POST', '/api/roles', async (u, p, req) => {
+    const g = new Set(((b(req).claims) || []).filter(c => c.typ === 'groups' || c.typ === 'http://schemas.microsoft.com/ws/2008/06/identity/claims/groups').map(c => c.val));
+    const M = [['apih-admin', env.APIH_GRUPO_ADMIN], ['apih-editor', env.APIH_GRUPO_EDITOR], ['apih-lectura', env.APIH_GRUPO_LECTURA]];
+    return { roles: M.filter(([, id]) => id && g.has(id)).map(([r]) => r) };
+  });
   ruta('GET', '/api/yo', async u => u);
   ruta('GET', '/api/sello', u => servicio.sello(u));
   ruta('GET', '/api/hitos', u => servicio.todosHitos(u));
@@ -45,12 +52,13 @@ module.exports = function crearApp({ servicio, env = process.env }) {
     const hit = R.map(([m, re, h]) => [m, path.match(re), h]).filter(x => x[1]);
     if (!hit.length) return json(404, { codigo: 'NO_ENCONTRADA', mensaje: 'Ruta no encontrada' });
     const r = hit.find(x => x[0] === req.method); if (!r) return json(405, { codigo: 'METODO', mensaje: 'Método no permitido' }, { allow: hit.map(x => x[0]).join(', ') });
-    const u = path === '/api/salud' ? null : usuarioDe(req.headers, env);
-    if (path !== '/api/salud' && !u) return json(401, { codigo: 'NO_AUTENTICADO', mensaje: 'Inicia sesión con tu cuenta Aramark' });
+    const publica = path === '/api/salud' || path === '/api/roles';
+    const u = publica ? null : usuarioDe(req.headers, env);
+    if (!publica && !u) return json(401, { codigo: 'NO_AUTENTICADO', mensaje: 'Inicia sesión con tu cuenta Aramark' });
     if (u && !u.rol && path !== '/api/yo') return json(403, { codigo: 'SIN_PERMISO', mensaje: 'Tu cuenta no tiene un rol de APIH asignado' });
     try {
       const out = await r[2](u, r[1].groups || {}, req);
-      const st = (req.method === 'PUT' && /\/api\/registros\//.test(path) && !ver(req)) ? 201 : req.method === 'POST' && /\/api\/(iniciativas|iniciativas\/[^/]+\/(hitos|riesgos))\/?$/.test(path) ? 201 : out === undefined ? 204 : 200;
+      const st = path === '/api/roles' ? 200 : (req.method === 'PUT' && /\/api\/registros\//.test(path) && !ver(req)) ? 201 : req.method === 'POST' && /\/api\/(iniciativas|iniciativas\/[^/]+\/(hitos|riesgos))\/?$/.test(path) ? 201 : out === undefined ? 204 : 200;
       return json(st, out, out && out.version ? { etag: '"' + out.version + '"' } : null);
     } catch (e) {
       if (e.codigo && HTTP[e.codigo]) return json(HTTP[e.codigo], { codigo: e.codigo, mensaje: e.message, detalles: e.detalles });

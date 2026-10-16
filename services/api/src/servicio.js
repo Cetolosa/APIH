@@ -2,7 +2,7 @@
 /* C2.0 — Servicio de negocio de APIH Corporativo. Aplica TODAS las reglas del contrato en el servidor
  * (packages/core/contracts/iniciativa.md y hitos-riesgos.md) sobre un store intercambiable (memoria / Azure SQL).
  * usuario: { email, nombre, rol: 'Admin' | 'Editor' | 'Lectura' } — lo entrega la capa de autenticación (Entra ID). */
-const core = require('../../../packages/core/apih-core.js');
+const core = require('./core');
 const { errorApi } = require('./errores');
 
 const RO_INI = ['id', 'version', 'creada', 'actualizada', 'modificadoPor', 'faseDesde', 'hist'];

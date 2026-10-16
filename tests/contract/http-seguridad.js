@@ -44,5 +44,11 @@ module.exports = async function (log = console.log) {
     await assert.rejects(store.tx(async t => { await t.insertar('iniciativas', { tipo: 'Proyecto' }, 'PRJ'); await t.actualizar('iniciativas', Object.assign({}, p, { estado: 'Aprobada' }), p.version); }));
     store.actualizar = orig; assert.strictEqual((await store.listar('iniciativas')).length, ant, 'rollback');
   });
+  await caso('rolesSource (/api/roles): grupos de Entra → roles; sin grupos, sin roles', async () => {
+    const h = app({ APIH_GRUPO_ADMIN: 'g-adm', APIH_GRUPO_EDITOR: 'g-edi', APIH_GRUPO_LECTURA: 'g-lec' });
+    const r = await h({ method: 'POST', path: '/api/roles', body: { claims: [{ typ: 'groups', val: 'g-edi' }, { typ: 'groups', val: 'otro' }] } });
+    assert.strictEqual(r.status, 200); assert.deepStrictEqual(JSON.parse(r.body).roles, ['apih-editor']);
+    assert.deepStrictEqual(JSON.parse((await h({ method: 'POST', path: '/api/roles', body: {} })).body).roles, []);
+  });
   return ok;
 };
