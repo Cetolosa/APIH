@@ -20,5 +20,9 @@ Dos productos sobre un núcleo compartido:
 ## Prototipo congelado
 APIH Prototipo está **congelado desde V22.52 (15-10-2026)**: tag `prototipo-v22.52-congelado`. Solo se aceptan correcciones críticas (errores y seguridad) y la gestión de accesos. Las funciones pendientes (Pronóstico financiero, Ruta crítica, Escenarios) se construyen una sola vez en APIH Corporativo sobre `packages/core`.
 
+## Versionado
+- Prototipo: **V22.52 congelada**. No se modifica.
+- Corporativo: **C<n>.<m>** desde C1.0. Lo que se reutilice del Prototipo se copia y continúa con versión C.
+
 ## Estado
-Fase 1 del plan (dividir `index.html` en `core` + `ui`) pendiente. Mientras tanto `/index.html`, `/apih-config.js` y `/supabase` siguen siendo la fuente y no se mueven, para no romper GitHub Pages.
+Fase 1 en curso: `packages/core` C1.0 (fechas y riesgo). Mientras tanto `/index.html`, `/apih-config.js` y `/supabase` siguen siendo la fuente y no se mueven, para no romper GitHub Pages.
