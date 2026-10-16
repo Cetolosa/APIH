@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "apih/contracts/hito/C1.4",
+  "title": "Hito (APIH Corporativo C1.4)",
+  "type": "object",
+  "required": ["ini", "nombre", "fecha"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^HIT-\\d+$", "readOnly": true },
+    "version": { "type": "string", "readOnly": true },
+    "ini": { "type": "string", "pattern": "^(PROP|PRJ)-\\d+$" },
+    "nombre": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "fase": { "enum": ["", "Recepción", "Evaluación", "Caso de Negocio", "Aprobación", "Planificación", "Ejecución", "Transición", "Cierre"] },
+    "fecha": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "completado": { "type": "boolean", "default": false },
+    "fechaReal": { "oneOf": [{ "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }, { "type": "null" }] },
+    "resp": { "type": "string" }
+  }
+}

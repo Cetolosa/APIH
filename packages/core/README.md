@@ -10,9 +10,10 @@ Reglas puras (sin DOM ni estado global). Script clásico: navegador (`window.API
 ## Registro
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
+| C1.4 | 16-10-2026 | Hitos, riesgos, compuertas (`gates`) y ventanas de fase, con dependencias por parámetro; equivalentes a V22.54. |
 | C1.1 | 15-10-2026 | Contrato de Iniciativa: `contracts/iniciativa.schema.json` (58 campos), `contracts/iniciativa.md` (8 operaciones, 10 reglas, errores, REST sugerido), `validarIniciativa`, `validarCambioEstado`, `hayCiclo`, `INICIATIVA`. Pruebas de contrato reutilizables por adaptador (`tests/contract/`). |
 | C1.0 | 15-10-2026 | Fechas (`pad`, `toISO`, `pD`, `addD`, `diffD`) y riesgo (`expo`, `nivelRiesgo(e, umbral)`, `riesgoAbierto`) copiadas de V22.52. `nivelRiesgo` recibe el umbral por parámetro. |
 
 ## Pruebas
 `node tests/contract/run.js` — esquema ↔ core, datos reales de `docs/` y contrato por adaptador (hoy: memoria).
-`node tests/unit/core-equivalencia.js` — compara contra las funciones de `index.html` V22.52 (solo lectura).
+`node tests/unit/core-equivalencia.js` y `node tests/unit/core-equivalencia-c14.js` — compara contra las funciones de `index.html` V22.52 (solo lectura).

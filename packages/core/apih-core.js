@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C1.1', b: '15-10-2026', origen: 'V22.52' };
+  const VERSION = { v: 'C1.4', b: '16-10-2026', origen: 'V22.54' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -83,7 +83,76 @@
     return e.length ? e : validarIniciativa(Object.assign({}, i, { estado: c.estado, estadoMotivo: c.motivo || '', estadoRev: c.rev || null }));
   }
 
+
+  /* ---------- hitos, riesgos, compuertas y fases (C1.4) — copiados de index.html V22.54, dependencias por parámetro ---------- */
+  const RISK_CATS = ['Técnico', 'Alcance', 'Recursos', 'Proveedor', 'Cronograma', 'Financiero', 'Regulatorio', 'Otro'];
+  const RISK_ESTADOS = ['Abierto', 'En mitigación', 'Materializado', 'Cerrado'];
+  const FASE_COLOR = { 'Recepción': '#8A8886', 'Evaluación': '#8764B8', 'Caso de Negocio': '#4F6BED', 'Aprobación': '#038387', 'Planificación': '#0D446A', 'Ejecución': '#107C10', 'Transición': '#CA5010', 'Cierre': '#605E5C' };
+  const porFecha = (a, b) => ((a.fecha == null) - (b.fecha == null)) || (a.fecha > b.fecha ? 1 : a.fecha < b.fecha ? -1 : 0);
+  const fasesDe = i => i && i.tipo === 'Propuesta' ? FASES.Propuesta : FASES.Proyecto;
+
+  // Semáforo de un hito. hoy: 'AAAA-MM-DD'. (El texto «Vence …» del Prototipo usa rel(); aquí: «Vence en N d».)
+  function hitoEstado(h, hoy) {
+    if (h.completado) return (h.fechaReal && h.fechaReal > h.fecha) ? { k: 'late', t: 'Completado con retraso', c: '#F2A100' } : { k: 'done', t: 'Completado', c: '#107C10' };
+    const d = diffD(h.fecha, hoy);
+    if (d < 0) return { k: 'over', t: 'Vencido (' + (-d) + ' d)', c: '#D13438' };
+    if (d <= 7) return { k: 'soon', t: d === 0 ? 'Vence hoy' : 'Vence en ' + d + ' d', c: '#F2A100' };
+    return { k: 'ok', t: 'En plazo', c: '#0D446A' };
+  }
+  const riesgoSinMit = (r, umbral) => riesgoAbierto(r) && expo(r) >= umbral && !String(r.mit || '').trim();
+
+  /* Compuertas de fase. ctx: { hitos: [...de la iniciativa], riesgos: [...], hoy, umbral } */
+  function gates(i, to, ctx) {
+    const g = [], ok = (c, t) => g.push({ ok: !!c, t });
+    const hs = ctx.hitos || [], rs = ctx.riesgos || [], U = ctx.umbral, sinMit = r => riesgoSinMit(r, U);
+    if (to === 'Evaluación') { ok(i.problema || i.desc, 'Problema/objetivo descrito'); ok(i.sponsor, 'Sponsor identificado'); }
+    if (to === 'Caso de Negocio') { ok(i.sponsor, 'Sponsor identificado'); ok(i.score, 'Evaluación de valor/esfuerzo completada'); ok(i.lider, 'Líder asignado'); }
+    if (to === 'Aprobación') { ok(i.presupuesto > 0, 'Presupuesto estimado'); ok(i.beneficio > 0 || i.categoria === 'Transversal', 'Beneficio esperado'); ok(i.bc, 'Business case redactado'); }
+    if (to === 'Ejecución') { ok(i.inicioPlan && i.finPlan, 'Fechas plan definidas'); ok(i.presupuesto > 0 || i.categoria === 'Transversal', 'Presupuesto asignado'); ok(hs.length >= 2, 'Al menos 2 hitos planificados'); ok(!rs.some(sinMit), 'Riesgos críticos con plan de mitigación'); ok(i.lider, 'Líder asignado'); }
+    if (to === 'Transición') { ok(i.avance >= 80, 'Avance ≥ 80%'); ok(!hs.some(h => !h.completado && h.fecha < ctx.hoy), 'Sin hitos vencidos'); ok(!rs.some(sinMit), 'Riesgos críticos con plan de mitigación'); }
+    { const F_ = fasesDe(i), a = F_.indexOf(i.fase), b = F_.indexOf(to); if (b > a && a >= 0) { const pend = hs.filter(h => h.fase === i.fase && !h.completado); if (hs.some(h => h.fase === i.fase)) ok(!pend.length, 'Hitos de la fase ' + i.fase + ' completados' + (pend.length ? ' (faltan ' + pend.length + ')' : '')); } }
+    if (to === 'Cierre') { ok(i.avance >= 100, 'Avance al 100%'); ok(hs.every(h => h.completado), 'Todos los hitos completados'); ok(!rs.some(r => r.estado === 'Abierto' && expo(r) >= U), 'Sin riesgos críticos abiertos'); }
+    return g;
+  }
+
+  /* Ventana de cada fase (V22.53): del día siguiente al fin de la anterior hasta su último hito */
+  function fasesVentana(i, hitos) {
+    const FS = fasesDe(i), hs = hitos || []; let prev = null;
+    return FS.map((f, k) => {
+      const h = hs.filter(x => x.fase === f).slice().sort(porFecha);
+      let ini = k === 0 ? (i.inicioPlan || (h[0] && h[0].fecha) || null) : (prev ? addD(prev, 1) : ((h[0] && h[0].fecha) || null));
+      let fin = h.length ? h[h.length - 1].fecha : (k === FS.length - 1 ? (i.finPlan || ini) : ini);
+      if (ini && fin && fin < ini) fin = ini; if (!ini) ini = fin; if (fin) prev = fin;
+      return { fase: f, k, ini, fin, hitos: h, done: h.filter(x => x.completado).length, color: FASE_COLOR[f] || '#605E5C', actual: i.fase === f, pasada: FS.indexOf(i.fase) > k };
+    });
+  }
+
+  function validarHito(h) {
+    const e = [], err = (campo, regla) => e.push({ campo, regla });
+    if (!h || typeof h !== 'object') return [{ campo: '', regla: 'objeto requerido' }];
+    if (!h.ini) err('ini', 'obligatorio');
+    if (!h.nombre || !String(h.nombre).trim()) err('nombre', 'obligatorio');
+    if (!h.fecha || !fechaOk(h.fecha)) err('fecha', 'fecha AAAA-MM-DD válida');
+    if (h.fase && !FASES.Propuesta.concat(FASES.Proyecto).includes(h.fase)) err('fase', 'fase válida o vacía');
+    if (h.fechaReal != null && h.fechaReal !== '' && !fechaOk(h.fechaReal)) err('fechaReal', 'fecha AAAA-MM-DD válida');
+    if (h.completado && !h.fechaReal) err('fechaReal', 'obligatoria si está completado');
+    return e;
+  }
+  function validarRiesgo(r, umbral) {
+    const e = [], err = (campo, regla) => e.push({ campo, regla });
+    if (!r || typeof r !== 'object') return [{ campo: '', regla: 'objeto requerido' }];
+    if (!r.ini) err('ini', 'obligatorio');
+    if (!r.desc || !String(r.desc).trim()) err('desc', 'obligatorio');
+    ['prob', 'imp'].forEach(k => { if (!(Number.isInteger(r[k]) && r[k] >= 1 && r[k] <= 5)) err(k, 'entero 1 a 5'); });
+    if (r.cat != null && !RISK_CATS.includes(r.cat)) err('cat', 'categoría válida');
+    if (!RISK_ESTADOS.includes(r.estado)) err('estado', 'estado válido');
+    ['fIdent', 'fRev'].forEach(k => { if (r[k] != null && r[k] !== '' && !fechaOk(r[k])) err(k, 'fecha AAAA-MM-DD válida'); });
+    if (umbral != null && riesgoSinMit(r, umbral)) err('mit', 'un riesgo crítico requiere plan de mitigación');
+    return e;
+  }
+
   const INICIATIVA = Object.freeze({ FASES, ESTADOS, EST_FINAL, EST_MOTIVO, EST_REVISION, RAGS, PRIOS, MONEDAS });
 
-  return Object.freeze({ VERSION, pad, toISO, pD, addD, diffD, expo, nivelRiesgo, riesgoAbierto, INICIATIVA, hayCiclo, validarIniciativa, validarCambioEstado });
+  const RIESGO = Object.freeze({ RISK_CATS, RISK_ESTADOS });
+  return Object.freeze({ VERSION, pad, toISO, pD, addD, diffD, expo, nivelRiesgo, riesgoAbierto, INICIATIVA, RIESGO, FASE_COLOR, fasesDe, hayCiclo, validarIniciativa, validarCambioEstado, hitoEstado, riesgoSinMit, gates, fasesVentana, validarHito, validarRiesgo });
 });
