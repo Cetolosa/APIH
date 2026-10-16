@@ -1,0 +1,59 @@
+// APIH · Medidas DAX para el modelo de Power BI (C2.10). Tablas = vistas rpt.* de Azure SQL (ver README.md).
+// Pegar en una tabla de medidas «_Medidas». Las reglas replican packages/core (semáforos, compuertas no incluidas).
+
+// ---------- Portafolio ----------
+Iniciativas = COUNTROWS ( dim_iniciativa )
+Proyectos vigentes = CALCULATE ( [Iniciativas], dim_iniciativa[tipo] = "Proyecto", dim_iniciativa[vigente] = 1 )
+Propuestas vigentes = CALCULATE ( [Iniciativas], dim_iniciativa[tipo] = "Propuesta", dim_iniciativa[vigente] = 1 )
+Proyectos completados = CALCULATE ( [Iniciativas], dim_iniciativa[estado] = "Completado" )
+Avance promedio = AVERAGE ( dim_iniciativa[avance] )
+Proyectos en rojo = CALCULATE ( [Proyectos vigentes], dim_iniciativa[rag] = "Rojo" )
+% en rojo = DIVIDE ( [Proyectos en rojo], [Proyectos vigentes] )
+Sin actualizar (> 14 d) = CALCULATE ( [Proyectos vigentes], dim_iniciativa[dias_sin_actualizar] > 14 )
+Desviación promedio (d) =
+    AVERAGEX (
+        FILTER ( dim_iniciativa, dim_iniciativa[vigente] = 1 && NOT ISBLANK ( dim_iniciativa[fin_plan] ) && NOT ISBLANK ( dim_iniciativa[fin_estimado] ) ),
+        MAX ( 0, INT ( dim_iniciativa[fin_estimado] - dim_iniciativa[fin_plan] ) )
+    )
+Tasa de aprobación de propuestas =
+    DIVIDE (
+        CALCULATE ( [Iniciativas], dim_iniciativa[tipo] = "Propuesta", dim_iniciativa[estado] = "Aprobada" ),
+        CALCULATE ( [Iniciativas], dim_iniciativa[tipo] = "Propuesta", dim_iniciativa[estado] IN { "Aprobada", "Rechazada", "Retirada" } )
+    )
+
+// ---------- Hitos ----------
+Hitos = COUNTROWS ( fact_hitos )
+Hitos vencidos = CALCULATE ( [Hitos], fact_hitos[estado] = "Vencido" )
+Hitos por vencer = CALCULATE ( [Hitos], fact_hitos[estado] = "Por vencer" )
+% hitos a tiempo =
+    DIVIDE ( CALCULATE ( [Hitos], fact_hitos[estado] = "Completado" ), CALCULATE ( [Hitos], fact_hitos[completado] = TRUE () ) )
+
+// ---------- Riesgos ----------
+Riesgos abiertos = CALCULATE ( COUNTROWS ( fact_riesgos ), fact_riesgos[abierto] = 1 )
+Riesgos críticos = CALCULATE ( [Riesgos abiertos], fact_riesgos[nivel] = "Crítico" )
+Riesgos sin mitigación = CALCULATE ( [Riesgos abiertos], fact_riesgos[sin_mitigacion] = 1 )
+Exposición total = CALCULATE ( SUM ( fact_riesgos[exposicion] ), fact_riesgos[abierto] = 1 )
+
+// ---------- Gobierno ----------
+Decisiones pendientes = CALCULATE ( COUNTROWS ( fact_decisiones ), fact_decisiones[estado] = "Pendiente" )
+Decisiones vencidas = CALCULATE ( COUNTROWS ( fact_decisiones ), fact_decisiones[vencida] = 1 )
+Compromisos vencidos = CALCULATE ( COUNTROWS ( fact_compromisos ), fact_compromisos[vencido] = 1 )
+Cambios solicitados = CALCULATE ( COUNTROWS ( fact_cambios ), fact_cambios[estado] = "Solicitado" )
+Días promedio de resolución de cambios = AVERAGE ( fact_cambios[dias_resolucion] )
+
+// ---------- Tiempos (historial automático) ----------
+Días promedio por fase = AVERAGE ( fact_tramos[dias] )
+Avance a la fecha = 
+    // último avance registrado hasta la fecha del contexto (para curvas de avance por proyecto)
+    VAR f = MAX ( Calendario[Fecha] )
+    RETURN CALCULATE ( LASTNONBLANKVALUE ( fact_avance[fecha], MAX ( fact_avance[avance] ) ), fact_avance[fecha] <= f, REMOVEFILTERS ( Calendario ) )
+
+// ---------- Confidencial (solo si el informe incluye fact_finanzas) ----------
+Presupuesto = SUM ( fact_finanzas[presupuesto] )
+Gastado = SUM ( fact_finanzas[gastado] )
+% ejecutado = DIVIDE ( [Gastado], [Presupuesto] )
+Beneficio = SUM ( fact_finanzas[beneficio] )
+Ahorro real = SUM ( fact_finanzas[ahorro_real] )
+
+// ---------- Tabla calculada de fechas (Modelado → Nueva tabla) ----------
+// Calendario = ADDCOLUMNS ( CALENDAR ( DATE ( 2025, 1, 1 ), DATE ( 2028, 12, 31 ) ), "Año", YEAR ( [Date] ), "Mes", FORMAT ( [Date], "yyyy-MM" ), "Fecha", [Date] )
