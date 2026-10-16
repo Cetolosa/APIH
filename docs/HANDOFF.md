@@ -1,4 +1,4 @@
-# APIH — Documento de traspaso (15-10-2026, V22.52)
+# APIH — Documento de traspaso (15-10-2026 · Prototipo V22.52 · Corporativo C1.2)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -13,7 +13,8 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Congelado en V22.52** (solo correcciones críticas y accesos) | En planificación |
+| Estado | **Congelado en V22.52** (solo correcciones críticas y accesos) | En construcción, **C1.2** |
+| Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo, monorepo (carpetas vacías aún), luego repo de Aramark que indique TI |
 | Salida | Se retira al entrar Corporativo | Producción objetivo **22-12-2026** (agresivo) |
@@ -31,6 +32,8 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 - Plan y brechas (Claude Docs, privado): https://claude.ai/artifact/2GquKhzaERtSspc3J9n8ay
 - `docs/APIH_iniciativas_con_plan.json`: las 2 iniciativas con hitos y riesgos, listo para **Administración → Importar iniciativas** (el importador omite títulos que ya existen; si ya se cargó una versión previa, borrar y reimportar).
 - Memoria del proyecto (claude.ai): `areas/apih.md`.
+- **Registro de versiones:** `CHANGELOG.md` (raíz). **Decisiones:** `docs/decisiones/` (ADR-001…005).
+- **Contrato de Iniciativa (para TI):** `packages/core/contracts/iniciativa.md` + `iniciativa.schema.json`.
 
 ## 5. Arquitectura del prototipo (para no redescubrirla)
 - Un solo `index.html` (~1,4 MB, ~10.200 líneas), vistas con `Views.x`, acciones `Acts.x`, cambios `Chg.x`; render con `render()`; wrapper v22 post-render. Colecciones: ini, riesgos, hitos, decisiones, compromisos, cambios, notas, documentos, bitacora, comites. 22 vistas. CSP con `'unsafe-inline'`.
@@ -40,9 +43,20 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 - Editar CSS: bloques de override antes de `/* ---------- V21: errores visuales ---------- */`; reglas posteriores necesitan prefijo `#main` o `!important`.
 
 ## 6. Pruebas
-`tests/e2e/` (Playwright sobre copia demo; ver su README). Regresión mínima: t10, t13, t43, t44, cap2, r1, c4, imp1, imp2, ia1.
+- Prototipo: `tests/e2e/` (Playwright sobre copia demo; ver su README). Regresión mínima: t10, t13, t43, t44, cap2, r1, c4, imp1, imp2, ia1.
+- Corporativo (Node, sin dependencias): `node tests/unit/core-equivalencia.js` (core ≡ V22.52, 68.256 casos) y `node tests/contract/run.js` (esquema ↔ core, datos reales, 12 casos de contrato por adaptador).
+
+## 6b. Estado del Corporativo
+| Versión | Contenido |
+| --- | --- |
+| C1.0 | `packages/core/apih-core.js`: fechas y riesgo copiados de V22.52 |
+| C1.1 | Contrato de Iniciativa (esquema, operaciones, reglas, errores), validador, pruebas de contrato, adaptador en memoria |
+| C1.2 | CHANGELOG, ADR, este traspaso, tags |
+
+Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con versión C** (ADR-002). Cada componente declara la última versión C en que cambió (ADR-005).
 
 ## 7. Pendientes
 **Usuario:** enviar correo a José; que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); importar las 2 iniciativas; (opcional) crear usuario "Bot IA" con rol Editor.
-**Claude, sin esperar a TI (Fase 1):** extraer `packages/core` — **partir con UN módulo de ejemplo y pedir aprobación**. Candidato: `fechas` (pD, toISO, addD, diffD) + `riesgo` (expo, nivelRiesgo con umbral por parámetro, riesgoAbierto) como script clásico que funcione en navegador y Node, con pruebas de equivalencia contra las funciones actuales, y `index.html` consumiéndolo sin cambiar lógica. Luego: contrato de API de Iniciativa (campos y operaciones, sin atarse al stack), pruebas de contrato por adaptador.
-**Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren SMTP/webhook de TI; el tag `prototipo-v22.52-congelado` no se pudo subir (proxy): crear desde GitHub Releases; el push de tags/API de GitHub puede fallar en la sesión en la nube.
+**Claude, siguiente (C1.3):** contratos de Hitos y Riesgos + compuertas de fase (`gates()` de V22.52) en core, con equivalencia y pruebas de contrato. Opcional: correo a José con las 6 preguntas adjuntando `contracts/iniciativa.md` como propuesta de backend.
+**Hecho (C1.0–C1.2):** core de fechas/riesgo, contrato de Iniciativa, documentación del proceso.
+**Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren SMTP/webhook de TI; los tags `prototipo-v22.52-congelado` y `c1.x` pueden no subir (proxy): crear desde GitHub Releases; el push de tags/API de GitHub puede fallar en la sesión en la nube.
