@@ -6,3 +6,4 @@
 **Motor (`pasosDe`)**: reglas fijas y explicables, sin IA. Prioridad: vencido u hoy → lo que apaga un tenedor → condiciones de la siguiente compuerta → revisiones de riesgo ≤ 7 d o crítico sin mitigación → hitos y compromisos ≤ 7 d. Cada paso dice por qué aparece y qué protege.
 **Alternativas.** Sugerencias generadas por IA (descartada por ahora: no son auditables ni deterministas).
 **Consecuencias.** «Posponer» se guarda solo en el navegador (localStorage). `pasosDe` se copiará al core del Corporativo junto con las compuertas.
+**Cierre.** 16-10-2026: el Prototipo queda congelado nuevamente en V22.54.
