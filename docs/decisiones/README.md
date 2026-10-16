@@ -10,5 +10,6 @@ Una ficha por decisión: contexto, decisión, alternativas, consecuencias. No se
 | [004](ADR-004-motivoalta-importacion.md) | Importación exenta de `motivoAlta` | C1.1 | Vigente |
 | [005](ADR-005-version-por-componente.md) | Cada componente declara su última versión C | C1.2 | Vigente |
 | [006](ADR-006-descongelar-prototipo-fases.md) | Excepción: vista «Fases» en el Prototipo | V22.53 | Vigente |
+| [009](ADR-009-azure-sql-documento.md) | Azure SQL: documento JSON + columnas calculadas + tablas temporales | C2.1 | Propuesta a TI |
 | [008](ADR-008-api-node-swa.md) | API en Node.js, auth de Static Web Apps y 3 roles | C2.0 | Propuesta a TI |
 | [007](ADR-007-planificacion-ficha-y-siguientes-pasos.md) | Excepción: Planificación en la ficha y Siguientes pasos | V22.54 | Vigente |

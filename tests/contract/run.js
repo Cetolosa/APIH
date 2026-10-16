@@ -33,7 +33,7 @@ let plan0;
   console.log('✓ ' + plan.iniciativas.length + ' iniciativas de docs/ cumplen el contrato');
 
   // 3) Contrato por adaptador
-  const A = require('./adaptadores.js'); const adaptadores = { 'servicio (memoria)': A.servicio, 'http (REST + Static Web Apps)': A.http };
+  const A = require('./adaptadores.js'); const adaptadores = { 'servicio (memoria)': A.servicio, 'http (REST + Static Web Apps)': A.http, 'http + store Azure SQL (ejecutor simulado)': A.sqlSimulado };
   for (const [nombre, fabrica] of Object.entries(adaptadores)) { console.log('Adaptador ' + nombre + ':'); const n = await require('./iniciativa.contract.js')(fabrica); console.log('✓ ' + n + ' casos de contrato'); }
   console.log('Seguridad y protocolo HTTP:'); console.log('✓ ' + await require('./http-seguridad.js')() + ' casos');
   console.log('Adaptador Azure Functions:'); console.log('✓ ' + await require('./functions-adaptador.js')() + ' caso');

@@ -38,4 +38,7 @@ function http(o, store) {
     _handle: handle
   };
 }
-module.exports = { servicio, http, HOY };
+const { crearStoreSql } = require('../../services/api/src/store-mssql');
+const crearEjecutorSimulado = require('./sql-simulado');
+const sqlSimulado = o => http(o, crearStoreSql(crearEjecutorSimulado()));
+module.exports = { servicio, http, sqlSimulado, HOY };

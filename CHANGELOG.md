@@ -5,6 +5,7 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 
 | Versión | Fecha | Rama · commit | Cambio | Componentes |
 | --- | --- | --- | --- | --- |
+| C2.1 | 16-10-2026 | `c2.1-azure-sql` | Azure SQL: esquema (documento + columnas calculadas + tablas temporales + vistas), permisos con identidad administrada, `store-mssql.js`, migración desde el respaldo del Prototipo. Contrato en verde contra la lógica SQL (ejecutor simulado); script para validarlo en la base real. ADR-009. | db/azure-sql C2.1, services/api C2.1, tools C2.1 |
 | C2.0 | 16-10-2026 | `c2.0-api` | API en Node.js: servicio con todas las reglas en servidor (iniciativas, hitos, riesgos, compuertas, roles), enrutador REST con `If-Match`/`ETag`, auth Static Web Apps + Entra ID, adaptador Azure Functions, servidor local. 15 casos de contrato × 2 (servicio y HTTP) + 7 de seguridad. ADR-008. | services/api C2.0, tests/contract C2.0 |
 | C1.4 | 16-10-2026 | `c1.4-core-hitos-riesgos` | Core: `gates`, `fasesVentana`, `hitoEstado`, `riesgoSinMit`, `validarHito`, `validarRiesgo` (equivalencia con V22.54: 62.061 casos). Contratos `hito.schema.json`, `riesgo.schema.json`, `hitos-riesgos.md`. | core C1.4, contracts C1.4, tests |
 | C1.3 | 16-10-2026 | `c1.3-replan-acelerado` | Replanificación acelerada de APIH Corporativo: 21 hitos (producción 27-11, antes 22-12), 9 riesgos con fecha de revisión. Archivo importable `docs/APIH_Corporativo_plan_acelerado_C1.3.json`. | docs |
