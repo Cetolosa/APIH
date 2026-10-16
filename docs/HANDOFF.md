@@ -1,4 +1,4 @@
-# APIH — Documento de traspaso (15-10-2026 · Prototipo V22.54 · Corporativo C1.3)
+# APIH — Documento de traspaso (15-10-2026 · Prototipo V22.54 · Corporativo C2.4)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -53,11 +53,17 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C1.1 | Contrato de Iniciativa (esquema, operaciones, reglas, errores), validador, pruebas de contrato, adaptador en memoria |
 | C1.2 | CHANGELOG, ADR, este traspaso |
 | C1.3 | Plan acelerado: `docs/APIH_Corporativo_plan_acelerado_C1.3.json` (21 hitos, 9 riesgos con fecha) |
+| C1.4 | Core: compuertas, hitos, riesgos, ventanas de fase (equivalentes a V22.54) |
+| C2.0 | API Node.js (`services/api`): reglas en servidor, auth Static Web Apps + Entra ID, roles, Azure Functions |
+| C2.1 | Azure SQL (`db/azure-sql`), `store-mssql`, migración (`tools/migrar-desde-prototipo.js`) |
+| C2.2 | SPA corporativa (`apps/corporativo`, copia de V22.54) conectada a la API |
+| C2.3 | Infraestructura (`infra/`), pipeline, `docs/seguridad.md` |
+| C2.4 | Propuesta para TI (Claude Docs): https://claude.ai/code/artifact/ae0913ea-ba10-4bfd-a8b2-609b4d7e9754 |
 
 Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con versión C** (ADR-002). Cada componente declara la última versión C en que cambió (ADR-005).
 
 ## 7. Pendientes
 **Usuario:** enviar correo a José; que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); importar las 2 iniciativas; (opcional) crear usuario "Bot IA" con rol Editor.
-**Claude, siguiente (C1.4):** contratos de Hitos y Riesgos + compuertas de fase (`gates()`), `fasesVentana` y `pasosDe` (V22.54) en core, con equivalencia y pruebas de contrato. Antes: reescribir el correo a José en modo **propuestas con fecha de no-objeción (21-10)** + lista exacta de infraestructura, adjuntando el contrato. Objetivo del proyecto: demostrar que la metodología acelera los plazos (medir horas por versión).
+**Camino elegido: construir y proponer a TI.** Siguiente: enviar la propuesta (correo con no-objeción al 21-10); al habilitar dev, validar en Azure (`tests/contract/run-azure-sql.js`). Pendiente en core: `pasosDe` (V22.54); contratos propios para decisiones, compromisos, cambios, bitácora y comités., con equivalencia y pruebas de contrato. Objetivo del proyecto: demostrar que la metodología acelera los plazos (medir horas por versión).
 **Hecho (C1.0–C1.3):** core de fechas/riesgo, contrato de Iniciativa, documentación del proceso.
 **Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren SMTP/webhook de TI; los tags `prototipo-v22.52-congelado` y `c1.x` pueden no subir (proxy): crear desde GitHub Releases; el push de tags/API de GitHub puede fallar en la sesión en la nube.
