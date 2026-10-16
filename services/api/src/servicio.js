@@ -1,0 +1,138 @@
+'use strict';
+/* C2.0 — Servicio de negocio de APIH Corporativo. Aplica TODAS las reglas del contrato en el servidor
+ * (packages/core/contracts/iniciativa.md y hitos-riesgos.md) sobre un store intercambiable (memoria / Azure SQL).
+ * usuario: { email, nombre, rol: 'Admin' | 'Editor' | 'Lectura' } — lo entrega la capa de autenticación (Entra ID). */
+const core = require('../../../packages/core/apih-core.js');
+const { errorApi } = require('./errores');
+
+const RO_INI = ['id', 'version', 'creada', 'actualizada', 'modificadoPor', 'faseDesde', 'hist'];
+const RO_SUB = ['id', 'version', 'modificadoPor', 'actualizada'];
+const copia = x => JSON.parse(JSON.stringify(x));
+const quitar = (x, ks) => { const c = copia(x || {}); ks.forEach(k => delete c[k]); return c; };
+
+module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date()), config = {} }) {
+  const umbral = () => +config.umbralCritico || 15;
+  const escribe = u => { if (!u || !['Admin', 'Editor'].includes(u.rol)) throw errorApi('SIN_PERMISO', 'Tu rol no permite modificar datos'); };
+  const lee = u => { if (!u || !['Admin', 'Editor', 'Lectura'].includes(u.rol)) throw errorApi('SIN_PERMISO', 'Sin acceso a APIH'); };
+  const sello = (x, u) => Object.assign(x, { actualizada: hoy(), modificadoPor: u.email });
+  const leerIni = async (s, id) => { const x = await s.obtener('iniciativas', id); if (!x) throw errorApi('NO_ENCONTRADA', 'No existe ' + id); return x; };
+  const leerSub = async (s, col, id) => { const x = await s.obtener(col, id); if (!x) throw errorApi('NO_ENCONTRADA', 'No existe ' + id); return x; };
+  const grafo = async s => Object.fromEntries((await s.listar('iniciativas')).map(x => [x.id, x.deps || []]));
+  const validarIni = async (s, x, ctx) => { const e = core.validarIniciativa(x, Object.assign({ grafo: await grafo(s) }, ctx)); if (e.length) throw errorApi('INVALIDA', 'Datos inválidos', e); };
+  const ctxGates = async (s, id) => ({ hitos: await s.listar('hitos', h => h.ini === id), riesgos: await s.listar('riesgos', r => r.ini === id), hoy: hoy(), umbral: umbral() });
+  const verificarVersion = (x, version) => { if (version == null || x.version !== String(version)) throw errorApi('CONFLICTO', 'Otro usuario modificó ' + x.id + ' (versión ' + x.version + ')'); };
+  const EST = core.INICIATIVA;
+
+  const api = {
+    /* ---------- Iniciativas ---------- */
+    async listar(u, f = {}) {
+      lee(u); const t = (f.texto || '').toLowerCase();
+      return store.listar('iniciativas', x => (!f.tipo || x.tipo === f.tipo) && (!f.fase || x.fase === f.fase) && (!f.estado || x.estado === f.estado)
+        && (!f.area || (x.area || []).includes(f.area)) && (!t || (x.titulo + ' ' + (x.desc || '')).toLowerCase().includes(t)));
+    },
+    async obtener(u, id) { lee(u); return leerIni(store, id); },
+    async crear(u, datos) {
+      escribe(u);
+      return store.tx(async s => {
+        const x = quitar(datos, RO_INI); x.area = x.area || ['BISE']; x.avance = x.avance || 0; x.origen = x.origen || 'usuario';
+        await validarIni(s, x, { nueva: true });
+        x.creada = x.faseDesde = hoy(); x.hist = [[hoy(), x.avance]];
+        return s.insertar('iniciativas', sello(x, u), x.tipo === 'Propuesta' ? 'PROP' : 'PRJ');
+      });
+    },
+    async actualizar(u, id, cambios, version) {
+      escribe(u);
+      return store.tx(async s => {
+        const a = await leerIni(s, id); verificarVersion(a, version);
+        const c = quitar(cambios, RO_INI);
+        if ('tipo' in c && c.tipo !== a.tipo) throw errorApi('INVALIDA', 'El tipo no cambia', [{ campo: 'tipo', regla: 'inmutable' }]);
+        if ('estado' in c && c.estado !== a.estado) throw errorApi('INVALIDA', 'Use cambiarEstado', [{ campo: 'estado', regla: 'usar cambiarEstado' }]);
+        if ('fase' in c && c.fase !== a.fase) throw errorApi('INVALIDA', 'Use cambiarFase', [{ campo: 'fase', regla: 'usar cambiarFase' }]);
+        const n = Object.assign(copia(a), c); await validarIni(s, n);
+        if (n.avance !== a.avance) n.hist = [...(a.hist || []), [hoy(), n.avance]];
+        return s.actualizar('iniciativas', sello(n, u), version);
+      });
+    },
+    async cambiarEstado(u, id, c, version) {
+      escribe(u);
+      return store.tx(async s => {
+        const a = await leerIni(s, id); verificarVersion(a, version);
+        const e = core.validarCambioEstado(a, c || {}); if (e.length) throw errorApi('INVALIDA', 'Cambio de estado inválido', e);
+        const n = Object.assign(copia(a), { estado: c.estado, estadoMotivo: EST.EST_MOTIVO.includes(c.estado) ? c.motivo : '', estadoRev: EST.EST_REVISION.includes(c.estado) ? c.rev : null });
+        if (c.estado === 'Completado') { n.finReal = hoy(); if (n.avance < 100) { n.avance = 100; n.hist = [...(n.hist || []), [hoy(), 100]]; } }
+        return s.actualizar('iniciativas', sello(n, u), version);
+      });
+    },
+    /* Avance de UNA fase con compuertas (gates) o retroceso a cualquier fase anterior. */
+    async cambiarFase(u, id, fase, version) {
+      escribe(u);
+      return store.tx(async s => {
+        const a = await leerIni(s, id); verificarVersion(a, version);
+        if (EST.EST_FINAL.includes(a.estado)) throw errorApi('INVALIDA', 'Estado final', [{ campo: 'estado', regla: 'estado final' }]);
+        const FS = core.fasesDe(a), ia = FS.indexOf(a.fase), ib = FS.indexOf(fase);
+        if (ib < 0) throw errorApi('INVALIDA', 'Fase no válida para ' + a.tipo, [{ campo: 'fase', regla: 'fase de ' + a.tipo }]);
+        if (ib > ia + 1) throw errorApi('INVALIDA', 'Solo se avanza una fase a la vez', [{ campo: 'fase', regla: 'siguiente: ' + FS[ia + 1] }]);
+        if (ib === ia + 1) { const g = core.gates(a, fase, await ctxGates(s, id)), no = g.filter(x => !x.ok); if (no.length) throw errorApi('COMPUERTA', 'Compuerta hacia ' + fase + ' no cumplida', no.map(x => ({ campo: 'fase', regla: x.t }))); }
+        const n = Object.assign(copia(a), { fase }); if (fase !== a.fase) n.faseDesde = hoy();
+        return s.actualizar('iniciativas', sello(n, u), version);
+      });
+    },
+    async aprobarPropuesta(u, id, version) {
+      escribe(u);
+      return store.tx(async s => {
+        const p = await leerIni(s, id); verificarVersion(p, version);
+        if (p.tipo !== 'Propuesta' || p.fase !== 'Aprobación' || EST.EST_FINAL.includes(p.estado)) throw errorApi('COMPUERTA', 'No aprobable', [{ campo: 'fase', regla: 'Propuesta vigente en fase Aprobación' }]);
+        const prj = quitar(p, RO_INI);
+        Object.assign(prj, { tipo: 'Proyecto', fase: 'Planificación', estado: 'En curso', rag: 'Verde', avance: 0, propuestaOrigen: p.id, estadoMotivo: '', estadoRev: null, finEst: p.finPlan || null });
+        await validarIni(s, prj, { nueva: true });
+        prj.creada = prj.faseDesde = hoy(); prj.hist = [[hoy(), 0]];
+        const proyecto = await s.insertar('iniciativas', sello(prj, u), 'PRJ');
+        for (const col of ['hitos', 'riesgos']) for (const x of await s.listar(col, y => y.ini === p.id)) await s.actualizar(col, sello(Object.assign(x, { ini: proyecto.id }), u), x.version);
+        const propuesta = await s.actualizar('iniciativas', sello(Object.assign(copia(p), { estado: 'Aprobada' }), u), version);
+        return { propuesta, proyecto };
+      });
+    },
+    async eliminar(u, id, version) {
+      escribe(u);
+      return store.tx(async s => {
+        const a = await leerIni(s, id); verificarVersion(a, version);
+        for (const col of ['hitos', 'riesgos']) for (const x of await s.listar(col, y => y.ini === id)) await s.eliminar(col, x.id);
+        await s.eliminar('iniciativas', id, version);
+        for (const x of await s.listar('iniciativas', y => (y.deps || []).includes(id))) await s.actualizar('iniciativas', Object.assign(x, { deps: x.deps.filter(d => d !== id) }), x.version);
+      });
+    },
+    async compuerta(u, id, fase) { lee(u); const a = await leerIni(store, id); const FS = core.fasesDe(a); fase = fase || FS[FS.indexOf(a.fase) + 1]; return { fase: fase || null, condiciones: fase ? core.gates(a, fase, await ctxGates(store, id)) : [] }; },
+    async fases(u, id) { lee(u); const a = await leerIni(store, id); return core.fasesVentana(a, await store.listar('hitos', h => h.ini === id)).map(v => Object.assign(v, { hitos: v.hitos.map(h => h.id) })); },
+
+    /* ---------- Hitos ---------- */
+    async listarHitos(u, ini) { lee(u); await leerIni(store, ini); return (await store.listar('hitos', h => h.ini === ini)).map(h => Object.assign(h, { semaforo: core.hitoEstado(h, hoy()) })); },
+    async crearHito(u, ini, datos) {
+      escribe(u);
+      return store.tx(async s => { await leerIni(s, ini); const h = Object.assign(quitar(datos, RO_SUB), { ini }); h.completado = !!h.completado; if (h.completado && !h.fechaReal) h.fechaReal = hoy(); if (!h.completado) h.fechaReal = null;
+        const e = core.validarHito(h); if (e.length) throw errorApi('INVALIDA', 'Hito inválido', e); return s.insertar('hitos', sello(h, u), 'HIT'); });
+    },
+    async actualizarHito(u, id, cambios, version) {
+      escribe(u);
+      return store.tx(async s => { const a = await leerSub(s, 'hitos', id); verificarVersion(a, version); const c = quitar(cambios, RO_SUB.concat('ini'));
+        const h = Object.assign(copia(a), c); h.completado = !!h.completado; if (h.completado && !h.fechaReal) h.fechaReal = hoy(); if (!h.completado) h.fechaReal = null;
+        const e = core.validarHito(h); if (e.length) throw errorApi('INVALIDA', 'Hito inválido', e); return s.actualizar('hitos', sello(h, u), version); });
+    },
+    async completarHito(u, id, fechaReal, version) { return api.actualizarHito(u, id, { completado: true, fechaReal: fechaReal || hoy() }, version); },
+    async eliminarHito(u, id, version) { escribe(u); return store.tx(async s => { const a = await leerSub(s, 'hitos', id); verificarVersion(a, version); await s.eliminar('hitos', id, version); }); },
+
+    /* ---------- Riesgos ---------- */
+    async listarRiesgos(u, ini) { lee(u); await leerIni(store, ini); return (await store.listar('riesgos', r => r.ini === ini)).map(r => Object.assign(r, { exposicion: core.expo(r), nivel: core.nivelRiesgo(core.expo(r), umbral()).n })); },
+    async crearRiesgo(u, ini, datos) {
+      escribe(u);
+      return store.tx(async s => { await leerIni(s, ini); const r = Object.assign({ cat: 'Técnico', estado: 'Abierto', fIdent: hoy(), fRev: core.addD(hoy(), 30), mit: '', dueno: u.nombre || u.email }, quitar(datos, RO_SUB), { ini });
+        const e = core.validarRiesgo(r, umbral()); if (e.length) throw errorApi('INVALIDA', 'Riesgo inválido', e); return s.insertar('riesgos', sello(r, u), 'RSK'); });
+    },
+    async actualizarRiesgo(u, id, cambios, version) {
+      escribe(u);
+      return store.tx(async s => { const a = await leerSub(s, 'riesgos', id); verificarVersion(a, version); const r = Object.assign(copia(a), quitar(cambios, RO_SUB.concat('ini')));
+        const e = core.validarRiesgo(r, umbral()); if (e.length) throw errorApi('INVALIDA', 'Riesgo inválido', e); return s.actualizar('riesgos', sello(r, u), version); });
+    },
+    async eliminarRiesgo(u, id, version) { escribe(u); return store.tx(async s => { const a = await leerSub(s, 'riesgos', id); verificarVersion(a, version); await s.eliminar('riesgos', id, version); }); }
+  };
+  return api;
+};

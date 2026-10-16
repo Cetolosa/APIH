@@ -56,26 +56,60 @@ module.exports = async function contratoIniciativa(fabrica, log = console.log) {
     const b = await d.cambiarEstado(a.id, { estado: 'Pausado', motivo: 'Sin fondos', rev: '2026-12-01' }, a.version);
     assert.strictEqual(b.estado, 'Pausado'); assert.strictEqual(b.estadoRev, '2026-12-01');
   });
+  await caso('cambiarFase aplica compuertas (COMPUERTA) y avanza de a una fase', async () => {
+    const d = fabrica(); let a = await d.crear(prj({ presupuesto: 0 }));
+    await falla(d.cambiarFase(a.id, 'Transición', a.version), 'INVALIDA', 'fase');
+    const e = await falla(d.cambiarFase(a.id, 'Ejecución', a.version), 'COMPUERTA');
+    assert.ok(e.detalles.some(x => /Presupuesto/.test(x.regla)) && e.detalles.some(x => /2 hitos/.test(x.regla)), JSON.stringify(e.detalles));
+    const g = await d.compuerta(a.id); assert.strictEqual(g.fase, 'Ejecución'); assert.ok(g.condiciones.some(x => !x.ok));
+  });
   await caso('Completado solo en Cierre; estado final no admite más cambios', async () => {
-    const d = fabrica(); let a = await d.crear(prj());
+    const d = fabrica(); let a = await d.crear(prj({ presupuesto: 10 }));
     await falla(d.cambiarEstado(a.id, { estado: 'Completado' }, a.version), 'INVALIDA', 'estado');
+    for (const n of ['H1', 'H2']) { const h = await d.crearHito(a.id, { nombre: n, fase: 'Planificación', fecha: '2026-10-10' }); await d.completarHito(h.id, null, h.version); }
+    a = await d.cambiarFase(a.id, 'Ejecución', a.version);
+    a = await d.actualizar(a.id, { avance: 100 }, a.version);
+    a = await d.cambiarFase(a.id, 'Transición', a.version);
     a = await d.cambiarFase(a.id, 'Cierre', a.version);
     a = await d.cambiarEstado(a.id, { estado: 'Completado' }, a.version);
     assert.strictEqual(a.avance, 100); assert.ok(a.finReal);
     await falla(d.cambiarEstado(a.id, { estado: 'En curso' }, a.version), 'INVALIDA', 'estado');
   });
+  await caso('hitos: crear, completar (fechaReal), validar y semáforo', async () => {
+    const d = fabrica(); const a = await d.crear(prj());
+    await falla(d.crearHito(a.id, { nombre: '', fecha: '2026-10-20' }), 'INVALIDA', 'nombre');
+    await falla(d.crearHito(a.id, { nombre: 'X', fecha: '2026-13-01' }), 'INVALIDA', 'fecha');
+    await falla(d.crearHito('PRJ-404', { nombre: 'X', fecha: '2026-10-20' }), 'NO_ENCONTRADA');
+    let h = await d.crearHito(a.id, { nombre: 'Kickoff', fase: 'Planificación', fecha: '2026-10-16' });
+    assert.match(h.id, /^HIT-/); h = await d.completarHito(h.id, null, h.version); assert.ok(h.completado && h.fechaReal);
+    await falla(d.actualizarHito(h.id, { nombre: 'Y' }, 'vieja'), 'CONFLICTO');
+    const L = await d.listarHitos(a.id); assert.strictEqual(L.length, 1); assert.strictEqual(L[0].semaforo.k, 'done');
+    const F = await d.fases(a.id); assert.strictEqual(F.length, 4); assert.strictEqual(F[0].done, 1);
+  });
+  await caso('riesgos: crítico exige mitigación; nivel y exposición', async () => {
+    const d = fabrica(); const a = await d.crear(prj());
+    await falla(d.crearRiesgo(a.id, { desc: 'R', prob: 5, imp: 4 }), 'INVALIDA', 'mit');
+    await falla(d.crearRiesgo(a.id, { desc: 'R', prob: 6, imp: 1, mit: 'x' }), 'INVALIDA', 'prob');
+    let r = await d.crearRiesgo(a.id, { desc: 'R', prob: 5, imp: 4, mit: 'Plan B' }); assert.match(r.id, /^RSK-/);
+    await falla(d.actualizarRiesgo(r.id, { mit: '' }, r.version), 'INVALIDA', 'mit');
+    r = await d.actualizarRiesgo(r.id, { estado: 'Cerrado', mit: '' }, r.version); assert.strictEqual(r.estado, 'Cerrado');
+    const L = await d.listarRiesgos(a.id); assert.strictEqual(L[0].exposicion, 20);
+  });
   await caso('cambiarFase valida la fase del tipo y actualiza faseDesde', async () => {
-    const d = fabrica(); const a = await d.crear(prop());
+    const d = fabrica(); const a = await d.crear(prop({ sponsor: 'Luis', desc: 'd' }));
     await falla(d.cambiarFase(a.id, 'Ejecución', a.version), 'INVALIDA', 'fase');
     const b = await d.cambiarFase(a.id, 'Evaluación', a.version); assert.strictEqual(b.fase, 'Evaluación'); assert.ok(b.faseDesde);
   });
   await caso('aprobarPropuesta crea PRJ con propuestaOrigen y cierra la propuesta', async () => {
     const d = fabrica(); let p = await d.crear(prop({ finPlan: '2027-03-01' }));
     await falla(d.aprobarPropuesta(p.id, p.version), 'COMPUERTA');
-    p = await d.cambiarFase(p.id, 'Aprobación', p.version);
+    p = await d.actualizar(p.id, { sponsor: 'Luis', desc: 'd', score: { estrategia: 3, valor: 3, esfuerzo: 3, riesgo: 2 }, presupuesto: 10, beneficio: 5, bc: 'bc' }, p.version);
+    for (const f of ['Evaluación', 'Caso de Negocio', 'Aprobación']) p = await d.cambiarFase(p.id, f, p.version);
+    const h0 = await d.crearHito(p.id, { nombre: 'Tentativo', fecha: '2026-11-01' });
     const r = await d.aprobarPropuesta(p.id, p.version);
     assert.strictEqual(r.propuesta.estado, 'Aprobada'); assert.match(r.proyecto.id, /^PRJ-/);
     assert.strictEqual(r.proyecto.propuestaOrigen, p.id); assert.strictEqual(r.proyecto.fase, 'Planificación');
+    assert.strictEqual((await d.listarHitos(r.proyecto.id)).length, 1, 'hitos pasan al proyecto');
     await falla(d.aprobarPropuesta(p.id, r.propuesta.version), 'COMPUERTA');
   });
   await caso('eliminar con version; limpia dependencias', async () => {
@@ -84,9 +118,9 @@ module.exports = async function contratoIniciativa(fabrica, log = console.log) {
     await d.eliminar(a.id, a.version);
     await falla(d.obtener(a.id), 'NO_ENCONTRADA'); assert.deepStrictEqual((await d.obtener(b.id)).deps, []);
   });
-  await caso('rol sin escritura → SIN_PERMISO', async () => {
+  await caso('rol Lectura: lee pero no escribe (SIN_PERMISO)', async () => {
     const d = fabrica({ puedeEscribir: false });
-    await falla(d.crear(prop()), 'SIN_PERMISO');
+    await falla(d.crear(prop()), 'SIN_PERMISO'); assert.deepStrictEqual(await d.listar(), []);
   });
   return ok;
 };
