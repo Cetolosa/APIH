@@ -32,14 +32,24 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
         && (!f.area || (x.area || []).includes(f.area)) && (!t || (x.titulo + ' ' + (x.desc || '')).toLowerCase().includes(t)));
     },
     async obtener(u, id) { lee(u); return leerIni(store, id); },
-    async crear(u, datos) {
-      escribe(u);
+    /* opts.migracion (solo Admin): carga del historial del Prototipo. Conserva creada, faseDesde, hist y actualizada,
+       y valida el registro como existente (no como alta nueva): un proyecto antiguo o una propuesta ya aprobada se aceptan tal cual. */
+    async crear(u, datos, opts = {}) {
+      escribe(u); const mig = !!opts.migracion;
+      if (mig && u.rol !== 'Admin') throw errorApi('SIN_PERMISO', 'Solo Admin puede migrar historial');
       return store.tx(async s => {
         const x = quitar(datos, RO_INI); x.area = x.area || ['BISE']; x.avance = x.avance || 0; x.origen = x.origen || 'usuario';
         const pre = x.tipo === 'Propuesta' ? 'PROP' : 'PRJ';
         if (datos && datos.id != null) { if (!new RegExp('^' + pre + '-\\d+$').test(datos.id)) throw errorApi('INVALIDA', 'Id inválido', [{ campo: 'id', regla: pre + '-n' }]); x.id = datos.id; }
-        await validarIni(s, x, { nueva: true });
-        if (x.propuestaOrigen) { const p = await s.obtener('iniciativas', x.propuestaOrigen); if (!p || p.tipo !== 'Propuesta' || p.fase !== 'Aprobación' || EST.EST_FINAL.includes(p.estado)) throw errorApi('COMPUERTA', 'La propuesta de origen no está aprobable', [{ campo: 'propuestaOrigen', regla: 'Propuesta vigente en fase Aprobación' }]); }
+        await validarIni(s, x, mig ? {} : { nueva: true });
+        if (x.propuestaOrigen && !mig) { const p = await s.obtener('iniciativas', x.propuestaOrigen); if (!p || p.tipo !== 'Propuesta' || p.fase !== 'Aprobación' || EST.EST_FINAL.includes(p.estado)) throw errorApi('COMPUERTA', 'La propuesta de origen no está aprobable', [{ campo: 'propuestaOrigen', regla: 'Propuesta vigente en fase Aprobación' }]); }
+        if (mig) {
+          const fecha = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : null;
+          x.creada = fecha(datos.creada) || hoy(); x.faseDesde = fecha(datos.faseDesde) || x.creada;
+          x.hist = Array.isArray(datos.hist) && datos.hist.length ? datos.hist.filter(h => Array.isArray(h) && fecha(h[0])) : [[x.creada, x.avance]];
+          const r = sello(x, u); r.actualizada = fecha(datos.actualizada) || r.actualizada; r.origenMigracion = 'prototipo';
+          return s.insertar('iniciativas', r, pre);
+        }
         x.creada = x.faseDesde = hoy(); x.hist = [[hoy(), x.avance]];
         return s.insertar('iniciativas', sello(x, u), pre);
       });
