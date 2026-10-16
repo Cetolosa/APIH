@@ -30,3 +30,16 @@ Ver `packages/core/contracts/iniciativa.md` y `hitos-riesgos.md`. Además: `GET 
 
 ## Pruebas
 `node tests/contract/run.js`: 15 casos de contrato contra el servicio y contra HTTP, 7 de seguridad/protocolo y el adaptador de Functions.
+
+## Notificaciones (C2.8)
+- `GET /api/notificaciones`: avisos del usuario actual (mismas reglas que la campana de la SPA, ver ADR-011).
+- `POST /api/notificaciones/despachar`: solo Admin. Por defecto **simula** (devuelve a quién se enviaría); `?simular=0` envía con los canales configurados.
+- Envío programado: función temporizada `apih-notificaciones` (lunes a viernes 08:00 Chile; `APIH_NOTIF_CRON`), solo si `APIH_NOTIF_CANALES` tiene valor.
+
+| Variable | Uso |
+| --- | --- |
+| `APIH_NOTIF_CANALES` | `correo`, `teams` o `correo,teams`. Vacío = solo avisos en la app. `consola` = desarrollo |
+| `APIH_CORREO_REMITENTE` | Buzón remitente para Graph `sendMail` (permiso Mail.Send de aplicación, limitado a ese buzón por TI) |
+| `APIH_TEAMS_WEBHOOK` | URL del flujo de Power Automate de TI que publica en el chat de cada persona. Configuración protegida, nunca en el repo |
+| `APIH_URL_APP` | Enlace «Abrir APIH» en los mensajes (Bicep lo completa) |
+| `APIH_ZONA` | Zona horaria del negocio (por defecto America/Santiago) |

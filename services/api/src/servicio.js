@@ -150,6 +150,12 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
     },
     async todosHitos(u) { lee(u); return store.listar('hitos'); },
     async todosRiesgos(u) { lee(u); return store.listar('riesgos'); },
+    /* ---------- Notificaciones (C2.8): mismas reglas que la campana de la SPA ---------- */
+    async misNotificaciones(u) { lee(u); const N = require('./notificaciones'), d = await N.cargarDatos(store); return N.avisosDe(d, N.personaDe(d, u), hoy()); },
+    async despacharNotificaciones(u, { canales = {}, simular = true } = {}) {
+      if (u && u.rol !== 'Admin') throw errorApi('SIN_PERMISO', 'Solo Admin ejecuta el envío de notificaciones');
+      return require('./notificaciones').despachar({ store, hoy: hoy(), canales, simular });
+    },
     async sello(u) { lee(u); return { sello: store.sello ? await store.sello() : String(Date.now()) }; },
 
     /* ---------- Registros genéricos (C2.2): resto de colecciones de la SPA mientras no tengan contrato propio ----------

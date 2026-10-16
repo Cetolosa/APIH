@@ -8,6 +8,7 @@ function crearStore(env) {
 }
 module.exports = function crearApi(env = process.env) {
   const store = crearStore(env);
-  const servicio = crearServicio({ store, config: { umbralCritico: env.APIH_UMBRAL_CRITICO } });
+  const hoyChile = () => new Intl.DateTimeFormat('en-CA', { timeZone: env.APIH_ZONA || 'America/Santiago' }).format(new Date());   /* fecha del negocio, no la del servidor (UTC) */
+  const servicio = crearServicio({ store, hoy: hoyChile, config: { umbralCritico: env.APIH_UMBRAL_CRITICO } });
   return { store, servicio, handle: crearApp({ servicio, env }) };
 };
