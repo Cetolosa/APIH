@@ -23,6 +23,10 @@ param grupoAdminId string
 param grupoEditorId string
 param grupoLecturaId string
 param dominioPermitido string = 'aramark.cl'
+@description('Notificaciones (punto 9): canales habilitados, p. ej. \'correo\' o \'correo,teams\'. Vacío = solo avisos en la app.')
+param notifCanales string = ''
+@description('Buzón remitente para el canal correo (Graph sendMail con la identidad administrada).')
+param correoRemitente string = ''
 param etiquetas object = { sistema: 'APIH', ambiente: ambiente, area: 'BISE' }
 
 var sufijo = '${prefijo}-${ambiente}-${uniqueString(resourceGroup().id)}'
@@ -91,6 +95,9 @@ resource func 'Microsoft.Web/sites@2023-01-01' = {
         { name: 'APIH_GRUPO_ADMIN', value: grupoAdminId }
         { name: 'APIH_GRUPO_EDITOR', value: grupoEditorId }
         { name: 'APIH_GRUPO_LECTURA', value: grupoLecturaId }
+        { name: 'APIH_NOTIF_CANALES', value: notifCanales }
+        { name: 'APIH_CORREO_REMITENTE', value: correoRemitente }
+        { name: 'APIH_URL_APP', value: 'https://${swa.properties.defaultHostname}/' }
       ]
     }
   }

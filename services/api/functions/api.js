@@ -13,3 +13,13 @@ app.http('apih', {
     return { status: r.status, headers: r.headers, body: r.body };
   }
 });
+
+/* C2.8 — Envío programado de notificaciones (lunes a viernes 08:00 Chile ≈ 11:00 UTC; ajustable con APIH_NOTIF_CRON).
+ * Solo se registra si TI habilitó al menos un canal (APIH_NOTIF_CANALES). */
+if (process.env.APIH_NOTIF_CANALES) {
+  const canales = require('../src/canales')(process.env);
+  app.timer('apih-notificaciones', {
+    schedule: process.env.APIH_NOTIF_CRON || '0 0 11 * * 1-5',
+    handler: async (t, ctx) => { const r = await api.servicio.despacharNotificaciones(null, { canales, simular: false }); ctx.log('APIH notificaciones', JSON.stringify({ personas: r.personas, envios: r.envios.length, errores: r.errores })); }
+  });
+}

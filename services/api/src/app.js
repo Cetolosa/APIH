@@ -20,6 +20,9 @@ module.exports = function crearApp({ servicio, env = process.env }) {
   });
   ruta('GET', '/api/yo', async u => u);
   ruta('GET', '/api/sello', u => servicio.sello(u));
+  ruta('GET', '/api/notificaciones', u => servicio.misNotificaciones(u));
+  /* Admin: vista previa del envío (simular=1, por defecto) o envío real con los canales configurados */
+  ruta('POST', '/api/notificaciones/despachar', (u, p, req) => servicio.despacharNotificaciones(u, { canales: req.query.simular === '0' ? require('./canales')(env) : Object.fromEntries(String(env.APIH_NOTIF_CANALES || '').split(',').filter(Boolean).map(c => [c === 'consola' ? 'app' : c.trim(), null])), simular: req.query.simular !== '0' }));
   ruta('GET', '/api/hitos', u => servicio.todosHitos(u));
   ruta('GET', '/api/riesgos', u => servicio.todosRiesgos(u));
   ruta('GET', '/api/registros/{lista}', (u, p) => servicio.listarRegistros(u, p.lista));
