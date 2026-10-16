@@ -26,7 +26,7 @@ module.exports = function crearApp({ servicio, env = process.env }) {
   ruta('PUT', '/api/registros/{lista}/{id}', (u, p, req) => servicio.guardarRegistro(u, p.lista, decodeURIComponent(p.id), b(req).datos, ver(req)));
   ruta('DELETE', '/api/registros/{lista}/{id}', (u, p, req) => servicio.eliminarRegistro(u, p.lista, decodeURIComponent(p.id), ver(req)));
   ruta('GET', '/api/iniciativas', (u, p, req) => servicio.listar(u, req.query));
-  ruta('POST', '/api/iniciativas', (u, p, req) => servicio.crear(u, b(req)));
+  ruta('POST', '/api/iniciativas', (u, p, req) => servicio.crear(u, b(req), { migracion: req.headers['x-apih-migracion'] === '1' }));
   ruta('GET', '/api/iniciativas/{id}', (u, p) => servicio.obtener(u, p.id));
   ruta('PATCH', '/api/iniciativas/{id}', (u, p, req) => servicio.actualizar(u, p.id, b(req), ver(req)));
   ruta('DELETE', '/api/iniciativas/{id}', (u, p, req) => servicio.eliminar(u, p.id, ver(req)));

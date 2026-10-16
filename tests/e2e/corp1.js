@@ -9,7 +9,7 @@ const B = 'http://localhost:7072';
   const espera = async () => { await p.waitForTimeout(900); for (let k = 0; k < 40; k++) { const st = await p.evaluate(() => DataService.st.state + '|' + DataService.st.pending + '|' + (DataService.busy ? 1 : 0) + '|' + (DataService.dirty ? 1 : 0)); if (/^(ok|error)\|0\|0\|0/.test(st) || /^error/.test(st)) return st; await p.waitForTimeout(250); } return p.evaluate(() => JSON.stringify(DataService.st)); };
   await p.goto(B + '/'); await p.waitForTimeout(1500);
   const r = {};
-  r.version = await p.evaluate(() => document.title + ' | ' + (document.body.innerText.match(/C2\.2[^\n]*/) || [''])[0]);
+  r.version = await p.evaluate(() => document.title + ' | ' + (document.body.innerText.match(/C2\.\d[^\n]*/) || [''])[0]);
   r.modo = await p.evaluate(() => DataService.mode + ' · ' + DataService.st.msg + ' · ' + (AuthService.user() || {}).email);
   r.estado0 = await espera();
   // Alta de un proyecto desde la SPA (mismo camino que el formulario: St + save)
@@ -32,6 +32,6 @@ const B = 'http://localhost:7072';
   r.trasRecargar = await p.evaluate(() => { const i = St.ini.find(x => x.id === 'PRJ-101'); return i ? i.titulo + ' · ' + i.area + ' · hitos ' + St.hitos.filter(h => h.ini === 'PRJ-101').length : 'no está'; });
   r.registros = (await api('/api/registros/APIH_Config')).s;
   r.errores = errs; r.csp = csp; console.log(JSON.stringify(r, null, 1));
-  const ok = /C2\.2/.test(r.version) && /^api/.test(r.modo) && /^ok/.test(r.estado0) && /^200 Prueba corporativa/.test(r.servidor) && /\["BISE"\]/.test(r.servidor) && r.hitosServidor === 1 && /^Pausado · Prueba corporativa \(editada\)/.test(r.trasEditar) && /Compuerta/.test(r.rechazo) && r.faseServidor === 'Planificación' && r.faseLocal === 'Planificación' && r.conflicto === 409 && /editada.*BISE.*hitos 1/.test(r.trasRecargar) && !errs.length && !csp.length;
+  const ok = /C2\.\d/.test(r.version) && /^api/.test(r.modo) && /^ok/.test(r.estado0) && /^200 Prueba corporativa/.test(r.servidor) && /\["BISE"\]/.test(r.servidor) && r.hitosServidor === 1 && /^Pausado · Prueba corporativa \(editada\)/.test(r.trasEditar) && /Compuerta/.test(r.rechazo) && r.faseServidor === 'Planificación' && r.faseLocal === 'Planificación' && r.conflicto === 409 && /editada.*BISE.*hitos 1/.test(r.trasRecargar) && !errs.length && !csp.length;
   console.log(ok ? 'OK corp1' : 'FALLA corp1'); await b.close(); process.exit(ok ? 0 : 1);
 })();

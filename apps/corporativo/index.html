@@ -1803,7 +1803,7 @@ const DataService = {
     };
     const t0 = performance.now();
     const gr = !!v.batchOps, bat = gr ? ops.filter(o => o.t !== 's') : [], q = (gr ? ops.filter(o => o.t === 's') : ops).slice();
-    const chunks = []; for (let i = 0; i < bat.length; i += 20) chunks.push(bat.slice(i, i + 20));
+    const chunks = [], CH = v.mode === 'api' ? Math.max(1, bat.length) : 20; for (let i = 0; i < bat.length; i += CH) chunks.push(bat.slice(i, i + CH));
     const batchWorker = async () => {
       while (chunks.length) {
         const ch = chunks.shift();
@@ -2050,8 +2050,8 @@ class ApiService extends SharePointService {
   constructor(cfg) { super(cfg); this.ver = {}; this.obj = {}; }
   get mode() { return 'api'; }
   get base() { return String((this.cfg.api || {}).base || '/api').replace(/\/$/, ''); }
-  async _f(method, path, body, version) {
-    const h = { 'Content-Type': 'application/json' }; if (version) h['If-Match'] = '"' + version + '"';
+  async _f(method, path, body, version, extra) {
+    const h = Object.assign({ 'Content-Type': 'application/json' }, extra || {}); if (version) h['If-Match'] = '"' + version + '"';
     let res;
     for (let n = 0; n < 3; n++) {
       try { res = await fetch(this.base + path, { method, headers: h, body: body == null ? undefined : JSON.stringify(body), credentials: 'same-origin', cache: 'no-store' }); }
@@ -2102,7 +2102,7 @@ class ApiService extends SharePointService {
     if (!t) { if (op.t === 'd') return this.deleteItem(op.ent, op.id); await this._putReg(op.ent, SPMap.fieldsOf(op.ent, op.o)); this.ids[op.ent][id] = id; return; }
     if (op.t === 'd') { try { await this._f('DELETE', this._ruta(t, id), null, this.ver[k]); } catch (e) { if (e.status !== 404) throw e; } delete this.ver[k]; delete this.obj[k]; return; }
     const o = this._aApi(t, op.o);
-    if (!this.ver[k]) { this._guarda(k, t === 'ini' ? await this._f('POST', '/iniciativas', o) : await this._f('POST', '/iniciativas/' + encodeURIComponent(o.ini) + (t === 'hito' ? '/hitos' : '/riesgos'), o)); this.ids[op.ent][id] = id; return; }
+    if (!this.ver[k]) { this._guarda(k, t === 'ini' ? await this._f('POST', '/iniciativas', o, null, window.__apihMigrando ? { 'x-apih-migracion': '1' } : null) : await this._f('POST', '/iniciativas/' + encodeURIComponent(o.ini) + (t === 'hito' ? '/hitos' : '/riesgos'), o)); this.ids[op.ent][id] = id; return; }
     let cur = this.obj[k] || {}; const RO = ['id', 'version', 'creada', 'actualizada', 'modificadoPor', 'faseDesde', 'hist', 'semaforo'];
     if (t === 'ini' && o.estado !== cur.estado) cur = await this._f('POST', this._ruta(t, id) + '/estado', { estado: o.estado, motivo: o.estadoMotivo || '', rev: o.estadoRev || null }, this.ver[k]), this._guarda(k, cur);
     if (t === 'ini' && o.fase !== cur.fase) cur = await this._f('POST', this._ruta(t, id) + '/fase', { fase: o.fase }, this.ver[k]), this._guarda(k, cur);
@@ -2119,6 +2119,7 @@ class ApiService extends SharePointService {
       try { await this._op(ops[i]); }
       catch (e) { out[i] = { ok: false, conflict: e.status === 409, err: e.message, perm: [400, 403, 404, 422].includes(e.status) }; }
     }
+    window.__apihMigrando = false;
     return out;
   }
   async stamp() { return (await this._f('GET', '/sello')).sello; }
@@ -4095,7 +4096,7 @@ Chg.impfile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
     const cmp = ks.map(([k, n]) => n + ': ' + len(St, k) + ' → ' + len(o, k)).join(' · '), loss = len(o, 'ini') < len(St, 'ini') * 0.5 && len(St, 'ini') >= 4;
     const msg = 'Se reemplazarán TODOS los datos actuales por el respaldo' + (DataService.svc ? ' y el cambio se sincronizará para todos los usuarios' : '') + '.<br><br>Actual → Respaldo<br>' + cmp + (loss ? '<br><br>⚠ El respaldo tiene menos de la mitad de las iniciativas actuales.' : '') + '<br><br>Antes de importar se descargará una copia de los datos actuales. ¿Continuar?';
     confirmBox(msg, () => { try { download('APIH_antes_de_importar_' + hoy() + '.json', JSON.stringify(St, null, 1), 'application/json'); } catch (e) { }
-      St = migrateV5(o); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; toast('Respaldo importado (copia previa descargada)'); shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true);
+      St = migrateV5(o); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; St.ptema = St.ptema || {}; St.cfgU = St.cfgU || {}; St.eventos = St.eventos || []; St.pres = St.pres || []; toast('Respaldo importado (copia previa descargada)'); if (DataService.svc && DataService.svc.mode === 'api') window.__apihMigrando = true; shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true);
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 /* V22.50: importar iniciativas (suma registros, no reemplaza) */
 const INI_PLANTILLA = () => ({ formato: 'apih-iniciativas', v: 1, iniciativas: [
@@ -10000,7 +10001,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'C2.2', b: '16-10-2026 03:30' };
+  const VER = { v: 'C2.6', b: '16-10-2026 11:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
