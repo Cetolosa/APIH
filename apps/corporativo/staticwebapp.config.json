@@ -30,7 +30,7 @@
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-    "Content-Security-Policy": "frame-ancestors 'self' https://teams.microsoft.com https://*.teams.microsoft.com https://*.office.com"
+    "Content-Security-Policy": "frame-ancestors 'self' https://teams.microsoft.com https://*.teams.microsoft.com https://*.office.com https://teams.cloud.microsoft https://*.cloud.microsoft"
   },
   "platform": { "apiRuntime": "node:20" }
 }

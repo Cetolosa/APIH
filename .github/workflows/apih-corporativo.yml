@@ -19,6 +19,8 @@ jobs:
       - run: node tests/unit/core-equivalencia-c14.js
       - run: node tests/unit/migracion.js
       - run: node tests/contract/run.js
+      - run: node tests/unit/teams-paquete.js
+      - run: az bicep build --file infra/main.bicep --stdout > /dev/null
   desplegar:
     needs: pruebas
     if: github.event_name != 'pull_request'

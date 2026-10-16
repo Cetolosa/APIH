@@ -1,6 +1,6 @@
 # APIH — Documento de traspaso
 
-> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.54 · Corporativo C2.6)
+> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.54 · Corporativo C2.7)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -65,6 +65,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.4 | Propuesta para TI (Claude Docs, «Propuesta técnica para revisión con TI»): https://claude.ai/code/artifact/ae0913ea-ba10-4bfd-a8b2-609b4d7e9754 — página de resumen, 15 puntos para revisar (incl. notificaciones, suscripción Azure, directorio, IA, dirección web, soporte, clasificación de datos), anexo con los 21 hitos. PDF de 11 páginas. Tono 100 % colaborativo; no se habla de quién paga. |
 | C2.5 | Traspaso en el repo como fuente común entre cuentas; PDF en `docs/propuesta/` |
 | C2.6 | Migración limpia de toda la historia del Prototipo: «Importar respaldo» (Admin) en la SPA corporativa + modo migración en la API (conserva historial y fechas); e2e `corp2`. Propuesta actualizada: migración completa y «Completar con IA» (exportar con instrucciones → IA corporativa → importar) |
+| C2.7 | Validación sin Azure: Bicep compila; paquete de Teams (`apps/teams`); login en Teams requiere ventana aparte (validar en dev). Funciones diferidas (Pronóstico, Ruta crítica, Escenarios): **el usuario aún no decide implementarlas** |
 
 Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con versión C** (ADR-002). Cada componente declara la última versión C en que cambió (ADR-005).
 
