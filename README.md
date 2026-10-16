@@ -18,7 +18,7 @@ Dos productos sobre un núcleo compartido:
 | `tests` | Unitarios, contrato y e2e |
 
 ## Prototipo congelado
-APIH Prototipo está **congelado desde V22.52 (15-10-2026)**: tag `prototipo-v22.52-congelado`. Solo se aceptan correcciones críticas (errores y seguridad) y la gestión de accesos. Excepción aprobada: **V22.53**, vista *Fases* (ADR-006). Las funciones pendientes (Pronóstico financiero, Ruta crítica, Escenarios) se construyen una sola vez en APIH Corporativo sobre `packages/core`.
+APIH Prototipo está **congelado desde V22.52 (15-10-2026)**: tag `prototipo-v22.52-congelado`. Solo se aceptan correcciones críticas (errores y seguridad) y la gestión de accesos. Excepciones aprobadas: **V22.53** vista *Fases* (ADR-006) y **V22.54** Planificación en ficha + Siguientes pasos (ADR-007). Las funciones pendientes (Pronóstico financiero, Ruta crítica, Escenarios) se construyen una sola vez en APIH Corporativo sobre `packages/core`.
 
 ## Versionado
 - Prototipo: **V22.52 congelada**. No se modifica.

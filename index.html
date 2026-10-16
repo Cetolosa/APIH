@@ -680,6 +680,14 @@ body{font:13px/1.45 var(--font)}
 .fz-ri{display:flex;gap:8px;align-items:center;font-size:12px}.fz-rt{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;margin-top:4px}
 .fz-exp{min-width:24px;text-align:center;font-weight:700;border-radius:4px;padding:1px 4px;font-size:12px;flex:none}
 .fz-fb{position:absolute;top:6px;height:20px;color:#fff;font-size:11px;line-height:20px;padding-left:6px;box-sizing:border-box;overflow:hidden;white-space:nowrap;border-radius:3px}
+/* ---------- V22.54: siguientes pasos ---------- */
+.ps-it{border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--card)}.ps-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px}
+.ps-u{font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;text-transform:uppercase}.ps-ini{margin-left:auto;font-size:12px}
+.ps-t{font-size:13px;font-weight:600;margin-top:6px}.ps-p{font-size:12px;color:var(--tx2);margin-top:2px}
+.ps-a{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}.ps-pr{font-size:11px;padding:1px 8px;border-radius:10px;background:var(--pri-l);color:var(--pri)}.ps-b{display:inline-flex;gap:6px;margin-left:auto}
+.ps-card{margin-bottom:12px}.ps-g{font-size:11px;font-weight:700;letter-spacing:.04em;margin:12px 0 6px}
+.ps-f{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 4px}.ps-f button{min-height:32px;padding:0 12px;border:1px solid var(--bd3);border-radius:16px;background:var(--card);color:var(--tx);font:inherit;font-size:12px;cursor:pointer}.ps-f button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.ps-ban{display:flex;gap:8px;align-items:center;background:var(--navy);color:#fff;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:8px}
 /* ---------- V21: errores visuales ---------- */
 .tbl td{height:40px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl td.c-titulo{max-width:340px}.tbl.dense td{height:30px}.tbl tr.grp td{height:auto;max-width:none}
 .tbl tfoot td{position:sticky;bottom:0;z-index:5;background:var(--bg2)}
@@ -3413,6 +3421,73 @@ Acts.fzopen = d => { const f = F('fases', {}); f.open = Object.assign({}, f.open
 Acts.fzall = () => { const f = F('fases', {}), any = Object.keys(f.open || {}).some(k => f.open[k]); f.open = {}; if (!any) scopeAll().forEach(i => f.open[i.id] = true); render(); };
 Acts.fzsel = d => { const f = F('fases', {}); f.fk = +d.k; f.fid = d.id; render(); };
 
+/* ======================= V22.54 · Siguientes pasos (reglas explicables) + Planificación en la ficha ======================= */
+const PASO_U = [['Hoy', '#FDE7E9', '#A4262C'], ['Esta semana', '#FFF4CE', '#6B4E00'], ['Próximo', '#EAF1FB', '#0D446A']];
+const pospGet = () => { try { return JSON.parse(localStorage.getItem('apih_posp') || '{}'); } catch (e) { return {}; } };
+const pospSet = o => { try { localStorage.setItem('apih_posp', JSON.stringify(o)); } catch (e) { } };
+const pospOn = k => { const p = pospGet()[k]; return !!p && p > hoy(); };
+/* Pasos sugeridos de una iniciativa. u: 0 hoy · 1 esta semana · 2 próximo. prot: tenedor o compuerta que protege */
+function pasosDe(i) {
+  if (!i || esProp(i) || isDone(i)) return [];
+  const H = hoy(), out = [], add = (k, u, tipo, t, por, prot, btn, act, d, f) => out.push({ k: i.id + ':' + k, u, tipo, t, por, prot, btn, act, d, f: f || H, ini: i });
+  const hs = hitosDe(i.id).filter(h => !h.completado).sort(by('fecha'));
+  hs.filter(h => h.fecha < H).forEach(h => add('hv' + h.id, 0, 'Hito vencido', 'Cierra o reprograma «' + h.nombre + '»', 'Venció hace ' + diffD(H, h.fecha) + ' d. Sin explicar, apaga el tenedor Hitos.', 'Hitos', 'Editar hito', 'edit', { t: 'hito', id: h.id }, h.fecha));
+  hs.filter(h => h.fecha === H).forEach(h => add('hh' + h.id, 0, 'Hito', 'Marca «' + h.nombre + '» como cumplido', 'Vence hoy.', 'Hitos', 'Marcar cumplido', 'hitotoggle', { id: h.id }, h.fecha));
+  hs.filter(h => h.fecha > H && diffD(h.fecha, H) <= 7).slice(0, 3).forEach(h => add('hs' + h.id, 1, 'Hito', 'Prepara «' + h.nombre + '» (' + fzd(h.fecha) + ')', 'Vence en ' + diffD(h.fecha, H) + ' d' + (h.resp ? ' · ' + h.resp : '') + '.', 'Hitos', 'Ver hito', 'sel', { t: 'hito', id: h.id }, h.fecha));
+  if (FASES_ACT.includes(i.fase) && isLive(i)) { const st = starsOf(i, hoyW()), dia = st.find(x => x.k === 'dia'); if (dia && dia.s === 'off') add('dia', pD(H).getDay() >= 5 || pD(H).getDay() === 0 ? 0 : 1, 'Tenedor «Al día»', 'Registra la actualización semanal', dia.tip || 'Sin actualización esta semana: el tenedor «Al día» está apagado.', 'Al día', 'Actualizar', 'wk', { id: i.id }); }
+  riesgosDe(i.id).filter(riesgoAbierto).forEach(r => {
+    const n = nivelRiesgo(expo(r)), crit = expo(r) >= cfgI(i, 'umbralCritico');
+    if (crit && !String(r.mit || '').trim()) add('rm' + r.id, 0, 'Riesgo crítico', 'Define la mitigación de «' + r.desc + '»', 'Crítico (' + expo(r) + ') sin plan de mitigación: apaga el tenedor Riesgos y bloquea compuertas.', 'Riesgos', 'Editar riesgo', 'edit', { t: 'risk', id: r.id });
+    else if (r.fRev && r.fRev < H) add('rv' + r.id, 0, 'Riesgo', 'Revisa el riesgo «' + r.desc + '»', 'La revisión venció el ' + fzd(r.fRev) + ': apaga el tenedor Riesgos.', 'Riesgos', 'Editar riesgo', 'edit', { t: 'risk', id: r.id }, r.fRev);
+    else if (r.fRev && diffD(r.fRev, H) <= 7) add('rs' + r.id, r.fRev === H ? 0 : 1, 'Riesgo ' + n.n.toLowerCase(), 'Prepara la revisión de «' + r.desc + '» (' + fzd(r.fRev) + ')', n.n + ' (' + expo(r) + ')' + (r.mit ? '. Mitigación: ' + cut(r.mit, 90) : '.'), 'Riesgos', 'Abrir riesgo', 'sel', { t: 'risk', id: r.id }, r.fRev);
+  });
+  St.compromisos.filter(c => c.ini === i.id && !['Cumplido', 'Cancelado'].includes(c.estado) && c.limite && diffD(c.limite, H) <= 7).forEach(c => add('c' + c.id, c.limite <= H ? 0 : 1, 'Compromiso', (c.limite < H ? 'Cumple el compromiso vencido «' : 'Cumple «') + cut(c.texto || c.titulo || 'compromiso', 70) + '»', (c.limite < H ? 'Venció el ' : 'Vence el ') + fzd(c.limite) + (c.resp ? ' · ' + c.resp : '') + '.', 'Compromisos', 'Ver compromisos', 'go', { v: 'compromisos' }, c.limite));
+  const FS = fasesDe(i), nx = FS[FS.indexOf(i.fase) + 1];
+  if (nx) {
+    const g = gates(i, nx), falta = g.filter(x => !x.ok), V = fasesVentana(i), v = V.find(x => x.actual), cerca = v && v.fin && diffD(v.fin, H) <= 7;
+    if (!falta.length) add('adv', 0, 'Compuerta', 'Avanza a ' + nx, 'Se cumplen todas las condiciones de la compuerta.', 'Compuerta', 'Avanzar', 'advance', { id: i.id });
+    else falta.filter(x => !/^Hitos de la fase/.test(x.t)).forEach((x, k) => add('g' + k, cerca ? 1 : 2, 'Compuerta', 'Para pasar a ' + nx + ': ' + x.t.charAt(0).toLowerCase() + x.t.slice(1), 'Condición pendiente de la compuerta' + (v && v.fin ? '; la fase ' + i.fase + ' cierra el ' + fzd(v.fin) : '') + '.', 'Compuerta', 'Editar proyecto', 'edit', { t: 'ini', id: i.id }));
+  }
+  return out.filter(p => !pospOn(p.k)).sort(by(p => p.u + '|' + p.f));
+}
+function pasoHTML(p, conIni) {
+  const U = PASO_U[p.u];
+  return `<div class="ps-it"><div class="ps-h"><span class="ps-u" style="background:${U[1]};color:${U[2]}">${U[0]}</span><span class="mut">${esc(p.tipo)}</span>${conIni ? `<a class="lnk ps-ini" data-act="sel" data-t="ini" data-id="${p.ini.id}">${esc(cut(p.ini.titulo, 34))}</a>` : ''}</div>
+    <div class="ps-t">${esc(p.t)}</div><div class="ps-p">${esc(p.por)}</div>
+    <div class="ps-a"><span class="ps-pr">protege: ${esc(p.prot)}</span><span class="edit-only ps-b">${btn(p.btn, p.act, { d: p.d, cls: 'sm pri' })}${btn('Posponer', 'pasopos', { d: { k: p.k }, cls: 'sm', title: 'Ocultar hasta mañana' })}</span></div></div>`;
+}
+Acts.pasopos = d => { const p = pospGet(); p[d.k] = addD(hoy(), 1); Object.keys(p).forEach(k => { if (p[k] <= hoy()) delete p[k]; }); pospSet(p); toast('Paso pospuesto hasta mañana'); render(); };
+/* Pestaña «Planificación» de la ficha: fases, cronograma, próximos 14 días y siguientes pasos */
+function planFichaHTML(i) {
+  const V = fasesVentana(i), H = hoy(), P = pasosDe(i);
+  const steps = `<div class="fz-steps" style="--n:${V.length}">${V.map(x => `<div class="fz-step ${x.actual ? 'on act' : ''}" style="--c:${x.color};cursor:default"><span class="fz-st"><span class="fz-num">${x.k + 1}</span>${esc(x.fase)}</span><small class="fz-sm">${fzd(x.ini)} → ${fzd(x.fin)} · ${x.done}/${x.hitos.length} hitos</small><span class="fz-pb"><i style="width:${x.hitos.length ? Math.round(x.done / x.hitos.length * 100) : 0}%"></i></span></div>`).join('')}</div>`;
+  const prox = [...hitosDe(i.id).filter(h => !h.completado && h.fecha >= H && diffD(h.fecha, H) <= 14).map(h => ({ f: h.fecha, k: 'Hito', c: '#0D446A', t: h.nombre })),
+    ...riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev && r.fRev >= H && diffD(r.fRev, H) <= 14).map(r => ({ f: r.fRev, k: 'Riesgo', c: '#A4262C', t: 'Revisión: ' + r.desc }))].sort(by('f'));
+  const g = Views.fases.gantt([i], { q: '', open: { [i.id]: true }, riesgos: true });
+  return `<div class="fz-2" style="margin-top:0"><div style="flex:999 1 620px;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <div class="fz-card" style="padding:12px 14px"><div class="fz-ch" style="padding:0 0 10px;border:0"><h3>Fases</h3><a class="lnk" data-act="fzir" data-id="${i.id}">Abrir en Planificación › Fases</a></div>${steps}</div>
+      ${g}
+      <div class="fz-card" style="padding:12px 14px"><h3 style="margin:0 0 6px">Próximos 14 días</h3>${prox.length ? prox.map(p => `<div class="fz-li" style="padding:7px 0"><b style="width:44px">${fzd(p.f)}</b><span class="fz-pill" style="color:${p.c};border:1px solid ${p.c}">${p.k}</span><span>${esc(p.t)}</span></div>`).join('') : '<p class="mut">Nada programado en los próximos 14 días.</p>'}</div></div>
+    <div class="fz-card" style="flex:1 1 340px;min-width:0;padding:12px 14px"><div class="fz-ch" style="padding:0 0 4px;border:0"><h3>Siguientes pasos</h3><small class="mut">${P.length} sugerido${P.length === 1 ? '' : 's'}</small></div><p class="mut" style="font-size:12px;margin:0 0 10px">Calculados con las reglas de APIH: hitos, compuerta de fase, riesgos, compromisos y tenedores.</p>${P.length ? P.map(p => pasoHTML(p)).join('') : '<p class="mut">Sin pasos pendientes. ¡Todo al día!</p>'}</div></div>`;
+}
+Acts.fzir = d => { const f = F('fases', {}); f.tab = 'linea'; f.id = d.id; UI.view = 'fases'; render(); };
+/* Mi cocina: pasos de todos mis proyectos activos */
+function pasosCocinaHTML(me) {
+  const f = F('cielo', {}), mine = proyActivos(me, hoyW());
+  if (!mine.length) return '';
+  let P = mine.flatMap(pasosDe).filter(p => p.u <= 1); const pp = f.pp && mine.some(i => i.id === f.pp) ? f.pp : '';
+  if (pp) P = P.filter(p => p.ini.id === pp);
+  P.sort(by(p => p.u + '|' + p.f)); const tot = P.length; if (!f.psAll) P = P.slice(0, 5);
+  const KT = { 'Al día': 'dia', Hitos: 'hit', Compromisos: 'cmp', Riesgos: 'rsk' };
+  const prender = new Set(P.filter(p => p.u === 0 && KT[p.prot] && (starsOf(p.ini, hoyW()).find(x => x.k === KT[p.prot]) || {}).s === 'off').map(p => p.ini.id + KT[p.prot])).size;
+  const chips = `<div class="ps-f">${[['', 'Todos'], ...mine.map(i => [i.id, cut(i.titulo, 26)])].map(([v, t]) => `<button class="${pp === v ? 'on' : ''}" data-act="pasof" data-v="${v}">${esc(t)}</button>`).join('')}</div>`;
+  const grp = [0, 1].map(u => { const L = P.filter(p => p.u === u); return L.length ? `<div class="ps-g" style="color:${PASO_U[u][2]}">${PASO_U[u][0].toUpperCase()} · ${L.length}</div>${L.map(p => pasoHTML(p, true)).join('')}` : ''; }).join('');
+  return `<section class="card ps-card"><header><h2>Tus siguientes pasos</h2><small>ordenados por lo que más tenedores y plazos protege</small></header>
+    ${prender ? `<div class="ps-ban">${icon('fork', 15)}<span>Si completas los pasos de hoy puedes encender <b>${prender}</b> tenedor${prender === 1 ? '' : 'es'} esta semana.</span></div>` : ''}${chips}${grp || '<p class="mut">Sin pasos para hoy ni esta semana. ¡Mesa al día!</p>'}${tot > 5 ? btn(f.psAll ? 'Ver solo los 5 primeros' : 'Ver los ' + tot + ' pasos', 'pasoall', { cls: 'sm' }) : ''}</section>`;
+}
+Acts.pasof = d => { F('cielo', {}).pp = d.v; render(); };
+Acts.pasoall = () => { const f = F('cielo', {}); f.psAll = !f.psAll; render(); };
+
 /* ======================= GANTT ======================= */
 const GZ = { week: { n: 'Semana', p: 11 }, month: { n: 'Mes', p: 4.2 }, quarter: { n: 'Trimestre', p: 1.5 } };
 Views.gantt = {
@@ -4644,7 +4719,7 @@ Views.cielo = {
       <section class="card c6"><header><h2>Niveles, racha e insignias</h2></header><div class="sky-leg"><div>${icon('fork', 15)}<span><b>Racha:</b> semanas seguidas con los 5 tenedores (todos tus proyectos, sin ninguno pendiente).</span></div><div>${icon('spark', 15)}<span><b>Niveles:</b> Pinche, Cocinero (1 semana perfecta), Chef de partida (4) y Chef ejecutivo (12), contando las últimas 26 semanas.</span></div><div>${icon('flag', 15)}<span><b>Insignias:</b> ${insignias(me).length} reconocimientos por conductas concretas. Se ganan solas; no se pierden.</span></div><div>${icon('users', 15)}<span><b>Salón de chefs:</b> porcentaje de tenedores encendidos del portafolio frente a la meta (${meta}%), el promedio de tenedores y las estrellas Michelin repartidas. Sin ranking de personas.</span></div></div>
       <h3 class="sky-lt">Reglas del juego limpio</h3><div class="sky-leg"><div>${icon('check', 15)}<span>Reportar un rojo a tiempo vale lo mismo que un verde.</span></div><div>${icon('check', 15)}<span>«Sin novedades» no da tenedor la tercera semana seguida.</span></div><div>${icon('check', 15)}<span>No se usa para evaluar desempeño ni para bonos.</span></div></div></section></div>`;
     }
-    return head + cocaPase(me, P, C, meta, adm);
+    return head + pasosCocinaHTML(me) + cocaPase(me, P, C, meta, adm);
     const ls = P.cur.slice().sort(by(x => -x.st.filter(y => y.s === 'off').length));
     const nx = NIV.find(n => n[0] === P.nivel), sigN = (NIV[NIV.indexOf(nx) + 1] || [])[0], falt = nx[2] - P.total;
     const proy = ls.length ? ls.map(x => `<button class="sky-r" data-act="sel" data-t="ini" data-id="${x.i.id}"><span class="sky-n">${esc(cut(x.i.titulo, 40))}<small>${esc(x.i.fase)} · ${x.st.filter(y => y.s === 'on').length} de ${x.st.filter(y => y.s !== 'na').length} tenedores</small></span><span class="rowg">${starsRow(x.st, 22)}${msRow(x.i, 22)}</span></button>`).join('') : '<p class="sky-e">No lideras proyectos activos esta semana.<br>Cuando lideres uno, aparecerá aquí con sus tenedores.</p>';
@@ -9550,7 +9625,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     return { kicker: kx ? kx.innerHTML : '', title: (f.querySelector('.pn-h h3') || {}).innerHTML || '', pills: (f.querySelector('.pn-p') || {}).innerHTML || '', acts: (f.querySelector('.pn-a') || {}).innerHTML || '', body: f.querySelector('.pn-b') };
   }
   const SECS = [
-    ['res', 'Resumen', 'list', true], ['cif', 'Cifras, fechas y responsables', 'money'], ['sal', 'Salud y recomendación', 'target'], ['dep', 'Dependencias', 'link'], ['log', 'Logros y próximos pasos', 'check'], ['cal', 'Calidad de datos', 'shield'],
+    ['res', 'Resumen', 'list', true], ['pla', 'Planificación', 'gantt', true, 'prj'], ['cif', 'Cifras, fechas y responsables', 'money'], ['sal', 'Salud y recomendación', 'target'], ['dep', 'Dependencias', 'link'], ['log', 'Logros y próximos pasos', 'check'], ['cal', 'Calidad de datos', 'shield'],
     ['hit', 'Hitos', 'flag', true, 'prj'], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Historial', 'book', true], ['ia', 'IA', 'spark'], ['doc', 'Documentación', 'book'], ['int', 'Notas internas del PMO', 'lock', true], ['nota', 'Comentarios del área', 'comment', true]
   ];
   const SIMPLE_OPEN = ['res', 'cif', 'hit', 'rie', 'doc', 'int'];
@@ -9694,6 +9769,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     [...R.body.children].forEach(el => { const k = PR ? 'res' : grupoResumen(el); (G[k] = G[k] || []).push(el.outerHTML); });
     const sec = {};
     ['res', 'cif', 'sal', 'dep', 'log', 'cal'].forEach(k => { if (G[k]) sec[k] = [null, G[k].join('')]; });
+    if (!PR) sec.pla = [pasosDe(i).length || null, planFichaHTML(i)];
     if (!PR) sec.hit = secHitos(i);
     sec.rie = secRiesgos(i); sec.dec = secDec(i); sec.com = secCom(i); if (!PR) sec.cam = secCam(i);
     sec.act = [St.bitacora.filter(x => x.ini === i.id).length, histHTML(i)];
@@ -9709,7 +9785,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     af.querySelectorAll('button').forEach(b => { const t = b.textContent.trim(); b.classList.remove('sm'); b.setAttribute('title', t); if (/^Actualizar/.test(t)) main.push(b.outerHTML.replace('class="btn', 'class="btn')); else if (/^(Informe|Editar|Gantt|Presentar)/.test(t)) seg.push(b.outerHTML); else more.push(b.outerHTML); });
     const kick = R.kicker.replace(/\s*<button[\s\S]*?<\/button>/g, '');
     const acts = `<div class="fl2-a">${main.join('')}${seg.join('')}${more.length ? `<div class="popw"><button class="btn" data-act="pop" data-id="pop-flmore" aria-label="Más acciones" title="Fase, estado y más">${icon('dots', 16)}</button><div class="pop" id="pop-flmore" style="right:0">${more.join('')}</div></div>` : ''}</div>`;
-    const PRIM = ['res', 'cif', 'sal', 'log', 'hit', 'rie'], prim = lista.filter(x => PRIM.includes(x[0])), rest = lista.filter(x => !PRIM.includes(x[0]));
+    const PRIM = ['res', 'pla', 'cif', 'sal', 'log', 'hit', 'rie'], prim = lista.filter(x => PRIM.includes(x[0])), rest = lista.filter(x => !PRIM.includes(x[0]));
     const act0 = UI.flTab && lista.some(x => x[0] === UI.flTab) ? UI.flTab : (prim[0] || lista[0] || [])[0];
     const tab = x => `<button class="fl2-tab ${x[0] === act0 ? 'on' : ''} ${fOculta(x[0]) ? 'off' : ''}" data-act="fltab" data-k="${x[0]}" title="${esc(x[1])}" ${x[0] === act0 ? 'aria-current="true"' : ''}>${esc(({ cif: 'Cifras', sal: 'Salud', log: 'Logros' })[x[0]] || x[1])}</button>`;
     let phX = '', phLab = '';
@@ -9822,7 +9898,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.53', b: '16-10-2026 01:30' };
+  const VER = { v: 'V22.54', b: '16-10-2026 02:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;

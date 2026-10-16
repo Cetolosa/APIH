@@ -1,4 +1,4 @@
-# APIH — Documento de traspaso (15-10-2026 · Prototipo V22.53 · Corporativo C1.3)
+# APIH — Documento de traspaso (15-10-2026 · Prototipo V22.54 · Corporativo C1.3)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -13,7 +13,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Congelado** (V22.52) con excepción **V22.53**: vista Planificación → Fases (ADR-006) | En construcción, **C1.3** · producción objetivo **27-11-2026** (plan acelerado) |
+| Estado | **Congelado** (V22.52) con excepciones **V22.53** (vista Fases, ADR-006) y **V22.54** (Planificación en ficha + Siguientes pasos, ADR-007) | En construcción, **C1.3** · producción objetivo **27-11-2026** (plan acelerado) |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo, monorepo (carpetas vacías aún), luego repo de Aramark que indique TI |
@@ -58,6 +58,6 @@ Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con
 
 ## 7. Pendientes
 **Usuario:** enviar correo a José; que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); importar las 2 iniciativas; (opcional) crear usuario "Bot IA" con rol Editor.
-**Claude, siguiente (C1.4):** contratos de Hitos y Riesgos + compuertas de fase (`gates()` de V22.52) en core, con equivalencia y pruebas de contrato. Antes: reescribir el correo a José en modo **propuestas con fecha de no-objeción (21-10)** + lista exacta de infraestructura, adjuntando el contrato. Objetivo del proyecto: demostrar que la metodología acelera los plazos (medir horas por versión).
+**Claude, siguiente (C1.4):** contratos de Hitos y Riesgos + compuertas de fase (`gates()`), `fasesVentana` y `pasosDe` (V22.54) en core, con equivalencia y pruebas de contrato. Antes: reescribir el correo a José en modo **propuestas con fecha de no-objeción (21-10)** + lista exacta de infraestructura, adjuntando el contrato. Objetivo del proyecto: demostrar que la metodología acelera los plazos (medir horas por versión).
 **Hecho (C1.0–C1.3):** core de fechas/riesgo, contrato de Iniciativa, documentación del proceso.
 **Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren SMTP/webhook de TI; los tags `prototipo-v22.52-congelado` y `c1.x` pueden no subir (proxy): crear desde GitHub Releases; el push de tags/API de GitHub puede fallar en la sesión en la nube.
