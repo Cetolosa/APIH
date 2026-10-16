@@ -40,5 +40,5 @@ for (const u of [12, 15, 20, '15']) {
 }
 for (const e of ['Abierto', 'Cerrado', 'Mitigado', undefined, '']) eq(core.riesgoAbierto({ estado: e }), P.riesgoAbierto({ estado: e }), 'abierto ' + e);
 
-eq(core.VERSION.v, 'C1.0', 'versión');
+eq(core.VERSION.origen, 'V22.52', 'origen');
 console.log('OK core ' + core.VERSION.v + ' ≡ index.html ' + core.VERSION.origen + ' — ' + casos + ' casos');

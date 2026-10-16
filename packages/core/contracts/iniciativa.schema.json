@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "apih/contracts/iniciativa/C1.1",
+  "title": "Iniciativa (APIH Corporativo C1.1)",
+  "description": "Propuesta o Proyecto. Derivado de index.html V22.52. Campos readOnly los asigna el servidor. Montos: CLP en millones, USD en miles, UF en unidades.",
+  "type": "object",
+  "required": ["tipo", "titulo", "fase", "estado", "lider"],
+  "additionalProperties": false,
+  "properties": {
+    "id":            { "type": "string", "pattern": "^(PROP|PRJ)-\\d+$", "readOnly": true },
+    "version":       { "type": "string", "readOnly": true, "description": "Token de concurrencia; cambia en cada escritura (hoy: actualizado de Supabase)" },
+    "creada":        { "$ref": "#/$defs/fecha", "readOnly": true },
+    "actualizada":   { "$ref": "#/$defs/fecha", "readOnly": true },
+    "modificadoPor": { "type": "string", "readOnly": true },
+    "faseDesde":     { "$ref": "#/$defs/fecha", "readOnly": true },
+    "hist":          { "type": "array", "readOnly": true, "items": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/fecha" }, { "$ref": "#/$defs/pct" }], "items": false } },
+
+    "tipo":          { "enum": ["Propuesta", "Proyecto"] },
+    "titulo":        { "type": "string", "minLength": 1, "maxLength": 200 },
+    "tipoIni":       { "type": "string", "description": "Tipo de la metodología (precarga hitos)" },
+    "desc":          { "type": "string" },
+    "bc":            { "type": "string", "description": "Business case / beneficios" },
+    "problema":      { "type": "string" },
+    "objetivos":     { "type": "string" },
+    "usuarios":      { "type": "string" },
+    "motivoAlta":    { "type": "string", "description": "Obligatorio al crear un Proyecto sin propuesta previa" },
+    "origen":        { "type": "string", "default": "usuario" },
+    "propuestaOrigen": { "type": ["string", "null"], "pattern": "^PROP-\\d+$" },
+    "legacyId":      { "type": "string" },
+
+    "solicitante":   { "type": "string" },
+    "sponsor":       { "type": "string" },
+    "lider":         { "type": "string", "minLength": 1 },
+    "negocio":       { "type": "string" },
+    "area":          { "type": "array", "items": { "type": "string" }, "minItems": 1, "default": ["BISE"] },
+    "categoria":     { "type": "string" },
+    "clasif":        { "enum": ["Táctico", "Estratégico"] },
+    "gasto":         { "enum": ["OPEX", "CAPEX"] },
+    "prioridad":     { "enum": ["Alta", "Media", "Baja"] },
+
+    "fase":          { "enum": ["Recepción", "Evaluación", "Caso de Negocio", "Aprobación", "Planificación", "Ejecución", "Transición", "Cierre"] },
+    "estado":        { "enum": ["Vigente", "En espera", "Aprobada", "Rechazada", "Retirada", "En curso", "Pausado", "Completado", "Cancelado"] },
+    "estadoMotivo":  { "type": "string" },
+    "estadoRev":     { "oneOf": [{ "$ref": "#/$defs/fecha" }, { "type": "null" }] },
+    "rag":           { "enum": ["Verde", "Ámbar", "Rojo"] },
+    "avance":        { "$ref": "#/$defs/pct" },
+    "avanceFase":    { "$ref": "#/$defs/pct" },
+    "score": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "estrategia": { "$ref": "#/$defs/s15" }, "valor": { "$ref": "#/$defs/s15" }, "esfuerzo": { "$ref": "#/$defs/s15" }, "riesgo": { "$ref": "#/$defs/s15" } }
+    },
+
+    "moneda":        { "enum": ["CLP", "USD", "UF"], "default": "CLP" },
+    "presupuesto":   { "$ref": "#/$defs/monto" },
+    "gastado":       { "$ref": "#/$defs/monto" },
+    "beneficio":     { "$ref": "#/$defs/monto" },
+    "ahorroReal":    { "$ref": "#/$defs/monto" },
+    "resultadoNota": { "type": "string" },
+    "folio":         { "type": "string" },
+    "oc":            { "type": "string" },
+
+    "inicioPlan":    { "oneOf": [{ "$ref": "#/$defs/fecha" }, { "type": "null" }] },
+    "finPlan":       { "oneOf": [{ "$ref": "#/$defs/fecha" }, { "type": "null" }] },
+    "finEst":        { "oneOf": [{ "$ref": "#/$defs/fecha" }, { "type": "null" }] },
+    "inicioReal":    { "oneOf": [{ "$ref": "#/$defs/fecha" }, { "type": "null" }] },
+    "finReal":       { "oneOf": [{ "$ref": "#/$defs/fecha" }, { "type": "null" }] },
+
+    "deps":          { "type": "array", "items": { "type": "string", "pattern": "^(PROP|PRJ)-\\d+$" }, "uniqueItems": true },
+    "proveedor":     { "type": "string" },
+    "contrato":      { "enum": ["", "Sin contrato", "Con contrato", "En negociación"] },
+
+    "resumen":       { "type": "string" },
+    "logros":        { "type": "string" },
+    "proximos":      { "type": "string" },
+    "issue":         { "type": "string" },
+    "riesgoTxt":     { "type": "string" },
+    "tags":          { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    { "if": { "properties": { "tipo": { "const": "Propuesta" } } },
+      "then": { "properties": { "fase": { "enum": ["Recepción", "Evaluación", "Caso de Negocio", "Aprobación"] }, "estado": { "enum": ["Vigente", "En espera", "Aprobada", "Rechazada", "Retirada"] } } } },
+    { "if": { "properties": { "tipo": { "const": "Proyecto" } } },
+      "then": { "properties": { "fase": { "enum": ["Planificación", "Ejecución", "Transición", "Cierre"] }, "estado": { "enum": ["En curso", "Pausado", "Completado", "Cancelado"] } } } }
+  ],
+  "$defs": {
+    "fecha": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "pct":   { "type": "number", "minimum": 0, "maximum": 100 },
+    "s15":   { "type": "integer", "minimum": 1, "maximum": 5 },
+    "monto": { "type": "number", "minimum": 0 }
+  }
+}

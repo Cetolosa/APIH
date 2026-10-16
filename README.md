@@ -25,4 +25,4 @@ APIH Prototipo está **congelado desde V22.52 (15-10-2026)**: tag `prototipo-v22
 - Corporativo: **C<n>.<m>** desde C1.0. Lo que se reutilice del Prototipo se copia y continúa con versión C.
 
 ## Estado
-Fase 1 en curso: `packages/core` C1.0 (fechas y riesgo). Mientras tanto `/index.html`, `/apih-config.js` y `/supabase` siguen siendo la fuente y no se mueven, para no romper GitHub Pages.
+Fase 1 en curso: `packages/core` C1.1 (fechas, riesgo y contrato de Iniciativa). Mientras tanto `/index.html`, `/apih-config.js` y `/supabase` siguen siendo la fuente y no se mueven, para no romper GitHub Pages.
