@@ -163,7 +163,7 @@
      "fase": "Ejecución",
      "fecha": "2026-10-21",
      "completado": false,
-     "resp": "TI (José Curihuinca)"
+     "resp": "TI"
     },
     {
      "nombre": "C1.5 · Contratos de decisiones, compromisos, bitácora y comités",
@@ -191,7 +191,7 @@
      "fase": "Ejecución",
      "fecha": "2026-11-04",
      "completado": false,
-     "resp": "TI (José Curihuinca)"
+     "resp": "TI"
     },
     {
      "nombre": "C2.2 · SPA con Entra ID consumiendo la API",
@@ -226,7 +226,7 @@
      "fase": "Transición",
      "fecha": "2026-11-24",
      "completado": false,
-     "resp": "TI (José Curihuinca)"
+     "resp": "TI"
     },
     {
      "nombre": "Paso a producción (web con Entra ID)",
@@ -263,7 +263,7 @@
      "cat": "Cronograma",
      "prob": 3,
      "imp": 5,
-     "mit": "Correo con propuestas concretas y fecha de no-objeción; seguir construyendo en paralelo; escalar a Jaime Bulo el 22-10 si no hay respuesta.",
+     "mit": "Correo con propuestas concretas y fecha de no-objeción; seguir construyendo en paralelo; ajustar el plan en conjunto con TI si no hay respuesta.",
      "estado": "Abierto",
      "dueno": "Christian Tolosa",
      "fIdent": "2026-10-16",
@@ -276,7 +276,7 @@
      "imp": 4,
      "mit": "Entregar lista exacta de recursos (y plantilla de infraestructura como código) junto al correo; ambiente local equivalente para no detener el desarrollo.",
      "estado": "Abierto",
-     "dueno": "TI (José Curihuinca)",
+     "dueno": "TI",
      "fIdent": "2026-10-16",
      "fRev": "2026-11-04"
     },
@@ -298,7 +298,7 @@
      "imp": 4,
      "mit": "Entregar con la demo (10-11) la documentación de seguridad: Entra ID, roles por grupos, reglas en servidor, OWASP; pedir la revisión con fecha desde el 21-10.",
      "estado": "Abierto",
-     "dueno": "TI (José Curihuinca)",
+     "dueno": "TI",
      "fIdent": "2026-10-16",
      "fRev": "2026-11-10"
     },

@@ -1,14 +1,17 @@
-# APIH — Documento de traspaso (15-10-2026 · Prototipo V22.54 · Corporativo C2.4)
+# APIH — Documento de traspaso
+
+> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.54 · Corporativo C2.4)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
 ## 1. Quién y cómo trabajar
+- **Dos cuentas de Claude:** el repositorio es la fuente común. Al cerrar cada versión Claude actualiza este archivo y deja copia de los documentos clave en `docs/`, para retomar desde cualquier cuenta con «lee docs/HANDOFF.md y sigue».
 - **Christian Tolosa Delpino**, IT Business Partner BISE, Aramark Chile. Responder **en español**, conciso y técnico, ediciones quirúrgicas.
 - Una acción del usuario a la vez. **Mockup antes de cambios grandes de layout.** Subir la etiqueta de versión (`VER` en index.html) en cada publicación.
 - "Publica cada grupo apenas lo pruebes": rama por grupo → pruebas → merge a `main` → push. Terminar los mensajes de publicación con recordatorio **Ctrl+Shift+R**.
 - **Nunca tocar secretos**: la clave `service_role` jamás en el repo; `apih-config.js` solo URL pública y anon key. No pedir ni guardar contraseñas.
 - Commits terminan con las líneas de atribución de la sesión (Co-Authored-By / Claude-Session).
-- No quiere reuniones con TI: todo **por correo, redactado con ayuda de Claude** (él lo envía desde su Outlook de Aramark; su Gmail conectado es personal: cetolosa@gmail.com, donde reenvía correos de trabajo).
+- No quiere reuniones con TI: todo **por correo, redactado con ayuda de Claude** (los envía desde su correo de Aramark).
 
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
@@ -22,13 +25,14 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`, `packages/data-supabase`, `packages/data-azure`, `apps/prototipo`, `apps/corporativo`, `services/api`, `db/`, `tests/`. **El prototipo sigue siendo `/index.html`** (no mover: rompe GitHub Pages). Funciones diferidas del prototipo, a construir una sola vez en Corporativo: Pronóstico financiero, Ruta crítica, Escenarios.
 
 ## 3. Lo decidido con TI (correo "Registro de aplicación interna APIH en Entra ID", 11–14 oct)
-- José Curihuinca (Software Architect) recomendó **3 capas**: SPA (Entra ID, publicable en Teams), Backend/API (seguridad, reglas, validaciones), **Azure SQL**. Vale aunque la solución sea temporal; sugirió el **mismo enfoque del Catálogo CMDB** (referencia existente).
-- Jaime Bulo (Director TI) participa. Christian respondió que **aplaza producción** hasta entender seguridad, capa de servicios y persistencia.
+- El arquitecto de software de TI recomendó **3 capas**: SPA (Entra ID, publicable en Teams), Backend/API (seguridad, reglas, validaciones), **Azure SQL**. Vale aunque la solución sea temporal; sugirió el **mismo enfoque del Catálogo CMDB** (referencia existente).
+- La Dirección de TI participa en el hilo. Christian respondió que **aplaza producción** hasta entender seguridad, capa de servicios y persistencia.
 - Obsoleto: listas SharePoint + `Sites.Selected` (con Azure SQL, Graph se reduce a `User.Read`).
 - Pendiente pedir a TI: hosting (Azure Static Web App), registro en Entra ID con asignación requerida, publicación en Teams, pipeline/ambientes, roles por grupos de Entra.
-- **Siguiente acción de Christian:** enviar a José el correo (sin reunión) con 6 preguntas: documentación/repo del CMDB, stack del backend, cómo se solicita Azure SQL, hosting + pipeline dev/qa/prod, roles con grupos de Entra, sideloading en Teams. (Borrador en la conversación; hito "Respuestas de José por correo" 23-10.)
+- **Reemplazado (16-10):** en vez de 6 preguntas, se envía la propuesta técnica construida (`docs/propuesta/`), con 15 puntos para revisar y tono colaborativo.
 
 ## 4. Documentos y datos creados
+- Propuesta técnica para TI (PDF): `docs/propuesta/APIH_Corporativo_Propuesta_TI.pdf` (editable en Claude Docs de la cuenta de trabajo).
 - Plan y brechas (Claude Docs, privado): https://claude.ai/artifact/2GquKhzaERtSspc3J9n8ay
 - `docs/APIH_iniciativas_con_plan.json`: las 2 iniciativas con hitos y riesgos, listo para **Administración → Importar iniciativas** (el importador omite títulos que ya existen; si ya se cargó una versión previa, borrar y reimportar).
 - Memoria del proyecto (claude.ai): `areas/apih.md`.
@@ -58,12 +62,12 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.1 | Azure SQL (`db/azure-sql`), `store-mssql`, migración (`tools/migrar-desde-prototipo.js`) |
 | C2.2 | SPA corporativa (`apps/corporativo`, copia de V22.54) conectada a la API |
 | C2.3 | Infraestructura (`infra/`), pipeline, `docs/seguridad.md` |
-| C2.4 | Propuesta para TI (Claude Docs): https://claude.ai/code/artifact/ae0913ea-ba10-4bfd-a8b2-609b4d7e9754 |
+| C2.4 | Propuesta para TI (Claude Docs, «Propuesta técnica para revisión con TI»): https://claude.ai/code/artifact/ae0913ea-ba10-4bfd-a8b2-609b4d7e9754 — página de resumen, 15 puntos para revisar (incl. notificaciones, suscripción Azure, directorio, IA, dirección web, soporte, clasificación de datos), anexo con los 21 hitos. PDF de 11 páginas. Tono 100 % colaborativo; no se habla de quién paga. |
 
 Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con versión C** (ADR-002). Cada componente declara la última versión C en que cambió (ADR-005).
 
 ## 7. Pendientes
-**Usuario:** enviar correo a José; que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); importar las 2 iniciativas; (opcional) crear usuario "Bot IA" con rol Editor.
-**Camino elegido: construir y proponer a TI.** Siguiente: enviar la propuesta (correo con no-objeción al 21-10); al habilitar dev, validar en Azure (`tests/contract/run-azure-sql.js`). Pendiente en core: `pasosDe` (V22.54); contratos propios para decisiones, compromisos, cambios, bitácora y comités., con equivalencia y pruebas de contrato. Objetivo del proyecto: demostrar que la metodología acelera los plazos (medir horas por versión).
+**Usuario:** enviar la propuesta al arquitecto de TI; que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); importar las 2 iniciativas; (opcional) crear usuario "Bot IA" con rol Editor.
+**Camino elegido: construir y proponer a TI.** Siguiente: enviar al arquitecto de TI (mismo hilo, la Dirección de TI en copia) el correo colaborativo con el PDF; comentarios de TI esperados hacia el 21-10 (sin presión); al habilitar dev, validar en Azure (`tests/contract/run-azure-sql.js`). Pendiente en core: `pasosDe` (V22.54); contratos propios para decisiones, compromisos, cambios, bitácora y comités., con equivalencia y pruebas de contrato. Objetivo del proyecto: demostrar que la metodología acelera los plazos (medir horas por versión).
 **Hecho (C1.0–C1.3):** core de fechas/riesgo, contrato de Iniciativa, documentación del proceso.
 **Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren SMTP/webhook de TI; los tags `prototipo-v22.52-congelado` y `c1.x` pueden no subir (proxy): crear desde GitHub Releases; el push de tags/API de GitHub puede fallar en la sesión en la nube.
