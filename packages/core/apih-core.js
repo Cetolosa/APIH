@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C2.14', b: '17-10-2026', origen: 'V22.58' };
+  const VERSION = { v: 'C2.16', b: '17-10-2026', origen: 'V22.59' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -137,7 +137,7 @@
     if (h.fechaReal != null && h.fechaReal !== '' && !fechaOk(h.fechaReal)) err('fechaReal', 'fecha AAAA-MM-DD válida');
     if (h.completado && !h.fechaReal) err('fechaReal', 'obligatoria si está completado');
     if (h.cat != null && h.cat !== '' && !HITO_CATS.includes(h.cat)) err('cat', 'categoría de hito válida o vacía');
-    if (h.subfase != null && h.subfase !== '' && typeof h.subfase !== 'string') err('subfase', 'id de subfase');
+    if (h.subfase != null && h.subfase !== '' && (typeof h.subfase !== 'string' || !/^(PROP|PRJ|PRO)-\d+-SF\d+$/.test(h.subfase))) err('subfase', 'id de subfase (<iniciativa>-SF<n>)');
     return e;
   }
   function validarRiesgo(r, umbral) {
@@ -164,11 +164,14 @@
   function validarSubfases(i, hitos, opts) {
     const e = [], err = (campo, regla) => e.push({ campo, regla }), subs = (i && i.subfases) || [];
     if (!Array.isArray(subs)) return [{ campo: 'subfases', regla: 'lista' }];
+    if (subs.length > 60) return [{ campo: 'subfases', regla: 'máximo 60 por iniciativa' }];
     const V = fasesVentana(i, hitos || []), FS = fasesDe(i), ids = new Set();
     subs.forEach((s, k) => { const c = 'subfases[' + k + ']';
       if (!s || typeof s !== 'object') return err(c, 'objeto requerido');
-      if (!s.id || ids.has(s.id)) err(c + '.id', 'obligatorio y único'); ids.add(s.id);
-      if (!s.nombre || !String(s.nombre).trim()) err(c + '.nombre', 'obligatorio');
+      if (typeof s.id !== 'string' || !/^(PROP|PRJ|PRO)-\d+-SF\d+$/.test(s.id) || ids.has(s.id)) err(c + '.id', 'obligatorio, único, <iniciativa>-SF<n>'); ids.add(s.id);
+      if (typeof s.nombre !== 'string' || !s.nombre.trim() || s.nombre.length > 120) err(c + '.nombre', 'texto obligatorio de hasta 120 caracteres');
+      if (s.resp != null && (typeof s.resp !== 'string' || s.resp.length > 120)) err(c + '.resp', 'texto de hasta 120 caracteres');
+      const extra = Object.keys(s).filter(k => !['id', 'nombre', 'fase', 'inicio', 'fin', 'resp'].includes(k)); if (extra.length) err(c, 'campos no permitidos: ' + extra.join(', '));
       if (!FS.includes(s.fase)) return err(c + '.fase', 'una fase de ' + i.tipo);
       if (!fechaOk(s.inicio) || !fechaOk(s.fin)) return err(c + '.fechas', 'inicio y fin AAAA-MM-DD (nace con las fechas de su fase)');
       if (s.fin < s.inicio) return err(c + '.fin', 'no anterior al inicio');

@@ -963,7 +963,7 @@ const HITO_CATS = ['Entregable', 'Gobierno', 'Técnico', 'Proveedor', 'Pago', 'C
 const hitoCats = () => (typeof St !== 'undefined' && St && St.cfg && Array.isArray(St.cfg.hitoCats) && St.cfg.hitoCats.length ? St.cfg.hitoCats : HITO_CATS);
 /* V22.56 · Planificación muestra proyectos, propuestas o ambos (preferencia por navegador) */
 const PLAN_TIPOS = [['prj', 'Proyectos'], ['prop', 'Propuestas'], ['all', 'Ambos']];
-const planTipo = () => { if (!UI.planTipo) { try { UI.planTipo = localStorage.getItem('apih_ptipo') || 'all'; } catch (e) { UI.planTipo = 'all'; } } return UI.planTipo; };
+const planTipo = () => { if (!UI.planTipo) { try { UI.planTipo = localStorage.getItem('apih_ptipo') || 'all'; } catch (e) { UI.planTipo = 'all'; } if (!PLAN_TIPOS.some(t => t[0] === UI.planTipo)) UI.planTipo = 'all'; } return UI.planTipo; };
 const porTipo = i => { const t = planTipo(); return !i || t === 'all' || (t === 'prop') === esProp(i); };
 const planSeg = () => `<label class="flt"><small>Tipo</small><select data-chg="ptipo" aria-label="Tipo de iniciativa" style="width:118px!important;max-width:118px!important;min-width:0!important">${selOpts(PLAN_TIPOS.map(([v, t]) => ({ v, t })), planTipo())}</select></label>`;
 const tipoPF = () => ({ prj: 'Proyecto', prop: 'Propuesta', all: 'Todo' })[planTipo()] || 'Todo';
@@ -3418,6 +3418,7 @@ function subfaseForm(s, iniId, fase) {
       if (!w || !w.ini || !w.fin) { toast('La fase ' + o.fase + ' no tiene inicio y fin: define las fechas plan del proyecto', 'err'); return false; }
       if (nw && o.fase !== f0 && o.inicio === (w0.ini || '') && o.fin === (w0.fin || '')) { o.inicio = ''; o.fin = ''; }   // cambió de fase sin tocar las fechas: hereda las de la nueva fase
       if (!o.inicio) o.inicio = w.ini; if (!o.fin) o.fin = w.fin;
+      if (o.nombre.length > 120 || (o.resp || '').length > 120) { toast('Nombre y responsable: hasta 120 caracteres', 'err'); return false; }
       if (o.fin < o.inicio) { toast('El fin de la subfase no puede ser anterior a su inicio', 'err'); return false; }
       if (o.inicio < w.ini || o.fin > w.fin) { toast('La subfase debe quedar dentro de ' + o.fase + ' (' + rangoTx(w.ini, w.fin) + ')', 'err'); return false; }
       if (subfasesDe(i).some(x => x.id !== (s && s.id) && x.fase === o.fase && _nrm(x.nombre) === _nrm(o.nombre))) { toast('Ya existe una subfase «' + o.nombre + '» en ' + o.fase, 'err'); return false; }
@@ -3430,15 +3431,16 @@ function subfaseForm(s, iniId, fase) {
 /* V22.59 · importación de subfases (archivo de iniciativas y «Con IA"): valida la regla y resuelve referencias por id o nombre */
 function sfImportar(i, lista, warn) {
   (Array.isArray(lista) ? lista : []).forEach(x => {
-    if (!x || typeof x !== 'object' || !String(x.nombre || '').trim()) return warn('Subfase sin nombre (se omite)');
+    if (!x || typeof x !== 'object' || typeof x.nombre !== 'string' || !x.nombre.trim() || x.nombre.length > 120) return warn('Subfase sin nombre válido (texto de hasta 120 caracteres; se omite)');
+    if (x.resp != null && typeof x.resp !== 'string') return warn('Subfase «' + x.nombre + '»: responsable inválido');
     if (!fasesDe(i).includes(x.fase)) return warn('Subfase «' + x.nombre + '»: fase inválida para ' + tipoLbl(i).toLowerCase());
     const w = ventanaDe(i, x.fase); if (!w || !w.ini || !w.fin) return warn('Subfase «' + x.nombre + '»: la fase ' + x.fase + ' no tiene fechas');
     const ini = x.inicio || w.ini, fin = x.fin || w.fin;
     if (!iapFecha(ini) || !iapFecha(fin) || fin < ini) return warn('Subfase «' + x.nombre + '»: fechas inválidas');
     if (ini < w.ini || fin > w.fin) return warn('Subfase «' + x.nombre + '»: debe quedar dentro de ' + x.fase + ' (' + rangoTx(w.ini, w.fin) + ')');
     const ya = subfasesDe(i).find(s => (x.id && s.id === x.id) || (s.fase === x.fase && _nrm(s.nombre) === _nrm(x.nombre)));
-    if (ya) Object.assign(ya, { nombre: x.nombre, fase: x.fase, inicio: ini, fin, resp: x.resp != null ? x.resp : (ya.resp || '') });
-    else i.subfases = subfasesDe(i).concat([{ id: sfNextId(i), nombre: x.nombre, fase: x.fase, inicio: ini, fin, resp: x.resp || '' }]);
+    if (ya) Object.assign(ya, { nombre: x.nombre.trim(), fase: x.fase, inicio: ini, fin, resp: x.resp != null ? x.resp : (ya.resp || '') });
+    else { if (subfasesDe(i).length >= 60) return warn('Subfase «' + x.nombre + '»: máximo 60 por iniciativa'); i.subfases = subfasesDe(i).concat([{ id: sfNextId(i), nombre: x.nombre.trim(), fase: x.fase, inicio: ini, fin, resp: x.resp || '' }]); }
   });
 }
 /* referencia de subfase en un hito: id o nombre (si hay nombres repetidos en distintas fases, se usa la fase del hito) */
@@ -3446,7 +3448,7 @@ const sfRef = (i, ref, fase) => { if (!ref) return null; const L = subfasesDe(i)
 Acts.sfnew = d => subfaseForm(null, d.id, d.f);
 Acts.sfedit = d => { const i = byId(d.id), s = i && subfasesDe(i).find(x => x.id === d.s); if (s) subfaseForm(s, d.id); };
 
-Chg.ptipo = el => { UI.planTipo = el.value; try { localStorage.setItem('apih_ptipo', el.value); } catch (e) { } Object.assign(F('portfolio', {}), { fase: '', estado: '', rag: '' }); render(); };
+Chg.ptipo = el => { if (!PLAN_TIPOS.some(t => t[0] === el.value)) return; UI.planTipo = el.value; try { localStorage.setItem('apih_ptipo', el.value); } catch (e) { } Object.assign(F('portfolio', {}), { fase: '', estado: '', rag: '' }); render(); };
 Acts.fcat = d => { UI.fcat = Object.assign({}, UI.fcat || {}, { [d.t]: d.c }); render(); };
 
 Views.fases = {
@@ -10018,7 +10020,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.59', b: '17-10-2026 01:40' };
+  const VER = { v: 'V22.60', b: '17-10-2026 03:50' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;

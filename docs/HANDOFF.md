@@ -16,7 +16,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Abierto** desde V22.55 (excepciones al congelamiento ADR-006/007/012/013); vigente **V22.59**. Congelar de nuevo cuando el usuario lo pida | **C2.15** · todo lo del Prototipo traspasado y probado (`tests/e2e/correr-corporativo.sh`, 8/8) · producción objetivo **27-11-2026** |
+| Estado | **Congelado en V22.60** (ADR-014; ADR-002 vuelve a regir: lo nuevo va directo al Corporativo) | **C2.16** · revisión de seguridad 17-10 aplicada · `tests/e2e/correr-corporativo.sh` 9/9 · producción objetivo **27-11-2026** |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo: `apps/corporativo`, `services/api`, `packages/core`, `db/`, `infra/`, `powerbi/`, `tests/`; luego repo de Aramark que indique TI |
@@ -38,7 +38,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 - Plan y brechas (Claude Docs, privado): https://claude.ai/artifact/2GquKhzaERtSspc3J9n8ay
 - `docs/APIH_iniciativas_con_plan.json`: las 2 iniciativas con hitos y riesgos, listo para **Administración → Importar iniciativas** (el importador omite títulos que ya existen; si ya se cargó una versión previa, borrar y reimportar).
 - Memoria del proyecto (claude.ai): `areas/apih.md`.
-- **Registro de versiones:** `CHANGELOG.md` (raíz). **Decisiones:** `docs/decisiones/` (ADR-001…013).
+- **Registro de versiones:** `CHANGELOG.md` (raíz). **Decisiones:** `docs/decisiones/` (ADR-001…014).
 - **Contrato de Iniciativa (para TI):** `packages/core/contracts/iniciativa.md` + `iniciativa.schema.json`.
 
 ## 5. Arquitectura del prototipo (para no redescubrirla)
@@ -51,7 +51,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 ## 6. Pruebas
 - Prototipo: `tests/e2e/` (Playwright sobre copia demo; ver su README). Regresión mínima: imp3, fin1, sf1, fz1, ps1, t13, t43, t44, cap2, r1, c4, imp1, imp2, ia1.
 - Corporativo: `bash tests/e2e/correr-corporativo.sh` (corp1-3 + fin1/sf1/fz1/ps1/imp3 sobre la SPA corporativa, base nueva por prueba); `node tests/unit/*.js` (equivalencia 130.317 casos, subfases-categorías, notificaciones, Power BI, Teams, migración); `node tests/contract/run.js` y `http-seguridad.js`.
-- **Flujo acordado:** todo primero en el Prototipo → traspaso a `apps/corporativo` (mismo parche; verificar que no falte ninguna línea agregada) → `correr-corporativo.sh`.
+- **Flujo vigente (desde ADR-014):** Prototipo congelado; los cambios van directo a `apps/corporativo` → `correr-corporativo.sh`. (Mientras estuvo abierto: Prototipo primero → traspaso verificado línea a línea.)
 
 ## 6b. Estado del Corporativo
 | Versión | Contenido |
@@ -76,6 +76,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.12–C2.13 | Tabla y Tablero con ambos tipos (filtro Tipo), encabezado común de Iniciativas, «Pipeline de propuestas» en Gobierno |
 | C2.14 | API valida solo subfases nuevas o modificadas; `correr-corporativo.sh` |
 | C2.15 | Importar/exportar subfases y categorías (archivo de iniciativas, «Con IA»); la iniciativa con subfases se sincroniza antes que sus hitos |
+| C2.16 | Revisión de seguridad: `docs/revision-seguridad-2026-10-17.md` (5 hallazgos corregidos, e2e `xss1`) |
 | Docs 17-10 | Propuesta v2 (Claude Docs), docs de operación, seguridad y plan C2.15 actualizados |
 | Envío | 16-10-2026: propuesta enviada a TI (versión en `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf`, sin la nota de login en Teams del punto 6). Cambios posteriores se acumulan para una v2 que se envía solo si TI la pide o al responder sus comentarios |
 
@@ -85,6 +86,6 @@ Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con
 - **TI:** comentarios a la propuesta (esperados hacia el 21-10, sin presión); habilitar ambiente dev (04-11). La v2 de la propuesta se envía solo si TI la pide o al responder sus comentarios.
 - **Al habilitar dev:** desplegar, validar en Azure (`tests/contract/run-azure-sql.js`), ejecutar el guion UAT.
 - **Pendiente funcional:** editor de listas de categorías en Administración; selector Tipo en Calendario y Capacidad; funciones diferidas (Pronóstico, Ruta crítica, Escenarios): el usuario aún no decide; core: `pasosDe` y contratos propios de decisiones, compromisos, bitácora y comités (C1.5).
-- **Prototipo:** abierto; congelar cuando el usuario lo pida.
+- **Prototipo:** congelado en V22.60 (ADR-014). Una excepción requiere pedido explícito y ADR.
 - **Usuario:** que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); (opcional) usuario «Bot IA» con rol Editor.
 - **Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren canal de TI; tags pueden no subir desde la nube (crear en GitHub Releases).
