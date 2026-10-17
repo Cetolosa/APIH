@@ -18,7 +18,7 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
   const leerIni = async (s, id) => { const x = await s.obtener('iniciativas', id); if (!x) throw errorApi('NO_ENCONTRADA', 'No existe ' + id); return x; };
   const leerSub = async (s, col, id) => { const x = await s.obtener(col, id); if (!x) throw errorApi('NO_ENCONTRADA', 'No existe ' + id); return x; };
   const grafo = async s => Object.fromEntries((await s.listar('iniciativas')).map(x => [x.id, x.deps || []]));
-  const validarIni = async (s, x, ctx) => { const e = core.validarIniciativa(x, Object.assign({ grafo: await grafo(s) }, ctx)); if (e.length) throw errorApi('INVALIDA', 'Datos inválidos', e); };
+  const validarIni = async (s, x, ctx) => { const e = core.validarIniciativa(x, Object.assign({ grafo: await grafo(s) }, ctx)); if (Array.isArray(x.subfases) && x.subfases.length) e.push(...core.validarSubfases(x, await s.listar('hitos', h => h.ini === x.id))); if (e.length) throw errorApi('INVALIDA', 'Datos inválidos', e); };
   const ctxGates = async (s, id) => ({ hitos: await s.listar('hitos', h => h.ini === id), riesgos: await s.listar('riesgos', r => r.ini === id), hoy: hoy(), umbral: umbral() });
   const verificarVersion = (x, version) => { if (version == null || x.version !== String(version)) throw errorApi('CONFLICTO', 'Otro usuario modificó ' + x.id + ' (versión ' + x.version + ')'); };
   const EST = core.INICIATIVA;
@@ -125,13 +125,13 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
     async crearHito(u, ini, datos) {
       escribe(u);
       return store.tx(async s => { await leerIni(s, ini); const h = Object.assign(quitar(datos, RO_SUB), { ini }); if (datos && datos.id != null) { if (!/^HIT-\d+$/.test(datos.id)) throw errorApi('INVALIDA', 'Id inválido', [{ campo: 'id', regla: 'HIT-n' }]); h.id = datos.id; } h.completado = !!h.completado; if (h.completado && !h.fechaReal) h.fechaReal = hoy(); if (!h.completado) h.fechaReal = null;
-        const e = core.validarHito(h); if (e.length) throw errorApi('INVALIDA', 'Hito inválido', e); return s.insertar('hitos', sello(h, u), 'HIT'); });
+        const e = core.validarHito(h).concat(core.validarHitoSubfase(h, await leerIni(s, ini))); if (e.length) throw errorApi('INVALIDA', 'Hito inválido', e); return s.insertar('hitos', sello(h, u), 'HIT'); });
     },
     async actualizarHito(u, id, cambios, version) {
       escribe(u);
       return store.tx(async s => { const a = await leerSub(s, 'hitos', id); verificarVersion(a, version); const c = quitar(cambios, RO_SUB); if (c.ini && c.ini !== a.ini) await leerIni(s, c.ini);
         const h = Object.assign(copia(a), c); h.completado = !!h.completado; if (h.completado && !h.fechaReal) h.fechaReal = hoy(); if (!h.completado) h.fechaReal = null;
-        const e = core.validarHito(h); if (e.length) throw errorApi('INVALIDA', 'Hito inválido', e); return s.actualizar('hitos', sello(h, u), version); });
+        const e = core.validarHito(h).concat(core.validarHitoSubfase(h, await leerIni(s, h.ini))); if (e.length) throw errorApi('INVALIDA', 'Hito inválido', e); return s.actualizar('hitos', sello(h, u), version); });
     },
     async completarHito(u, id, fechaReal, version) { return api.actualizarHito(u, id, { completado: true, fechaReal: fechaReal || hoy() }, version); },
     async eliminarHito(u, id, version) { escribe(u); return store.tx(async s => { const a = await leerSub(s, 'hitos', id); verificarVersion(a, version); await s.eliminar('hitos', id, version); }); },

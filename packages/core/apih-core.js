@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C1.4', b: '16-10-2026', origen: 'V22.54' };
+  const VERSION = { v: 'C2.11', b: '17-10-2026', origen: 'V22.56' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -123,7 +123,7 @@
       let ini = k === 0 ? (i.inicioPlan || (h[0] && h[0].fecha) || null) : (prev ? addD(prev, 1) : ((h[0] && h[0].fecha) || null));
       let fin = h.length ? h[h.length - 1].fecha : (k === FS.length - 1 ? (i.finPlan || ini) : ini);
       if (ini && fin && fin < ini) fin = ini; if (!ini) ini = fin; if (fin) prev = fin;
-      return { fase: f, k, ini, fin, hitos: h, done: h.filter(x => x.completado).length, color: FASE_COLOR[f] || '#605E5C', actual: i.fase === f, pasada: FS.indexOf(i.fase) > k };
+      return { fase: f, k, ini, fin, hitos: h, subs: (Array.isArray(i.subfases) ? i.subfases : []).filter(s => s.fase === f).slice().sort((x, y) => x.inicio < y.inicio ? -1 : x.inicio > y.inicio ? 1 : 0), done: h.filter(x => x.completado).length, color: FASE_COLOR[f] || '#605E5C', actual: i.fase === f, pasada: FS.indexOf(i.fase) > k };
     });
   }
 
@@ -136,6 +136,8 @@
     if (h.fase && !FASES.Propuesta.concat(FASES.Proyecto).includes(h.fase)) err('fase', 'fase válida o vacía');
     if (h.fechaReal != null && h.fechaReal !== '' && !fechaOk(h.fechaReal)) err('fechaReal', 'fecha AAAA-MM-DD válida');
     if (h.completado && !h.fechaReal) err('fechaReal', 'obligatoria si está completado');
+    if (h.cat != null && h.cat !== '' && !HITO_CATS.includes(h.cat)) err('cat', 'categoría de hito válida o vacía');
+    if (h.subfase != null && h.subfase !== '' && typeof h.subfase !== 'string') err('subfase', 'id de subfase');
     return e;
   }
   function validarRiesgo(r, umbral) {
@@ -154,5 +156,30 @@
   const INICIATIVA = Object.freeze({ FASES, ESTADOS, EST_FINAL, EST_MOTIVO, EST_REVISION, RAGS, PRIOS, MONEDAS });
 
   const RIESGO = Object.freeze({ RISK_CATS, RISK_ESTADOS });
-  return Object.freeze({ VERSION, pad, toISO, pD, addD, diffD, expo, nivelRiesgo, riesgoAbierto, INICIATIVA, RIESGO, FASE_COLOR, fasesDe, hayCiclo, validarIniciativa, validarCambioEstado, hitoEstado, riesgoSinMit, gates, fasesVentana, validarHito, validarRiesgo });
+  /* C2.11 (V22.56) · categorías de hito */
+  const HITO_CATS = ['Entregable', 'Gobierno', 'Técnico', 'Proveedor', 'Pago', 'Comunicación', 'Otro'];
+  const HITO = Object.freeze({ HITO_CATS });
+  /* C2.11 (V22.55, ADR-012) · subfases: una sola fase obligatoria, nacen con fechas y no salen de la ventana de su fase */
+  function validarSubfases(i, hitos) {
+    const e = [], err = (campo, regla) => e.push({ campo, regla }), subs = (i && i.subfases) || [];
+    if (!Array.isArray(subs)) return [{ campo: 'subfases', regla: 'lista' }];
+    const V = fasesVentana(i, hitos || []), FS = fasesDe(i), ids = new Set();
+    subs.forEach((s, k) => { const c = 'subfases[' + k + ']';
+      if (!s || typeof s !== 'object') return err(c, 'objeto requerido');
+      if (!s.id || ids.has(s.id)) err(c + '.id', 'obligatorio y único'); ids.add(s.id);
+      if (!s.nombre || !String(s.nombre).trim()) err(c + '.nombre', 'obligatorio');
+      if (!FS.includes(s.fase)) return err(c + '.fase', 'una fase de ' + i.tipo);
+      if (!fechaOk(s.inicio) || !fechaOk(s.fin)) return err(c + '.fechas', 'inicio y fin AAAA-MM-DD (nace con las fechas de su fase)');
+      if (s.fin < s.inicio) return err(c + '.fin', 'no anterior al inicio');
+      const v = V.find(x => x.fase === s.fase); if (!v || !v.ini || !v.fin || s.inicio < v.ini || s.fin > v.fin) err(c, 'dentro de la fase ' + s.fase + (v && v.ini ? ' (' + v.ini + ' a ' + v.fin + ')' : ''));
+    });
+    return e;
+  }
+  /* El hito con subfase debe estar en la misma fase que ella */
+  function validarHitoSubfase(h, i) {
+    if (!h || !h.subfase) return []; const s = ((i && i.subfases) || []).find(x => x.id === h.subfase);
+    if (!s) return [{ campo: 'subfase', regla: 'subfase de la misma iniciativa' }];
+    return h.fase && h.fase !== s.fase ? [{ campo: 'subfase', regla: 'misma fase que la subfase (' + s.fase + ')' }] : [];
+  }
+  return Object.freeze({ VERSION, pad, toISO, pD, addD, diffD, expo, nivelRiesgo, riesgoAbierto, INICIATIVA, RIESGO, FASE_COLOR, fasesDe, hayCiclo, validarIniciativa, validarCambioEstado, hitoEstado, riesgoSinMit, gates, fasesVentana, validarHito, validarRiesgo, HITO, validarSubfases, validarHitoSubfase });
 });

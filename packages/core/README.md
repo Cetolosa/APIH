@@ -10,6 +10,7 @@ Reglas puras (sin DOM ni estado global). Script clásico: navegador (`window.API
 ## Registro
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
+| C2.11 | 17-10-2026 | Categorías de hito (`HITO.HITO_CATS`, `validarHito`), subfases (`validarSubfases`, `validarHitoSubfase`); de V22.55–V22.56. |
 | C1.4 | 16-10-2026 | Hitos, riesgos, compuertas (`gates`) y ventanas de fase, con dependencias por parámetro; equivalentes a V22.54. |
 | C1.1 | 15-10-2026 | Contrato de Iniciativa: `contracts/iniciativa.schema.json` (58 campos), `contracts/iniciativa.md` (8 operaciones, 10 reglas, errores, REST sugerido), `validarIniciativa`, `validarCambioEstado`, `hayCiclo`, `INICIATIVA`. Pruebas de contrato reutilizables por adaptador (`tests/contract/`). |
 | C1.0 | 15-10-2026 | Fechas (`pad`, `toISO`, `pD`, `addD`, `diffD`) y riesgo (`expo`, `nivelRiesgo(e, umbral)`, `riesgoAbierto`) copiadas de V22.52. `nivelRiesgo` recibe el umbral por parámetro. |
