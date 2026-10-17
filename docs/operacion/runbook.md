@@ -1,4 +1,4 @@
-# APIH Corporativo · Procedimientos de operación (runbook) — C2.9
+# APIH Corporativo · Procedimientos de operación (runbook) — C2.15
 
 Borrador para acordar con TI (**punto 14** de la propuesta: operación y soporte). Las responsabilidades marcadas «propuesta» se confirman con TI antes de producción.
 
@@ -71,6 +71,7 @@ Borrador para acordar con TI (**punto 14** de la propuesta: operación y soporte
 
 ## 7. Despliegues y vuelta atrás
 - Cada versión C se publica con su rama, sus pruebas y su entrada en `CHANGELOG.md`. El pipeline ejecuta todas las pruebas antes de desplegar.
+- Pruebas de navegador de la versión corporativa contra la API local, cada una con base nueva: `bash tests/e2e/correr-corporativo.sh` (8 pruebas; requiere el Prototipo servido en :8765 para corp2, ver `tests/e2e/README.md`).
 - **Vuelta atrás:** volver a desplegar la versión anterior (re-ejecutar el pipeline sobre su commit).
 - Los cambios de esquema SQL son aditivos (columnas calculadas y vistas), así que la versión anterior sigue funcionando con la base nueva.
 - **Cambios en las reglas de avisos:** regenerar el motor con `node tools/generar-motor-notif.js`. Si se olvida, el pipeline falla.
@@ -93,5 +94,5 @@ Borrador para acordar con TI (**punto 14** de la propuesta: operación y soporte
 1. Congelar la edición en el Prototipo (aviso a usuarios con fecha y hora).
 2. Exportar «Respaldo JSON» del Prototipo.
 3. «Importar respaldo» en APIH Corporativo (prod), como Admin, y revisar los rechazos informados.
-4. Validar con los casos D1 y V1 del guion de UAT.
+4. Validar con los casos D1, V1, V4 y F1 del guion de UAT (las subfases y categorías viajan en el respaldo).
 5. Comunicar la nueva dirección. El Prototipo queda solo lectura hasta su retiro (03-12) y luego se desactiva su base en Supabase, previo respaldo final.

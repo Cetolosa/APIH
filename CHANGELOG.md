@@ -5,6 +5,7 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 
 | Versión | Fecha | Rama · commit | Cambio | Componentes |
 | --- | --- | --- | --- | --- |
+| Docs | 17-10-2026 | `docs-c2.15` | Paquete para TI y traspaso al estado C2.15: propuesta v2 en Claude Docs (novedades, versiones C2.6–C2.15, 99 pruebas, plan al día), guion UAT (V4, V5, F1–F3, I2), manual, runbook, seguridad, plan importable `docs/APIH_Corporativo_plan_C2.15.json` (23 hitos, 3 subfases, 11 riesgos) y HANDOFF. | docs |
 | C2.15 | 17-10-2026 | `v22.59-importar-exportar` | Traspaso de V22.59 (importar/exportar subfases y categorías). Sincronización: la iniciativa con subfases se guarda antes que los hitos que las usan. `correr-corporativo.sh` suma imp3: 8/8. | apps/corporativo C2.15, tests |
 | C2.14 | 17-10-2026 | `c2.14-validacion-subfases` | API: la ventana de una subfase se valida solo si es nueva o cambió (antes, crear la iniciativa junto con sus hitos o editarla con una subfase desfasada por un hito movido era rechazado). Pruebas de pantalla del Prototipo corridas sobre la SPA corporativa (`tests/e2e/correr-corporativo.sh`): 7/7. | core C2.14, services/api C2.14, tests |
 | C2.13 | 17-10-2026 | `v22.58-iniciativas` | Traspaso de V22.58: encabezado común de Iniciativas, Tabla con los datos del Tablero, Propuestas movida a Gobierno. | apps/corporativo C2.13 |

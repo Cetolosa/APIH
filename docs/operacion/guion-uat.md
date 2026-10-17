@@ -1,4 +1,4 @@
-# APIH Corporativo · Guion de pruebas de usuario (UAT) — C2.9
+# APIH Corporativo · Guion de pruebas de usuario (UAT) — C2.15
 
 **Cuándo:** hito «Pruebas de usuario (UAT) y migración final de datos», en el ambiente **dev** de Azure con datos migrados del Prototipo.
 **Quiénes:** Sistemas BISE (un usuario por rol) y, si TI lo desea, un observador de TI.
@@ -33,12 +33,18 @@
 | D9 | Medio | Editor | Gobierno | Registrar decisión, compromiso, solicitud de cambio y acta de comité | Se guardan y aparecen en sus vistas | |
 | D10 | Medio | Admin | Historial | Abrir el historial de una iniciativa editada en D4/D6 | Muestra quién cambió qué y cuándo | |
 | V1 | Alto | Todos | Vistas | Recorrer Dashboard, Mi cocina, Tabla, Tablero, Gantt, Fases, Roadmap, Calendario, Hitos, Riesgos | Cargan sin errores y con los mismos números que el Prototipo para los datos migrados | |
+| V4 | Alto | Todos | Propuestas y proyectos juntos | En Tabla y Tablero, cambiar el filtro Tipo (Proyectos · Propuestas · Ambos); repetir en Gantt, Fases, Roadmap, Hitos y Riesgos | Cada vista muestra el tipo elegido; el tablero tiene columnas de fases de propuesta y de proyecto y no deja arrastrar entre tipos | |
+| V5 | Alto | Editor | Ficha de propuesta | Abrir una propuesta con y sin fecha tentativa | Muestra Planificación (fases con fechas, cronograma con hitos y riesgos), Hitos y Riesgos | |
+| F1 | Crítico | Editor | Subfases | En un proyecto, «+ Subfase» en Ejecución dejando fechas vacías; luego intentar una subfase que termine después de la fase | La primera hereda inicio y fin de la fase; la segunda no se guarda y dice el rango permitido | |
+| F2 | Alto | Editor | Hito en subfase | Asignar un hito a una subfase de su fase y luego a una de otra fase | Lo primero se guarda; lo segundo se rechaza con mensaje claro | |
+| F3 | Alto | Editor | Categorías | Asignar categoría a hitos; filtrar en la vista Hitos y en la ficha (hitos y riesgos) | Los filtros muestran solo la categoría elegida, con conteos correctos | |
 | V2 | Medio | Editor | Presentaciones | Generar una presentación de un proyecto | Se descarga y abre correctamente | |
 | V3 | Medio | Editor | Exportar | Exportar la tabla de iniciativas a Excel | El archivo abre y trae los filtros aplicados | |
 | N1 | Alto | Editor | Avisos en la app | Dejar un hito vencido y revisar la campana | Aparece el aviso «Hito vencido» | |
 | N2 | Alto | Admin | Envío de avisos (simulado) | Ejecutar `POST /api/notificaciones/despachar` (simula) | Lista a quién se enviaría y por qué canal, sin enviar | |
 | N3 | Medio | Admin | Envío real (si TI habilitó canal) | Ejecutar con `?simular=0` | Llega un resumen por persona; una segunda ejecución no repite avisos | |
-| I1 | Medio | Editor | Completar con IA | Exportar un proyecto para IA, usar la IA corporativa e importar la respuesta | Vista previa de cambios; al confirmar se enriquecen los datos | |
+| I1 | Medio | Editor | Completar con IA | Exportar un proyecto para IA, usar la IA corporativa e importar la respuesta (incluye subfases y categorías) | Vista previa de cambios con lo omitido y su motivo; al confirmar se enriquecen los datos | |
+| I2 | Alto | Admin | Importar iniciativas | Importar la plantilla descargada (trae subfases y categorías) | Se crean la iniciativa, sus hitos con categoría y subfases; lo inválido queda en avisos | |
 | S1 | Alto | — | Datos fuera de la app | Llamar a `/api/iniciativas` sin sesión | 401, sin datos | |
 | S2 | Medio | Todos | Desempeño | Abrir el Dashboard con todos los datos migrados | Carga en menos de 5 segundos | |
 | S3 | Medio | Todos | Navegadores | Repetir A1, V1 en Edge y Chrome | Funciona igual | |

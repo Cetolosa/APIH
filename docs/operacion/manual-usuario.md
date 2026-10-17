@@ -1,4 +1,4 @@
-# APIH · Manual de usuario — C2.9
+# APIH · Manual de usuario — C2.15
 
 APIH es la plataforma de gestión del portafolio de Sistemas BISE. Reúne propuestas, proyectos, fases, hitos, riesgos, decisiones y comités en un solo lugar.
 
@@ -13,9 +13,9 @@ APIH es la plataforma de gestión del portafolio de Sistemas BISE. Reúne propue
 | Menú | Para qué |
 | --- | --- |
 | Inicio → Dashboard / Mi cocina | Estado general del portafolio y tus iniciativas, pendientes y siguientes pasos |
-| Iniciativas → Tabla / Tablero / Propuestas | Buscar, filtrar y abrir la ficha de cada iniciativa |
-| Planificación → Gantt / Fases / Roadmap / Calendario / Hitos / Capacidad / Riesgos | Plan en el tiempo, hitos por fase, carga de equipos y riesgos |
-| Gobierno → Comité / Decisiones / Compromisos / Cambios | Actas, decisiones pendientes, acuerdos y solicitudes de cambio |
+| Iniciativas → Tabla / Tablero | Propuestas y proyectos juntos (filtro **Tipo**: Proyectos · Propuestas · Ambos). Tabla y tablero muestran lo mismo: fase con sus fechas, avance total y de la fase, hitos, desvío |
+| Planificación → Gantt / Fases / Roadmap / Calendario / Hitos / Capacidad / Riesgos | Plan en el tiempo, fases y subfases, hitos por fase y categoría, carga de equipos y riesgos. Gantt, Fases, Roadmap, Hitos y Riesgos también usan el filtro **Tipo** |
+| Gobierno → Pipeline de propuestas / Comité / Decisiones / Compromisos / Cambios | Evaluación y priorización de propuestas para el comité, actas, decisiones, acuerdos y solicitudes de cambio |
 | Presentaciones | Presentaciones de proyectos y del portafolio |
 | Administración | Parámetros, usuarios, bitácora, notificaciones (solo administradores) |
 
@@ -25,7 +25,9 @@ El buscador superior encuentra proyectos, propuestas, riesgos e hitos. El botón
 - **Actualizar un proyecto:** abre la ficha, ajusta el avance, el RAG y el resumen, y guarda. APIH registra quién y cuándo.
 - **Cambiar de fase:** usa el botón de fase de la ficha. Si falta algo (hitos, riesgos sin mitigar, campos obligatorios), APIH te lo indica.
 - **Aprobar una propuesta:** en fase Aprobación, usa «Aprobar». Se crea el proyecto vinculado.
-- **Hitos y riesgos:** créalos desde la ficha. Los vencidos y los riesgos críticos se destacan en el Dashboard.
+- **Hitos y riesgos:** créalos desde la ficha. Cada hito y riesgo tiene **categoría**; en la ficha y en las vistas Hitos y Riesgos puedes filtrar por ella. Los vencidos y los riesgos críticos se destacan en el Dashboard.
+- **Fases y subfases:** donde aparece la fase de una iniciativa se muestran su inicio y fin (desde el día siguiente al cierre de la fase anterior hasta su último hito). En la ficha › Planificación o en Planificación › Fases, «+ Subfase» divide una fase en etapas propias del proyecto: nacen con las fechas de la fase y **no pueden salir de ella**. Un hito puede asignarse a una subfase de su misma fase.
+- **Propuestas:** su ficha tiene Planificación (fases con fechas, cronograma con hitos y riesgos, siguientes pasos), Hitos y Riesgos, igual que un proyecto. Sin fecha tentativa, sus fases parten en la fecha de creación.
 - **Estados especiales:** «En espera», «Pausado», «Rechazada», «Retirada» y «Cancelado» piden un motivo. «En espera» y «Pausado» además piden una fecha de revisión.
 
 ## 4. Avisos
@@ -35,9 +37,15 @@ El buscador superior encuentra proyectos, propuestas, riesgos e hitos. El botón
 ## 5. Completar con IA
 En la ficha de un proyecto, **Completar con IA** exporta un archivo con las instrucciones necesarias. Úsalo con la IA corporativa y luego importa la respuesta. APIH muestra una vista previa y solo aplica lo que confirmes.
 
-## 6. Si algo no se guarda
+## 6. Importar y exportar
+- **Administración → Importar iniciativas:** archivo JSON (descarga la plantilla para ver el formato). Acepta hitos con categoría, subfases y la subfase de cada hito por nombre. Lo que no cumple las reglas se omite con un aviso; el resto se importa.
+- **Completar con IA** también lleva subfases y categorías, y muestra antes de aplicar qué entra y qué se omite.
+- **Respaldo completo** (solo administradores) guarda y restaura todo.
+- Excel, CSV y JSON de la Tabla son para consulta, no se reimportan.
+
+## 7. Si algo no se guarda
 - Si otra persona modificó lo mismo antes que tú, APIH te avisa y recarga los datos vigentes. Revisa y vuelve a aplicar tu cambio.
 - Si el indicador de conexión de la barra superior muestra error, recarga la página. Si persiste, avisa a Sistemas BISE con una captura.
 
-## 7. Ayuda
+## 8. Ayuda
 Menú **Ayuda → Para qué sirve**, o escribe a Sistemas BISE.
