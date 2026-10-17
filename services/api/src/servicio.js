@@ -18,7 +18,9 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
   const leerIni = async (s, id) => { const x = await s.obtener('iniciativas', id); if (!x) throw errorApi('NO_ENCONTRADA', 'No existe ' + id); return x; };
   const leerSub = async (s, col, id) => { const x = await s.obtener(col, id); if (!x) throw errorApi('NO_ENCONTRADA', 'No existe ' + id); return x; };
   const grafo = async s => Object.fromEntries((await s.listar('iniciativas')).map(x => [x.id, x.deps || []]));
-  const validarIni = async (s, x, ctx) => { const e = core.validarIniciativa(x, Object.assign({ grafo: await grafo(s) }, ctx)); if (Array.isArray(x.subfases) && x.subfases.length) e.push(...core.validarSubfases(x, await s.listar('hitos', h => h.ini === x.id))); if (e.length) throw errorApi('INVALIDA', 'Datos inválidos', e); };
+  /* Subfases: forma siempre; la ventana solo para las nuevas o modificadas respecto de lo guardado (prev). Al crear, la ventana la protege el cliente: sus hitos aún no existen en el servidor. */
+  const subCambiadas = (x, prev) => { const P = new Map(((prev && prev.subfases) || []).map(s => [s.id, JSON.stringify(s)])); return new Set((x.subfases || []).filter(s => P.get(s && s.id) !== JSON.stringify(s)).map(s => s && s.id)); };
+  const validarIni = async (s, x, ctx, prev) => { const e = core.validarIniciativa(x, Object.assign({ grafo: await grafo(s) }, ctx)); if (Array.isArray(x.subfases) && x.subfases.length) e.push(...core.validarSubfases(x, await s.listar('hitos', h => h.ini === x.id), { revisar: prev ? subCambiadas(x, prev) : new Set() })); if (e.length) throw errorApi('INVALIDA', 'Datos inválidos', e); };
   const ctxGates = async (s, id) => ({ hitos: await s.listar('hitos', h => h.ini === id), riesgos: await s.listar('riesgos', r => r.ini === id), hoy: hoy(), umbral: umbral() });
   const verificarVersion = (x, version) => { if (version == null || x.version !== String(version)) throw errorApi('CONFLICTO', 'Otro usuario modificó ' + x.id + ' (versión ' + x.version + ')'); };
   const EST = core.INICIATIVA;
@@ -62,7 +64,7 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
         if ('tipo' in c && c.tipo !== a.tipo) throw errorApi('INVALIDA', 'El tipo no cambia', [{ campo: 'tipo', regla: 'inmutable' }]);
         if ('estado' in c && c.estado !== a.estado) throw errorApi('INVALIDA', 'Use cambiarEstado', [{ campo: 'estado', regla: 'usar cambiarEstado' }]);
         if ('fase' in c && c.fase !== a.fase) throw errorApi('INVALIDA', 'Use cambiarFase', [{ campo: 'fase', regla: 'usar cambiarFase' }]);
-        const n = Object.assign(copia(a), c); await validarIni(s, n);
+        const n = Object.assign(copia(a), c); await validarIni(s, n, undefined, a);
         if (n.avance !== a.avance) n.hist = [...(a.hist || []), [hoy(), n.avance]];
         return s.actualizar('iniciativas', sello(n, u), version);
       });

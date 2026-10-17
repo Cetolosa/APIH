@@ -10,6 +10,7 @@ Reglas puras (sin DOM ni estado global). Script clásico: navegador (`window.API
 ## Registro
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
+| C2.14 | 17-10-2026 | `validarSubfases(i, hitos, { revisar })`: la ventana se verifica solo para las subfases indicadas (nuevas o modificadas). |
 | C2.12 | 17-10-2026 | `fasesVentana`: una propuesta sin fecha tentativa parte en su fecha de creación (V22.57). |
 | C2.11 | 17-10-2026 | Categorías de hito (`HITO.HITO_CATS`, `validarHito`), subfases (`validarSubfases`, `validarHitoSubfase`); de V22.55–V22.56. |
 | C1.4 | 16-10-2026 | Hitos, riesgos, compuertas (`gates`) y ventanas de fase, con dependencias por parámetro; equivalentes a V22.54. |

@@ -28,6 +28,11 @@ const B = 'http://localhost:7072';
   r.servidorFuera = (await api('/api/iniciativas/PRJ-301', { method: 'PATCH', headers: { 'content-type': 'application/json', 'If-Match': '"' + ver + '"' }, body: JSON.stringify({ subfases: [{ id: 'PRJ-301-SF1', nombre: 'Sprint 1', fase: 'Ejecución', inicio: '2026-10-11', fin: '2026-11-30' }] }) })).s;
   r.servidorHitoOtraFase = (await api('/api/iniciativas/PRJ-301/hitos', { method: 'POST', body: JSON.stringify({ nombre: 'X', fase: 'Transición', fecha: '2026-11-20', subfase: 'PRJ-301-SF1' }) })).s;
   r.servidorCatMala = (await api('/api/iniciativas/PRJ-301/hitos', { method: 'POST', body: JSON.stringify({ nombre: 'Y', fase: 'Ejecución', fecha: '2026-11-01', cat: 'Inventada' }) })).s;
+  // Una subfase que queda fuera porque se movió un hito no bloquea otras ediciones de la iniciativa
+  const h2 = (await api('/api/iniciativas/PRJ-301/hitos')).j.find(h => h.id === 'HIT-802');
+  await api('/api/hitos/HIT-802', { method: 'PATCH', headers: { 'content-type': 'application/json', 'If-Match': '"' + h2.version + '"' }, body: JSON.stringify({ fecha: '2026-11-01' }) });
+  const v2 = (await api('/api/iniciativas/PRJ-301')).j.version;
+  r.editarConSubFuera = (await api('/api/iniciativas/PRJ-301', { method: 'PATCH', headers: { 'content-type': 'application/json', 'If-Match': '"' + v2 + '"' }, body: JSON.stringify({ titulo: 'Proyecto con subfases (editado)' }) })).s;
   // Recargar: todo vuelve desde la API
   await p.reload(); await p.waitForTimeout(1500); await espera();
   r.trasRecargar = await p.evaluate(() => (subfasesDe(byId('PRJ-301'))[0] || {}).nombre + ' · cat ' + St.hitos.find(h => h.id === 'HIT-802').cat);
@@ -40,6 +45,6 @@ const B = 'http://localhost:7072';
   await p.screenshot({ path: '/tmp/t/corp3.png' });
   r.errores = errs; console.log(JSON.stringify(r, null, 1));
   const ok = /^ok/.test(r.alta) && r.hereda === '2026-10-11>2026-11-15' && /^ok/.test(r.guardaSub) && r.subServidor === '["Sprint 1 2026-10-11>2026-11-15"]' && r.servidorFuera === 422 && r.servidorHitoOtraFase === 422 && r.servidorCatMala === 422
-    && r.trasRecargar === 'Sprint 1 · cat Entregable' && r.ganttAmbos === 'PRJ-301,PROP-301' && r.hitosGobierno.split(',').length === 2 && /Planificación/.test(r.tabsFichaProp) && /Hitos/.test(r.tabsFichaProp) && r.fasesProp === 4 && /→/.test(r.fechaFase) && !errs.length;
+    && r.editarConSubFuera === 200 && r.trasRecargar === 'Sprint 1 · cat Entregable' && r.ganttAmbos === 'PRJ-301,PROP-301' && r.hitosGobierno.split(',').length === 2 && /Planificación/.test(r.tabsFichaProp) && /Hitos/.test(r.tabsFichaProp) && r.fasesProp === 4 && /→/.test(r.fechaFase) && !errs.length;
   console.log(ok ? 'OK corp3' : 'FALLA corp3'); await b.close(); process.exit(ok ? 0 : 1);
 })();
