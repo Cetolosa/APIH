@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C2.12', b: '17-10-2026', origen: 'V22.57' };
+  const VERSION = { v: 'C2.14', b: '17-10-2026', origen: 'V22.58' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -160,7 +160,8 @@
   const HITO_CATS = ['Entregable', 'Gobierno', 'Técnico', 'Proveedor', 'Pago', 'Comunicación', 'Otro'];
   const HITO = Object.freeze({ HITO_CATS });
   /* C2.11 (V22.55, ADR-012) · subfases: una sola fase obligatoria, nacen con fechas y no salen de la ventana de su fase */
-  function validarSubfases(i, hitos) {
+  /* opts.revisar: Set de ids cuya ventana se verifica (las nuevas o modificadas); sin opts se verifican todas */
+  function validarSubfases(i, hitos, opts) {
     const e = [], err = (campo, regla) => e.push({ campo, regla }), subs = (i && i.subfases) || [];
     if (!Array.isArray(subs)) return [{ campo: 'subfases', regla: 'lista' }];
     const V = fasesVentana(i, hitos || []), FS = fasesDe(i), ids = new Set();
@@ -171,6 +172,7 @@
       if (!FS.includes(s.fase)) return err(c + '.fase', 'una fase de ' + i.tipo);
       if (!fechaOk(s.inicio) || !fechaOk(s.fin)) return err(c + '.fechas', 'inicio y fin AAAA-MM-DD (nace con las fechas de su fase)');
       if (s.fin < s.inicio) return err(c + '.fin', 'no anterior al inicio');
+      if (opts && opts.revisar && !opts.revisar.has(s.id)) return;
       const v = V.find(x => x.fase === s.fase); if (!v || !v.ini || !v.fin || s.inicio < v.ini || s.fin > v.fin) err(c, 'dentro de la fase ' + s.fase + (v && v.ini ? ' (' + v.ini + ' a ' + v.fin + ')' : ''));
     });
     return e;

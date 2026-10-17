@@ -5,6 +5,7 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 
 | Versión | Fecha | Rama · commit | Cambio | Componentes |
 | --- | --- | --- | --- | --- |
+| C2.14 | 17-10-2026 | `c2.14-validacion-subfases` | API: la ventana de una subfase se valida solo si es nueva o cambió (antes, crear la iniciativa junto con sus hitos o editarla con una subfase desfasada por un hito movido era rechazado). Pruebas de pantalla del Prototipo corridas sobre la SPA corporativa (`tests/e2e/correr-corporativo.sh`): 7/7. | core C2.14, services/api C2.14, tests |
 | C2.13 | 17-10-2026 | `v22.58-iniciativas` | Traspaso de V22.58: encabezado común de Iniciativas, Tabla con los datos del Tablero, Propuestas movida a Gobierno. | apps/corporativo C2.13 |
 | C2.12 | 17-10-2026 | `c2.12-ambos-tipos` | Traspaso de V22.57: Tabla y Tablero con propuestas y proyectos; panel de propuesta con Hitos; fases de propuesta sin fecha tentativa desde su creación. | apps/corporativo C2.12, core C2.12 |
 | C2.11 | 17-10-2026 | `c2.11-traspaso-final` | Traspaso de V22.55–V22.56: subfases (ADR-012), ficha de propuesta con Planificación e Hitos, Planificación con propuestas (Proyectos · Propuestas · Ambos), categorías de hitos y filtros (ADR-013). Core: `HITO_CATS`, `validarSubfases`, `validarHitoSubfase`, `fasesVentana` con `subs`; API valida subfases y categoría (422). Esquemas hito/iniciativa actualizados. e2e `corp3`, unit `subfases-categorias`. | apps/corporativo C2.11, core C2.11, contracts C2.11, services/api C2.11 |
