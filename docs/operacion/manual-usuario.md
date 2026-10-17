@@ -1,4 +1,4 @@
-# APIH · Manual de usuario — C2.15
+# APIH · Manual de usuario — C2.17
 
 APIH es la plataforma de gestión del portafolio de Sistemas BISE. Reúne propuestas, proyectos, fases, hitos, riesgos, decisiones y comités en un solo lugar.
 
@@ -26,6 +26,7 @@ El buscador superior encuentra proyectos, propuestas, riesgos e hitos. El botón
 - **Cambiar de fase:** usa el botón de fase de la ficha. Si falta algo (hitos, riesgos sin mitigar, campos obligatorios), APIH te lo indica.
 - **Aprobar una propuesta:** en fase Aprobación, usa «Aprobar». Se crea el proyecto vinculado.
 - **Hitos y riesgos:** créalos desde la ficha. Cada hito y riesgo tiene **categoría**; en la ficha y en las vistas Hitos y Riesgos puedes filtrar por ella. Los vencidos y los riesgos críticos se destacan en el Dashboard.
+- **Descripciones:** fases, subfases e hitos pueden llevar una **descripción/instrucciones** (texto libre). La de la fase tiene una parte global (Administración → Metodología) y una **nota por proyecto** (ficha › Planificación → «+ Nota»). Se ven sobre todo en **Mi cocina**, junto a cada paso, y también en la ficha y en Fases.
 - **Fases y subfases:** donde aparece la fase de una iniciativa se muestran su inicio y fin (desde el día siguiente al cierre de la fase anterior hasta su último hito). En la ficha › Planificación o en Planificación › Fases, «+ Subfase» divide una fase en etapas propias del proyecto: nacen con las fechas de la fase y **no pueden salir de ella**. Un hito puede asignarse a una subfase de su misma fase.
 - **Propuestas:** su ficha tiene Planificación (fases con fechas, cronograma con hitos y riesgos, siguientes pasos), Hitos y Riesgos, igual que un proyecto. Sin fecha tentativa, sus fases parten en la fecha de creación.
 - **Estados especiales:** «En espera», «Pausado», «Rechazada», «Retirada» y «Cancelado» piden un motivo. «En espera» y «Pausado» además piden una fecha de revisión.

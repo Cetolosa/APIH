@@ -21,7 +21,7 @@ const B = 'http://localhost:7072';
   // Subfase desde el formulario: hereda las fechas de la fase y se guarda en el servidor
   await p.evaluate(() => Acts.sfnew({ id: 'PRJ-301', f: 'Ejecución' })); await p.waitForTimeout(200);
   r.hereda = await p.evaluate(() => $('#f_inicio').value + '>' + $('#f_fin').value);
-  await p.fill('#f_nombre', 'Sprint 1'); await p.click('[data-act="msave"]'); r.guardaSub = await espera();
+  await p.fill('#f_nombre', 'Sprint 1'); await p.$eval('#f_desc', (e,v)=>{e.value=v;e.dispatchEvent(new Event('input'))}, 'Instrucción de la subfase').catch(()=>{}); await p.click('[data-act="msave"]'); r.guardaSub = await espera();
   r.subServidor = await api('/api/iniciativas/PRJ-301').then(x => JSON.stringify((x.j.subfases || []).map(s => s.nombre + ' ' + s.inicio + '>' + s.fin)));
   // El servidor también protege las reglas
   const ver = (await api('/api/iniciativas/PRJ-301')).j.version;
@@ -33,6 +33,14 @@ const B = 'http://localhost:7072';
   await api('/api/hitos/HIT-802', { method: 'PATCH', headers: { 'content-type': 'application/json', 'If-Match': '"' + h2.version + '"' }, body: JSON.stringify({ fecha: '2026-11-01' }) });
   const v2 = (await api('/api/iniciativas/PRJ-301')).j.version;
   r.editarConSubFuera = (await api('/api/iniciativas/PRJ-301', { method: 'PATCH', headers: { 'content-type': 'application/json', 'If-Match': '"' + v2 + '"' }, body: JSON.stringify({ titulo: 'Proyecto con subfases (editado)' }) })).s;
+  // Descripciones (C2.17): faseNota de la iniciativa, desc del hito y de la subfase llegan al servidor
+  const vv = (await api('/api/iniciativas/PRJ-301')).j;
+  r.faseNotaIda = (await api('/api/iniciativas/PRJ-301', { method: 'PATCH', headers: { 'content-type': 'application/json', 'If-Match': '"' + vv.version + '"' }, body: JSON.stringify({ faseNota: { 'Ejecución': 'coordinar con TI' } }) })).s;
+  r.srvFaseNota = ((await api('/api/iniciativas/PRJ-301')).j.faseNota || {})['Ejecución'] || '';
+  r.srvSubDesc = (((await api('/api/iniciativas/PRJ-301')).j.subfases || [])[0] || {}).desc || '';
+  const h802b = (await api('/api/iniciativas/PRJ-301/hitos')).j.find(h => h.nombre === 'API lista');
+  r.hitoDescIda = (await api('/api/hitos/' + h802b.id, { method: 'PATCH', headers: { 'content-type': 'application/json', 'If-Match': '"' + h802b.version + '"' }, body: JSON.stringify({ desc: 'pedir revisión a TI' }) })).s;
+  r.srvHitoDesc = ((await api('/api/iniciativas/PRJ-301/hitos')).j.find(h => h.nombre === 'API lista') || {}).desc || '';
   // Recargar: todo vuelve desde la API
   await p.reload(); await p.waitForTimeout(1500); await espera();
   r.trasRecargar = await p.evaluate(() => (subfasesDe(byId('PRJ-301'))[0] || {}).nombre + ' · cat ' + St.hitos.find(h => h.id === 'HIT-802').cat);
@@ -45,6 +53,6 @@ const B = 'http://localhost:7072';
   await p.screenshot({ path: '/tmp/t/corp3.png' });
   r.errores = errs; console.log(JSON.stringify(r, null, 1));
   const ok = /^ok/.test(r.alta) && r.hereda === '2026-10-11>2026-11-15' && /^ok/.test(r.guardaSub) && r.subServidor === '["Sprint 1 2026-10-11>2026-11-15"]' && r.servidorFuera === 422 && r.servidorHitoOtraFase === 422 && r.servidorCatMala === 422
-    && r.editarConSubFuera === 200 && r.trasRecargar === 'Sprint 1 · cat Entregable' && r.ganttAmbos === 'PRJ-301,PROP-301' && r.hitosGobierno.split(',').length === 2 && /Planificación/.test(r.tabsFichaProp) && /Hitos/.test(r.tabsFichaProp) && r.fasesProp === 4 && /→/.test(r.fechaFase) && !errs.length;
+    && r.editarConSubFuera === 200 && r.trasRecargar === 'Sprint 1 · cat Entregable' && r.ganttAmbos === 'PRJ-301,PROP-301' && r.hitosGobierno.split(',').length === 2 && /Planificación/.test(r.tabsFichaProp) && /Hitos/.test(r.tabsFichaProp) && r.fasesProp === 4 && /→/.test(r.fechaFase) && r.faseNotaIda === 200 && r.srvFaseNota === 'coordinar con TI' && r.srvSubDesc === 'Instrucción de la subfase' && r.hitoDescIda === 200 && r.srvHitoDesc === 'pedir revisión a TI' && !errs.length;
   console.log(ok ? 'OK corp3' : 'FALLA corp3'); await b.close(); process.exit(ok ? 0 : 1);
 })();

@@ -1,4 +1,4 @@
-# APIH Corporativo · Procedimientos de operación (runbook) — C2.15
+# APIH Corporativo · Procedimientos de operación (runbook) — C2.17
 
 Borrador para acordar con TI (**punto 14** de la propuesta: operación y soporte). Las responsabilidades marcadas «propuesta» se confirman con TI antes de producción.
 
