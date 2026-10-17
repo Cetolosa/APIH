@@ -8,7 +8,7 @@ app.http('apih', {
   route: '{*ruta}', methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'], authLevel: 'anonymous',
   handler: async (request) => {
     const url = new URL(request.url), headers = Object.fromEntries(request.headers.entries());
-    let body = null; if (['POST', 'PATCH', 'PUT'].includes(request.method)) { const t = await request.text(); if (t) { try { body = JSON.parse(t); } catch (e) { return { status: 400, jsonBody: { codigo: 'INVALIDA', mensaje: 'JSON inválido' } }; } } }
+    let body = null; if (['POST', 'PATCH', 'PUT'].includes(request.method)) { const t = await request.text(); if (t.length > 2e6) return { status: 413, jsonBody: { codigo: 'INVALIDA', mensaje: 'Solicitud demasiado grande (máx. 2 MB)' } }; if (t) { try { body = JSON.parse(t); } catch (e) { return { status: 400, jsonBody: { codigo: 'INVALIDA', mensaje: 'JSON inválido' } }; } } }
     const r = await api.handle({ method: request.method, path: url.pathname, query: Object.fromEntries(url.searchParams), headers, body });
     return { status: r.status, headers: r.headers, body: r.body };
   }

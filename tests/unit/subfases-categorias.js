@@ -17,6 +17,11 @@ ok(core.validarHitoSubfase({ subfase: 'PRJ-1-SF1', fase: 'Transición' }, ini).l
 ok(core.validarHitoSubfase({ subfase: 'PRJ-1-SF9', fase: 'Ejecución' }, ini).length, 1, 'subfase inexistente');
 ok(core.validarSubfases(Object.assign({}, i, { subfases: [sf({ fin: '2026-11-20' })] }), hs, { revisar: new Set() }), [], 'una subfase no modificada no se vuelve a revisar');
 ok(core.validarSubfases(Object.assign({}, i, { subfases: [sf({ fin: '2026-11-20' })] }), hs, { revisar: new Set(['PRJ-1-SF1']) }).length, 1, 'una subfase modificada sí');
+ok(core.validarSubfases(Object.assign({}, i, { subfases: [sf({ nombre: 'x'.repeat(121) })] }), hs).length, 1, 'nombre de hasta 120');
+ok(core.validarSubfases(Object.assign({}, i, { subfases: [sf({ html: '<script>' })] }), hs).length, 1, 'sin campos extra');
+ok(core.validarSubfases(Object.assign({}, i, { subfases: [sf({ id: 'x"><img>' })] }), hs).length, 1, 'id con formato');
+ok(core.validarSubfases(Object.assign({}, i, { subfases: [sf({ nombre: { a: 1 } })] }), hs).length, 1, 'nombre debe ser texto');
+ok(core.validarHito({ ini: 'PRJ-1', nombre: 'H', fecha: '2026-10-20', subfase: '<b>' }).length, 1, 'subfase del hito con formato');
 const h = { ini: 'PRJ-1', nombre: 'H', fecha: '2026-10-20' };
 ok(core.validarHito(Object.assign({ cat: 'Gobierno' }, h)), [], 'categoría válida');
 ok(core.validarHito(Object.assign({ cat: '' }, h)), [], 'sin categoría');

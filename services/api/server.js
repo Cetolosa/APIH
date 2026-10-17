@@ -16,7 +16,8 @@ http.createServer(async (req, res) => {
   if (/^\/\.auth\/(login|logout)/.test(url.pathname)) { res.writeHead(302, { location: url.searchParams.get('post_login_redirect_uri') || '/' }); return res.end(); }
   if (url.pathname.startsWith('/api/')) {
     if (principal) req.headers['x-ms-client-principal'] = Buffer.from(JSON.stringify(principal)).toString('base64');
-    let raw = ''; for await (const c of req) raw += c;
+    let raw = '', big = false; for await (const c of req) { raw += c; if (raw.length > 2e6) { big = true; break; } }
+    if (big) { res.writeHead(413, { 'content-type': 'application/json' }); return res.end('{"codigo":"INVALIDA","mensaje":"Solicitud demasiado grande (máx. 2 MB)"}'); }
     let body = null; if (raw) { try { body = JSON.parse(raw); } catch (e) { res.writeHead(400, { 'content-type': 'application/json' }); return res.end('{"codigo":"INVALIDA","mensaje":"JSON inválido"}'); } }
     const r = await api.handle({ method: req.method, path: url.pathname, query: Object.fromEntries(url.searchParams), headers: req.headers, body });
     res.writeHead(r.status, r.headers); return res.end(r.body);
