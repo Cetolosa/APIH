@@ -3654,7 +3654,7 @@ Acts.riskcsv = () => { download('APIH_riesgos_' + hoy() + '.csv', toCSV(St.riesg
 Views.hitos = {
   render() {
     const f = F('hitos', { q: '', est: '', ini: '', resp: '', cat: '' });
-    let all = HITOS().filter(h => byId(h.ini) && inArea(byId(h.ini)) && porTipo(byId(h.ini)) && respItem(h, 'resp') && byId(h.ini).estado !== 'Cancelado'); let rows = all.slice();
+    let all = St.hitos.filter(h => byId(h.ini) && inArea(byId(h.ini)) && porTipo(byId(h.ini)) && respItem(h, 'resp') && byId(h.ini).estado !== 'Cancelado'); let rows = all.slice();
     if (f.cat) rows = rows.filter(h => (h.cat || '') === (f.cat === '—' ? '' : f.cat));
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(h => (h.nombre + nameOf(h.ini)).toLowerCase().includes(q)); }
     if (f.ini) rows = rows.filter(h => h.ini === f.ini); if (f.resp) rows = rows.filter(h => h.resp === f.resp);

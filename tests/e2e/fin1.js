@@ -42,6 +42,6 @@ const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').ini
   await p.evaluate(() => Acts.new({ t: 'hito', ini: 'PRO-050' })); await p.waitForTimeout(200); r.campoCat = await n('#f_cat option');
   r.errores = errs; console.log(JSON.stringify(r, null, 1));
   const ok = r.ganttAmbos.includes('PRJ-050') && r.ganttAmbos.includes('PRO-050') && r.ganttProp.includes('PRO-050') && !r.ganttProp.includes('PRJ-050') && ['roadmap', 'fases', 'hitos', 'riesgos'].every(v => r['seg_' + v] === 3) && r.roadmapProp && r.fasesProp === 4
-    && r.hitosGob === r.hitosGobEsperado && r.hitosGob < r.hitosTodos && /Planificación/.test(r.tabsFicha) && /Hitos/.test(r.tabsFicha) && r.planProp === 4 && r.ganttFicha > 1 && r.chipsH >= 3 && r.filasHitoEntregable === 2 && r.campoCat === 8 && !errs.length;
+    && r.hitosGob === r.hitosGobEsperado && r.hitosGob < r.hitosTodos && r.hitosTodos === 25 && /Planificación/.test(r.tabsFicha) && /Hitos/.test(r.tabsFicha) && r.planProp === 4 && r.ganttFicha > 1 && r.chipsH >= 3 && r.filasHitoEntregable === 2 && r.campoCat === 8 && !errs.length;
   console.log(ok ? 'OK fin1' : 'FALLA fin1'); await b.close(); process.exit(ok ? 0 : 1);
 })();

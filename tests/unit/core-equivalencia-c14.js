@@ -10,7 +10,7 @@ const linea = n => { const m = html.match(new RegExp('^const ' + n + ' = .*$', '
 const funcion = n => { const a = html.indexOf('function ' + n + '('); if (a < 0) throw new Error('No está ' + n); let i = html.indexOf('{', a), d = 0;
   for (let k = i; k < html.length; k++) { if (html[k] === '{') d++; else if (html[k] === '}') { d--; if (!d) return html.slice(a, k + 1); } } };
 const src = [linea('pad'), linea('toISO'), linea('pD'), linea('addD'), linea('diffD'), linea('expo'), linea('riesgoAbierto'), linea('by'),
-  linea('FASES_PROP'), linea('FASES_PRJ'), linea('FASE_COLOR'), linea('esProp'), linea('fasesDe'), linea('riesgoSinMit'),
+  linea('FASES_PROP'), linea('FASES_PRJ'), linea('FASE_COLOR'), linea('esProp'), linea('fasesDe'), linea('riesgoSinMit'), linea('subfasesDe'),
   funcion('gates'), funcion('hitoEstado'), funcion('fasesVentana')].join('\n');
 const proto = new Function('S', 'const hoy = () => S.hoy, cfgI = () => S.umbral, hitosDe = () => S.hitos, riesgosDe = () => S.riesgos, rel = () => "REL";\n' + src +
   '\nreturn { gates, hitoEstado, fasesVentana, riesgoSinMit };');

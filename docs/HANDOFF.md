@@ -1,6 +1,6 @@
 # APIH — Documento de traspaso
 
-> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.56 · Corporativo C2.10)
+> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.56 · Corporativo C2.11)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -75,7 +75,7 @@ Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con
 
 ## 7. Pendientes
 
-**Versión final de APIH Corporativo (pedido del usuario, 16-10-2026; mockup antes de implementar):**
+**Versión final de APIH Corporativo (pedido del usuario, 16-10-2026) — HECHO: Prototipo V22.56 y Corporativo C2.11 (ADR-012, ADR-013):**
 1. Propuestas con despliegue similar a proyectos: planificación en la ficha e hitos y riesgos en un mismo lugar.
 2. Propuestas visibles en las vistas del menú Planificación (Gantt, Fases, Roadmap, Calendario, Hitos, Capacidad, Riesgos).
 3. Categorías para hitos y riesgos, con filtro por categoría, tanto en proyectos como en propuestas.
