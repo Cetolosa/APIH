@@ -20,7 +20,7 @@
 - Respaldo: automático de Azure SQL (PITR 7 días por defecto; ajustar en prod).
 
 ## Aplicación
-- Todas las reglas de negocio y validaciones en el servidor (contratos + 17 pruebas de contrato × 3 capas + 8 de seguridad). Desde C2.11 también las de subfases (forma estricta desde C2.16: ver `docs/revision-seguridad-2026-10-17.md`; cuerpos > 2 MB → 413) (una sola fase, dentro de su ventana; se revisan las nuevas o modificadas) y categorías de hito; un dato inválido se rechaza con 422 y su motivo.
+- Todas las reglas de negocio y validaciones en el servidor (contratos + 17 pruebas de contrato × 3 capas + 8 de seguridad). Desde C2.11 también las de subfases (forma estricta desde C2.16: ver `docs/revision-seguridad-2026-10-17.md`; cuerpos > 2 MB → 413; pentest interno 17-10 en `docs/pentest-2026-10-17.md`, 25 ataques a la API sin vulnerabilidades) (una sola fase, dentro de su ventana; se revisan las nuevas o modificadas) y categorías de hito; un dato inválido se rechaza con 422 y su motivo.
 - SPA con CSP `connect-src 'self'` (solo su API), sin CDN; encabezados HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`; `frame-ancestors` limitado a Teams/Office.
 - Errores sin detalles internos (500 genérico, detalle en Application Insights).
 - Sin secretos en el repositorio: el secreto de Entra vive en la configuración de SWA; despliegue con OIDC.
