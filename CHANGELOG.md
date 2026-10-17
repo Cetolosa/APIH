@@ -5,6 +5,7 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 
 | Versión | Fecha | Rama · commit | Cambio | Componentes |
 | --- | --- | --- | --- | --- |
+| C2.15 | 17-10-2026 | `v22.59-importar-exportar` | Traspaso de V22.59 (importar/exportar subfases y categorías). Sincronización: la iniciativa con subfases se guarda antes que los hitos que las usan. `correr-corporativo.sh` suma imp3: 8/8. | apps/corporativo C2.15, tests |
 | C2.14 | 17-10-2026 | `c2.14-validacion-subfases` | API: la ventana de una subfase se valida solo si es nueva o cambió (antes, crear la iniciativa junto con sus hitos o editarla con una subfase desfasada por un hito movido era rechazado). Pruebas de pantalla del Prototipo corridas sobre la SPA corporativa (`tests/e2e/correr-corporativo.sh`): 7/7. | core C2.14, services/api C2.14, tests |
 | C2.13 | 17-10-2026 | `v22.58-iniciativas` | Traspaso de V22.58: encabezado común de Iniciativas, Tabla con los datos del Tablero, Propuestas movida a Gobierno. | apps/corporativo C2.13 |
 | C2.12 | 17-10-2026 | `c2.12-ambos-tipos` | Traspaso de V22.57: Tabla y Tablero con propuestas y proyectos; panel de propuesta con Hitos; fases de propuesta sin fecha tentativa desde su creación. | apps/corporativo C2.12, core C2.12 |
@@ -29,6 +30,7 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 ## Excepciones del Prototipo
 | Versión | Fecha | Cambio | Decisión |
 | --- | --- | --- | --- |
+| V22.59 | 17-10-2026 | Importar iniciativas: `subfases` (validadas, heredan fechas) y `hitos[].subfase` por nombre o id; avisos para lo omitido; plantilla con ejemplo. «Con IA»: exporta subfases y ventanas de fase; al volver aplica subfases nuevas/cambiadas, categoría y subfase de hitos (con validación). Respaldo completo ya las incluía. e2e `imp3`. | [ADR-012](docs/decisiones/ADR-012-subfases-por-proyecto.md) |
 | V22.58 | 17-10-2026 | Iniciativas: Tabla y Tablero con el mismo encabezado (Nueva propuesta + Más) y filtros en una fila; selector «Tipo» igual a Área/Responsable en todas las vistas (corrige choque con el selector antiguo de la Tabla); Tabla con columnas del Tablero (tipo, fase con fechas, avance total y de fase, hitos, desvío); pestaña Propuestas sale de Iniciativas y queda como «Pipeline de propuestas» en Gobierno. | [ADR-013](docs/decisiones/ADR-013-version-final-propuestas-categorias.md) |
 | V22.57 | 17-10-2026 | Tabla (por defecto «Todo») y Tablero (columnas de propuesta y de proyecto, selector Proyectos · Propuestas · Ambos; no se arrastra entre tipos) con ambos tipos; panel de propuesta con pestaña Hitos; la planificación de una propuesta sin fecha tentativa parte en su creación. | [ADR-013](docs/decisiones/ADR-013-version-final-propuestas-categorias.md) |
 | V22.56 | 17-10-2026 | Versión final: ficha de propuesta con Planificación e Hitos; Planificación con selector Proyectos · Propuestas · Ambos; categorías de hitos y filtros por categoría (hitos y riesgos). e2e `fin1`. | [ADR-013](docs/decisiones/ADR-013-version-final-propuestas-categorias.md) |

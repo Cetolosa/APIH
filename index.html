@@ -3427,6 +3427,22 @@ function subfaseForm(s, iniId, fase) {
     }
   });
 }
+/* V22.59 · importación de subfases (archivo de iniciativas y «Con IA"): valida la regla y resuelve referencias por id o nombre */
+function sfImportar(i, lista, warn) {
+  (Array.isArray(lista) ? lista : []).forEach(x => {
+    if (!x || typeof x !== 'object' || !String(x.nombre || '').trim()) return warn('Subfase sin nombre (se omite)');
+    if (!fasesDe(i).includes(x.fase)) return warn('Subfase «' + x.nombre + '»: fase inválida para ' + tipoLbl(i).toLowerCase());
+    const w = ventanaDe(i, x.fase); if (!w || !w.ini || !w.fin) return warn('Subfase «' + x.nombre + '»: la fase ' + x.fase + ' no tiene fechas');
+    const ini = x.inicio || w.ini, fin = x.fin || w.fin;
+    if (!iapFecha(ini) || !iapFecha(fin) || fin < ini) return warn('Subfase «' + x.nombre + '»: fechas inválidas');
+    if (ini < w.ini || fin > w.fin) return warn('Subfase «' + x.nombre + '»: debe quedar dentro de ' + x.fase + ' (' + rangoTx(w.ini, w.fin) + ')');
+    const ya = subfasesDe(i).find(s => (x.id && s.id === x.id) || (s.fase === x.fase && _nrm(s.nombre) === _nrm(x.nombre)));
+    if (ya) Object.assign(ya, { nombre: x.nombre, fase: x.fase, inicio: ini, fin, resp: x.resp != null ? x.resp : (ya.resp || '') });
+    else i.subfases = subfasesDe(i).concat([{ id: sfNextId(i), nombre: x.nombre, fase: x.fase, inicio: ini, fin, resp: x.resp || '' }]);
+  });
+}
+/* referencia de subfase en un hito: id o nombre (si hay nombres repetidos en distintas fases, se usa la fase del hito) */
+const sfRef = (i, ref, fase) => { if (!ref) return null; const L = subfasesDe(i); return L.find(s => s.id === ref) || L.find(s => _nrm(s.nombre) === _nrm(ref) && (!fase || s.fase === fase)) || L.find(s => _nrm(s.nombre) === _nrm(ref)) || null; };
 Acts.sfnew = d => subfaseForm(null, d.id, d.f);
 Acts.sfedit = d => { const i = byId(d.id), s = i && subfasesDe(i).find(x => x.id === d.s); if (s) subfaseForm(s, d.id); };
 
@@ -4079,7 +4095,10 @@ Chg.impfile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
 /* V22.50: importar iniciativas (suma registros, no reemplaza) */
 const INI_PLANTILLA = () => ({ formato: 'apih-iniciativas', v: 1, iniciativas: [
   { tipo: 'Proyecto', titulo: 'APIH Prototipo', desc: 'Prototipo de APIH sobre SPA + Supabase (interino). Fuente de verdad de las reglas de negocio y las vistas.', area: 'BISE', lider: St.cfg.usuario || '', sponsor: '', fase: 'Ejecución', estado: 'En curso', rag: 'Verde', prioridad: 'Alta', avance: 70, inicioPlan: hoy(), finPlan: addD(hoy(), 120), presupuesto: 0 },
-  { tipo: 'Proyecto', titulo: 'APIH Corporativo', desc: 'APIH conforme a los requisitos de TI: SPA con Entra ID, API y Azure SQL (3 capas). Reutiliza el núcleo del prototipo.', area: 'BISE', lider: St.cfg.usuario || '', sponsor: '', fase: 'Planificación', estado: 'En curso', rag: 'Verde', prioridad: 'Alta', avance: 5, inicioPlan: hoy(), finPlan: addD(hoy(), 240), presupuesto: 0 }] });
+  { tipo: 'Proyecto', titulo: 'APIH Corporativo', desc: 'APIH conforme a los requisitos de TI: SPA con Entra ID, API y Azure SQL (3 capas). Reutiliza el núcleo del prototipo.', area: 'BISE', lider: St.cfg.usuario || '', sponsor: '', fase: 'Planificación', estado: 'En curso', rag: 'Verde', prioridad: 'Alta', avance: 5, inicioPlan: hoy(), finPlan: addD(hoy(), 240), presupuesto: 0,
+    hitos: [{ nombre: 'Plan aprobado', fase: 'Planificación', fecha: addD(hoy(), 10), cat: 'Gobierno' }, { nombre: 'API lista', fase: 'Ejecución', fecha: addD(hoy(), 60), cat: 'Entregable', subfase: 'Construcción' }, { nombre: 'Piloto con usuarios', fase: 'Ejecución', fecha: addD(hoy(), 90), cat: 'Técnico', subfase: 'Piloto' }],
+    subfases: [{ nombre: 'Construcción', fase: 'Ejecución', fin: addD(hoy(), 70) }, { nombre: 'Piloto', fase: 'Ejecución', inicio: addD(hoy(), 71) }],
+    _ayuda: 'hitos[].cat: ' + hitoCats().join(', ') + '. subfases: dentro de UNA fase; inicio/fin vacíos heredan los de la fase y no pueden salir de ella. hitos[].subfase: nombre o id de una subfase de la misma fase.' }] });
 Acts.inipl = () => { download('APIH_iniciativas_plantilla.json', JSON.stringify(INI_PLANTILLA(), null, 1), 'application/json'); toast('Plantilla descargada'); };
 Acts.impini = () => $('#impinifile').click();
 Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
@@ -4090,15 +4109,17 @@ Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
     const k = t => _nrm(t), ex = new Set(St.ini.map(i => k(i.titulo))), nuevas = [], omit = [];
     L.forEach(x => { if (!x || !String(x.titulo || '').trim()) { omit.push('(sin título)'); return; } if (ex.has(k(x.titulo))) { omit.push(x.titulo); return; } ex.add(k(x.titulo)); nuevas.push(x); });
     if (!nuevas.length) { toast('Nada que importar: todas ya existen (' + omit.join(', ') + ')', 'err'); return; }
-    let nh = 0, nr = 0; const th = nuevas.reduce((a, x) => a + (x.hitos || []).length, 0);
+    let nh = 0, nr = 0; const th = nuevas.reduce((a, x) => a + (x.hitos || []).length, 0), avisos = [];
     confirmBox('Se agregarán <b>' + nuevas.length + '</b> iniciativa(s) con ' + th + ' hitos: ' + nuevas.map(x => esc(x.titulo)).join(', ') + '.' + (omit.length ? '<br>Omitidas por existir o sin título: ' + omit.map(esc).join(', ') + '.' : '') + '<br>Los datos actuales no se modifican. ¿Continuar?', () => {
       nuevas.forEach(x => { const PR = x.tipo === 'Propuesta', pre = PR ? 'PROP' : 'PRJ', T = PR ? 'Propuesta' : 'Proyecto';
         const n = Object.assign({ id: nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))), tipo: T, legacy: '', creada: hoy(), faseDesde: hoy(), origen: 'importación', est: [], hist: [[hoy(), +x.avance || 0]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, estado: PR ? 'Vigente' : 'En curso', propuestaOrigen: null, estadoMotivo: '', estadoRev: null, rag: 'Verde', avance: 0, gastado: 0, proyecto: null, deps: [], area: 'BISE', fase: PR ? FASES_PROP[0] : 'Planificación', prioridad: 'Media', presupuesto: 0, logros: '', proximos: '', sponsor: '', lider: '', desc: '' }, x, { id: undefined, actualizada: hoy() });
-        n.id = nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))); n.finEst = n.finEst || n.finPlan || null; delete n.hitos; delete n.riesgos; St.ini.push(n);
+        n.id = nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))); n.finEst = n.finEst || n.finPlan || null; delete n.hitos; delete n.riesgos; delete n.subfases; St.ini.push(n); const nh0 = St.hitos.length;
         (x.hitos || []).forEach(h => { const f = h.fecha || addD(n.inicioPlan || hoy(), +h.dias || 0), ok = !!h.completado; St.hitos.push({ id: nextId('HIT', St.hitos), ini: n.id, nombre: h.nombre, fase: h.fase || n.fase, fecha: f, completado: ok, fechaReal: ok ? (h.fechaReal || f) : null, resp: h.resp || n.lider || '', ...(h.cat && hitoCats().includes(h.cat) ? { cat: h.cat } : {}) }); nh++; });
+        sfImportar(n, x.subfases, m => avisos.push(n.titulo + ': ' + m)); (x.hitos || []).forEach((h, k) => { if (!h || !h.subfase) return; const hh = St.hitos[nh0 + k], sf = hh && sfRef(n, h.subfase, hh.fase); if (!hh) return; if (!sf) return avisos.push(n.titulo + ': el hito «' + hh.nombre + '» apunta a una subfase que no existe (' + h.subfase + ')'); if (sf.fase !== hh.fase) return avisos.push(n.titulo + ': el hito «' + hh.nombre + '» es de ' + hh.fase + ' y la subfase «' + sf.nombre + '» de ' + sf.fase + ' (sin subfase)'); hh.subfase = sf.id; });
         (x.riesgos || []).forEach(r => { St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: n.id, cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: n.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '', ...r }); nr++; });
         log('Cambio', n.id, T + ' importada: ' + n.titulo + (x.hitos ? ' (' + x.hitos.length + ' hitos' + (x.riesgos ? ', ' + x.riesgos.length + ' riesgos' : '') + ')' : '')); });
-      toast(nuevas.length + ' iniciativa(s) importada(s), ' + nh + ' hitos, ' + nr + ' riesgos'); refresh(); }, 'Importar');
+      const ns = St.ini.slice(-nuevas.length).reduce((a, x) => a + subfasesDe(x).length, 0);
+      toast(nuevas.length + ' iniciativa(s) importada(s), ' + nh + ' hitos, ' + nr + ' riesgos' + (ns ? ', ' + ns + ' subfases' : '') + (avisos.length ? ' · ' + avisos.length + ' aviso(s): ' + avisos.slice(0, 2).join(' | ') : ''), avisos.length ? 'err' : 'ok'); avisos.forEach(a => log('Cambio', '', 'Importación: ' + a)); refresh(); }, 'Importar');
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 /* V22.52: proyecto <-> IA (exportar con instrucciones, importar con vista previa) */
 const IAP_TXT = ['titulo', 'desc', 'bc', 'sponsor', 'lider', 'negocio', 'categoria', 'resumen', 'logros', 'proximos', 'issue', 'riesgoTxt'], IAP_NUM = ['avance', 'presupuesto', 'gastado', 'beneficio'], IAP_DATE = ['inicioPlan', 'finPlan', 'finEst'];
@@ -4124,13 +4145,15 @@ function iapExport(i) {
       que_es_un_proyecto: 'Un proyecto tiene objetivo, sponsor, líder, presupuesto, fechas plan (inicioPlan, finPlan), avance 0-100, salud RAG, hitos y riesgos. Fases: ' + FASES_PRJ.join(' → ') + '. Estados: ' + ESTADOS_PRJ.join(', ') + '. Un hito es un entregable o punto de control con fecha y responsable. Un riesgo es un evento incierto con probabilidad e impacto (1 a 5); exposición = prob × imp; es crítico si exposición ≥ ' + um + ' y entonces exige plan de mitigación.',
       como_trabajar: ['1) Lee «pendientes»: es la lista de datos que faltan o están inconsistentes.', '2) PREGUNTA al usuario antes de escribir: pide cada dato faltante (objetivo, sponsor, presupuesto, fechas), los hitos por fase con fecha y responsable, y los riesgos principales con probabilidad, impacto, dueño y mitigación. Pregunta por varios a la vez, no uno por uno.', '3) NO inventes cifras, fechas ni nombres. Si el usuario no sabe un dato, déjalo sin cambios y dilo.', '4) Para hitos vencidos pregunta si se completaron (y su fecha real) o si cambia la fecha.', '5) Cuando el usuario confirme, entrega el JSON de vuelta.'],
       formato_de_vuelta: 'Responde SOLO con un bloque JSON válido (sin comentarios ni texto dentro), con esta forma: { "formato": "apih-proyecto-ia", "v": 1, "proyecto_id": "' + i.id + '", "proyecto": { SOLO los campos que cambian }, "hitos": [ ... ], "riesgos": [ ... ] }. Omite lo que no cambia. No incluyas «instrucciones», «pendientes» ni «catalogos».',
-      reglas: ['Fechas en formato YYYY-MM-DD. Números sin separadores ni unidades (presupuesto y gastado en ' + (MONEDAS[i.moneda] || MONEDAS.CLP).n + ').', 'Hito existente: incluye su «id» y solo los campos que cambian. Hito nuevo: sin «id», con «nombre», «fase» y «fecha» obligatorios; «resp» y «completado» opcionales. Si completado=true agrega «fechaReal».', 'Riesgo existente: incluye «id». Riesgo nuevo: sin «id», con «desc», «cat», «prob», «imp», «dueno», «mit».', 'No elimines ni renombres ids. Nunca cambies «fase» ni «estado» del proyecto: se cambian en la app porque tienen compuertas de validación.', 'Un riesgo abierto con exposición ≥ ' + um + ' debe traer «mit» no vacío o será rechazado.', 'avance debe ser coherente con los hitos completados.']
+      reglas: ['Fechas en formato YYYY-MM-DD. Números sin separadores ni unidades (presupuesto y gastado en ' + (MONEDAS[i.moneda] || MONEDAS.CLP).n + ').', 'Hito existente: incluye su «id» y solo los campos que cambian. Hito nuevo: sin «id», con «nombre», «fase» y «fecha» obligatorios; «resp» y «completado» opcionales. Si completado=true agrega «fechaReal».', 'Categoría de hito («cat»): ' + hitoCats().join(', ') + ' o vacía.', 'Subfases («subfases»): cada una dentro de UNA fase obligatoria, con inicio y fin dentro de «ventanas_de_fase» (vacíos heredan los de la fase). Existente: con su «id»; nueva: sin «id». «hitos[].subfase»: id o nombre de una subfase de la MISMA fase del hito; vacío la quita.', 'Riesgo existente: incluye «id». Riesgo nuevo: sin «id», con «desc», «cat», «prob», «imp», «dueno», «mit».', 'No elimines ni renombres ids. Nunca cambies «fase» ni «estado» del proyecto: se cambian en la app porque tienen compuertas de validación.', 'Un riesgo abierto con exposición ≥ ' + um + ' debe traer «mit» no vacío o será rechazado.', 'avance debe ser coherente con los hitos completados.']
     },
     catalogos: { rag: RAGS, prioridad: PRIOS, moneda: Object.keys(MONEDAS), fases: FASES_PRJ, riesgo_cat: RISK_CATS, riesgo_estado: RISK_ESTADOS },
     pendientes: iapPendientes(i),
     solo_lectura: { fase: i.fase, estado: i.estado, area: i.area, id: i.id },
     proyecto: pr,
-    hitos: hitosDe(i.id).sort(by('fecha')).map(h => ({ id: h.id, nombre: h.nombre, cat: h.cat || '', fase: h.fase, fecha: h.fecha, completado: !!h.completado, fechaReal: h.fechaReal || null, resp: h.resp || '' })),
+    ventanas_de_fase: fasesVentana(i).map(v => ({ fase: v.fase, inicio: v.ini, fin: v.fin })),
+    subfases: subfasesDe(i).map(x => ({ id: x.id, nombre: x.nombre, fase: x.fase, inicio: x.inicio, fin: x.fin, resp: x.resp || '' })),
+    hitos: hitosDe(i.id).sort(by('fecha')).map(h => ({ id: h.id, nombre: h.nombre, cat: h.cat || '', subfase: h.subfase || '', fase: h.fase, fecha: h.fecha, completado: !!h.completado, fechaReal: h.fechaReal || null, resp: h.resp || '' })),
     riesgos: riesgosDe(i.id).map(r => ({ id: r.id, desc: r.desc, cat: r.cat, prob: r.prob, imp: r.imp, estado: r.estado, dueno: r.dueno || '', fIdent: r.fIdent || '', fRev: r.fRev || '', mit: r.mit || '' })),
     contexto_decisiones: St.decisiones.filter(d => d.ini === i.id).map(d => ({ id: d.id, titulo: d.titulo, estado: d.estado }))
   };
@@ -4156,15 +4179,25 @@ Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = '';
       else err.push('Campo no editable por esta vía: ' + k); });
     const ip = P.inicioPlan !== undefined ? P.inicioPlan : i.inicioPlan, fp = P.finPlan !== undefined ? P.finPlan : i.finPlan; if (ip && fp && fp < ip) err.push('finPlan anterior a inicioPlan: se omiten cambios de fechas plan');
     const bloqueo = ip && fp && fp < ip;
+    const sfN = [];   // subfases que el archivo crea o cambia (para resolver referencias de hitos al validar)
+    (Array.isArray(o.subfases) ? o.subfases : []).forEach(x => { const e0 = err.length; const tmp = { id: i.id, tipo: i.tipo, fase: i.fase, inicioPlan: i.inicioPlan, finPlan: i.finPlan, creada: i.creada, subfases: [] }; sfImportar(Object.assign(tmp, { subfases: [] }), [x], m => err.push(m)); if (err.length > e0) return;
+      const w = ventanaDe(i, x.fase) || {}, ex = subfasesDe(i).find(s => (x.id && s.id === x.id) || (s.fase === x.fase && _nrm(s.nombre) === _nrm(x.nombre)));
+      sfN.push({ id: ex ? ex.id : null, nombre: x.nombre, fase: x.fase });
+      if (ex && ex.nombre === x.nombre && ex.fase === x.fase && ex.inicio === (x.inicio || w.ini) && ex.fin === (x.fin || w.fin) && (x.resp == null || x.resp === (ex.resp || ''))) return;   // sin cambios
+      ch.push((ex ? 'Subfase ' + ex.nombre + ': ' : 'Subfase NUEVA: ') + x.nombre + ' · ' + x.fase + ' · ' + rangoTx(x.inicio || w.ini, x.fin || w.fin)); ap.push(() => sfImportar(i, [x], m => toast(m, 'err'))); });
+    const sfVal = (ref, fase) => { if (!ref) return ''; const s0 = sfRef(i, ref, fase) || sfN.find(s => s.id === ref || (_nrm(s.nombre) === _nrm(ref) && (!fase || s.fase === fase))) || sfN.find(s => _nrm(s.nombre) === _nrm(ref)); if (!s0) return 'subfase «' + ref + '» no existe'; if (fase && s0.fase !== fase) return 'la subfase «' + s0.nombre + '» es de ' + s0.fase + ' y el hito de ' + fase; return ''; };
     (o.hitos || []).forEach(h => { if (!h || typeof h !== 'object') return;
       if (h.id) { const x = St.hitos.find(y => y.id === h.id); if (!x || x.ini !== i.id) return err.push('Hito ' + h.id + ' no pertenece a este proyecto'); const c = [];
         ['nombre', 'fase', 'resp'].forEach(k => { if (h[k] !== undefined && h[k] !== x[k]) { if (typeof h[k] !== 'string' || (k === 'nombre' && !h[k].trim())) return err.push(h.id + '.' + k + ' inválido'); if (k === 'fase' && h[k] && !FASES.includes(h[k])) return err.push(h.id + ': fase inválida'); c.push(k + ' ' + ver(x[k]) + ' → ' + ver(h[k])); } });
         ['fecha', 'fechaReal'].forEach(k => { if (h[k] !== undefined && h[k] !== (x[k] || null)) { if (h[k] !== null && !iapFecha(h[k])) return err.push(h.id + '.' + k + ' fecha inválida'); if (k === 'fecha' && !h[k]) return err.push(h.id + '.fecha vacía'); c.push(k + ' ' + ver(x[k]) + ' → ' + ver(h[k])); } });
+        if (h.cat !== undefined && (h.cat || '') !== (x.cat || '')) { if (h.cat && !hitoCats().includes(h.cat)) return err.push(h.id + ': categoría inválida (' + h.cat + ')'); c.push('cat ' + ver(x.cat) + ' → ' + ver(h.cat)); }
+        if (h.subfase !== undefined && (h.subfase || '') !== (x.subfase || '')) { const e1 = sfVal(h.subfase, h.fase !== undefined ? h.fase : x.fase); if (e1) return err.push(h.id + ': ' + e1); c.push('subfase ' + ver(x.subfase) + ' → ' + ver(h.subfase)); }
         if (h.completado !== undefined && !!h.completado !== !!x.completado) c.push('completado ' + !!x.completado + ' → ' + !!h.completado);
-        if (c.length) { ch.push('Hito ' + h.id + ': ' + c.join('; ')); ap.push(() => { ['nombre', 'fase', 'resp', 'fecha'].forEach(k => { if (h[k] !== undefined) x[k] = h[k]; }); if (h.completado !== undefined) { x.completado = !!h.completado; x.fechaReal = x.completado ? (h.fechaReal || x.fechaReal || hoy()) : null; } else if (h.fechaReal !== undefined && x.completado) x.fechaReal = h.fechaReal; }); } }
+        if (c.length) { ch.push('Hito ' + h.id + ': ' + c.join('; ')); ap.push(() => { ['nombre', 'fase', 'resp', 'fecha'].forEach(k => { if (h[k] !== undefined) x[k] = h[k]; }); if (h.cat !== undefined) { if (h.cat) x.cat = h.cat; else delete x.cat; } if (h.subfase !== undefined) { const sf = sfRef(i, h.subfase, x.fase); if (sf) x.subfase = sf.id; else delete x.subfase; } if (h.completado !== undefined) { x.completado = !!h.completado; x.fechaReal = x.completado ? (h.fechaReal || x.fechaReal || hoy()) : null; } else if (h.fechaReal !== undefined && x.completado) x.fechaReal = h.fechaReal; }); } }
       else { if (!String(h.nombre || '').trim() || !iapFecha(h.fecha)) return err.push('Hito nuevo sin nombre o con fecha inválida: ' + JSON.stringify(h).slice(0, 60)); if (h.fase && !FASES.includes(h.fase)) return err.push('Hito nuevo «' + h.nombre + '»: fase inválida');
         if (St.hitos.some(y => y.ini === i.id && _nrm(y.nombre) === _nrm(h.nombre))) return err.push('Hito nuevo «' + h.nombre + '» ya existe (se omite)');
-        ch.push('Hito NUEVO: ' + h.nombre + ' · ' + (h.fase || i.fase) + ' · ' + h.fecha); ap.push(() => { const ok = !!h.completado; St.hitos.push({ id: nextId('HIT', St.hitos), ini: i.id, nombre: h.nombre, fase: h.fase || i.fase, fecha: h.fecha, completado: ok, fechaReal: ok ? (h.fechaReal || h.fecha) : null, resp: h.resp || i.lider || '' }); }); } });
+        if (h.cat && !hitoCats().includes(h.cat)) return err.push('Hito nuevo «' + h.nombre + '»: categoría inválida'); if (h.subfase) { const e2 = sfVal(h.subfase, h.fase || i.fase); if (e2) return err.push('Hito nuevo «' + h.nombre + '»: ' + e2); }
+        ch.push('Hito NUEVO: ' + h.nombre + ' · ' + (h.fase || i.fase) + ' · ' + h.fecha); ap.push(() => { const ok = !!h.completado; const nw = { id: nextId('HIT', St.hitos), ini: i.id, nombre: h.nombre, fase: h.fase || i.fase, fecha: h.fecha, completado: ok, fechaReal: ok ? (h.fechaReal || h.fecha) : null, resp: h.resp || i.lider || '' }; if (h.cat) nw.cat = h.cat; const sf = h.subfase && sfRef(i, h.subfase, nw.fase); if (sf) nw.subfase = sf.id; St.hitos.push(nw); }); } });
     (o.riesgos || []).forEach(q => { if (!q || typeof q !== 'object') return; const x = q.id ? St.riesgos.find(y => y.id === q.id) : null; if (q.id && (!x || x.ini !== i.id)) return err.push('Riesgo ' + q.id + ' no pertenece a este proyecto');
       const v = Object.assign({}, x || { cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: i.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '' }, q); delete v.id;
       if (!x && !String(q.desc || '').trim()) return err.push('Riesgo nuevo sin descripción'); if (!RISK_CATS.includes(v.cat)) return err.push((q.id || 'Riesgo nuevo') + ': categoría inválida'); if (!RISK_ESTADOS.includes(v.estado)) return err.push((q.id || 'Riesgo nuevo') + ': estado inválido');
@@ -9985,7 +10018,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.58', b: '17-10-2026 01:10' };
+  const VER = { v: 'V22.59', b: '17-10-2026 01:40' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;

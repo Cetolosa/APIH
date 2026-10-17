@@ -7,3 +7,4 @@ for t in fin1 sf1 fz1 ps1; do sed "s#http://localhost:8765/demo/index.html#http:
 run() { APIH_DEV_USER=christian.tolosa@aramark.cl APIH_DEV_ROL=Admin PORT=7072 node services/api/server.js > /tmp/t/api.log 2>&1 & SP=$!; sleep 2.5; printf "%s: " "$1"; timeout 300 node "$2" 2>&1 | grep -E "^(OK|FALLA)" || echo "FALLA (sin resultado)"; kill $SP 2>/dev/null; wait $SP 2>/dev/null; sleep 1; }
 run corp2 tests/e2e/corp2.js; run corp1 tests/e2e/corp1.js; run corp3 tests/e2e/corp3.js
 for t in fin1 sf1 fz1 ps1; do run "corp-$t" /tmp/t/cx/$t.js; done
+export APIH_URL=http://localhost:7072/; run corp-imp3 tests/e2e/imp3.js
