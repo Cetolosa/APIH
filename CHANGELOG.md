@@ -25,6 +25,7 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 ## Excepciones del Prototipo
 | Versión | Fecha | Cambio | Decisión |
 | --- | --- | --- | --- |
+| V22.56 | 17-10-2026 | Versión final: ficha de propuesta con Planificación e Hitos; Planificación con selector Proyectos · Propuestas · Ambos; categorías de hitos y filtros por categoría (hitos y riesgos). e2e `fin1`. | [ADR-013](docs/decisiones/ADR-013-version-final-propuestas-categorias.md) |
 | V22.55 | 16-10-2026 | Subfases por proyecto dentro de las fases obligatorias: heredan inicio y fin de la fase, no pueden salir de ella; la fase se muestra siempre con sus fechas. e2e `sf1`. | [ADR-012](docs/decisiones/ADR-012-subfases-por-proyecto.md) |
 
 ## Cómo se documenta cada versión
