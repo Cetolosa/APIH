@@ -676,6 +676,7 @@ body{font:13px/1.45 var(--font)}
 .fz-g{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:13px}.fz-g b{width:14px;flex:none}
 .fz-cols{display:grid;grid-template-columns:repeat(var(--n),minmax(240px,1fr));gap:12px;overflow-x:auto;align-items:start}
 .fz-col{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;overflow:hidden}.fz-colh{color:#fff;padding:10px 12px}.fz-colh small{display:block;opacity:.9;font-size:12px}
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.cat-chips .chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:14px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer;min-height:28px}.cat-chips .chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .sf-grid{display:grid;grid-template-columns:repeat(var(--n),minmax(150px,1fr));gap:8px;margin-top:8px}.sf-colw{display:flex;flex-direction:column;gap:6px}
 .sf-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--bd);border-left:4px solid var(--c);border-radius:6px;padding:6px 8px;background:var(--card);color:var(--tx);font:inherit;font-size:12px;cursor:pointer}.sf-chip.cur{border-color:var(--c);box-shadow:0 0 0 1px var(--c)}.sf-chip.bad{border-color:var(--red)}.sf-chip small{color:var(--tx2,#605E5C)}
 .sf-add{border:1px dashed var(--bd);border-radius:6px;background:transparent;color:var(--pri);font:inherit;font-size:12px;padding:5px 8px;cursor:pointer;text-align:left}
@@ -957,6 +958,14 @@ const DEC_TIPOS = ['Iniciar', 'Acelerar', 'Mantener', 'Pausar', 'Cancelar'];
 const DEC_ICON = { Iniciar: 'play', Acelerar: 'fast', Mantener: 'pause2', Pausar: 'pause', Cancelar: 'x' };
 const DEC_C = { Iniciar: '#107C10', Acelerar: '#0D446A', Mantener: '#605E5C', Pausar: '#CA5010', Cancelar: '#D13438' };
 const RISK_CATS = ['Técnico', 'Alcance', 'Recursos', 'Proveedor', 'Cronograma', 'Financiero', 'Regulatorio', 'Otro'];
+/* V22.56 · categorías de hitos (configurables en St.cfg.hitoCats) */
+const HITO_CATS = ['Entregable', 'Gobierno', 'Técnico', 'Proveedor', 'Pago', 'Comunicación', 'Otro'];
+const hitoCats = () => (typeof St !== 'undefined' && St && St.cfg && Array.isArray(St.cfg.hitoCats) && St.cfg.hitoCats.length ? St.cfg.hitoCats : HITO_CATS);
+/* V22.56 · Planificación muestra proyectos, propuestas o ambos (preferencia por navegador) */
+const PLAN_TIPOS = [['prj', 'Proyectos'], ['prop', 'Propuestas'], ['all', 'Ambos']];
+const planTipo = () => { if (!UI.planTipo) { try { UI.planTipo = localStorage.getItem('apih_ptipo') || 'all'; } catch (e) { UI.planTipo = 'all'; } } return UI.planTipo; };
+const porTipo = i => { const t = planTipo(); return !i || t === 'all' || (t === 'prop') === esProp(i); };
+const planSeg = () => `<div class="seg" role="group" aria-label="Tipo de iniciativa">${PLAN_TIPOS.map(([k, t]) => `<button class="${planTipo() === k ? 'on' : ''}" aria-pressed="${planTipo() === k}" data-act="ptipo" data-k="${k}">${t}</button>`).join('')}</div>`;
 const RISK_ESTADOS = ['Abierto', 'En mitigación', 'Materializado', 'Cerrado'];
 const BIT_TIPOS = ['Cambio', 'Actualización', 'Riesgo', 'Comentario', 'Decisión', 'Edición'];
 const BIT_C = { 'Cambio': '#0D446A', 'Actualización': '#107C10', 'Riesgo': '#D13438', 'Comentario': '#8764B8', 'Decisión': '#CA5010', 'Edición': '#5a6b7d' };
@@ -2852,7 +2861,7 @@ function hitoForm(h, ini) {
   const nw = !h, v = h ? clone(h) : { ini: ini || (UI.sel && UI.sel.t === 'ini' ? UI.sel.id : ''), fecha: addD(hoy(), 14), completado: false, resp: '', subfase: '' }, hi = byId(v.ini);
   openForm({ pres: true,
     title: nw ? 'Nuevo hito' : 'Editar hito', values: v, danger: nw ? null : 'Eliminar', saveLabel: nw ? 'Crear' : 'Guardar',
-    fields: [{ k: 'ini', l: 'Iniciativa', t: 'select', opts: iniOpts(), req: true, w: 3 }, { k: 'nombre', l: 'Hito', req: true, w: 3 }, { k: 'fase', l: 'Fase', t: 'select', opts: ['', ...FASES.map(x => { const w = hi && ventanaDe(hi, x); return { v: x, t: x + (w && w.ini ? ' · ' + rangoTx(w.ini, w.fin) : '') }; })], hint: 'Opcional: al avanzar de fase se exige cerrar los hitos de la fase' }, { k: 'subfase', l: 'Subfase', t: 'select', opts: [{ v: '', t: '— sin subfase —' }, ...subfasesDe(hi).map(x => ({ v: x.id, t: x.fase + ' › ' + x.nombre + ' · ' + rangoTx(x.inicio, x.fin) }))], hint: hi && subfasesDe(hi).length ? 'Opcional. Debe ser de la misma fase del hito' : 'Este proyecto aún no tiene subfases' }, { k: 'fecha', l: 'Fecha plan', t: 'date', req: true }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'completado', l: 'Estado', t: 'check', lbl: 'Completado' }, { k: 'fechaReal', l: 'Fecha real', t: 'date' }],
+    fields: [{ k: 'ini', l: 'Iniciativa', t: 'select', opts: iniOpts(), req: true, w: 3 }, { k: 'nombre', l: 'Hito', req: true, w: 3 }, { k: 'fase', l: 'Fase', t: 'select', opts: ['', ...FASES.map(x => { const w = hi && ventanaDe(hi, x); return { v: x, t: x + (w && w.ini ? ' · ' + rangoTx(w.ini, w.fin) : '') }; })], hint: 'Opcional: al avanzar de fase se exige cerrar los hitos de la fase' }, { k: 'subfase', l: 'Subfase', t: 'select', opts: [{ v: '', t: '— sin subfase —' }, ...subfasesDe(hi).map(x => ({ v: x.id, t: x.fase + ' › ' + x.nombre + ' · ' + rangoTx(x.inicio, x.fin) }))], hint: hi && subfasesDe(hi).length ? 'Opcional. Debe ser de la misma fase del hito' : 'Este proyecto aún no tiene subfases' }, { k: 'fecha', l: 'Fecha plan', t: 'date', req: true }, { k: 'cat', l: 'Categoría', t: 'select', opts: [{ v: '', t: '— sin categoría —' }, ...hitoCats()] }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'completado', l: 'Estado', t: 'check', lbl: 'Completado' }, { k: 'fechaReal', l: 'Fecha real', t: 'date' }],
     onDanger: () => { St.hitos = St.hitos.filter(x => x.id !== h.id); log('Cambio', h.ini, 'Hito eliminado: ' + h.nombre); toast('Hito eliminado'); UI.sel = null; refresh(); },
     onSave(o) { if (o.completado && !o.fechaReal) o.fechaReal = hoy(); if (!o.completado) o.fechaReal = null;
       if (o.subfase) { const sx = subfasesDe(byId(o.ini)).find(x => x.id === o.subfase); if (!sx) { toast('La subfase elegida no es de esta iniciativa', 'err'); return false; } if (!o.fase) o.fase = sx.fase; if (o.fase !== sx.fase) { toast('La subfase «' + sx.nombre + '» es de ' + sx.fase + ': el hito debe estar en esa fase', 'err'); return false; } if (o.fecha < sx.inicio || o.fecha > sx.fin) toast('Aviso: la fecha del hito queda fuera de la subfase «' + sx.nombre + '» (' + rangoTx(sx.inicio, sx.fin) + ')', 'warn'); } else delete o.subfase;
@@ -3307,7 +3316,7 @@ Views.propuestas = {
 Views.roadmap = {
   render() {
     const t0 = pD(hoy()), f = F('road', { y0: t0.getFullYear(), q0: quarter(hoy()), lane: 'area', q: '', hideDone: false });
-    let rows = scope().filter(i => i.estado !== 'Cancelado'); if (f.hideDone) rows = rows.filter(isLive);
+    let rows = scopeAll().filter(i => porTipo(i) && i.estado !== 'Cancelado'); if (f.hideDone) rows = rows.filter(isLive);
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider).toLowerCase().includes(q)); }
     const W = [0, 1, 2, 3].map(k => { const n = f.y0 * 4 + (f.q0 - 1) + k; return { y: Math.floor(n / 4), q: n % 4 + 1, n }; });
     const qs = w => `${w.y}-${pad((w.q - 1) * 3 + 1)}-01`, qe = w => toISO(new Date(w.y, w.q * 3, 0, 12));
@@ -3324,7 +3333,7 @@ Views.roadmap = {
     }).join('');
     const before = rows.filter(i => endN(i) != null && endN(i) < W[0].n).length, after = rows.filter(i => endN(i) != null && endN(i) > W[3].n).length;
     return pageHead('Roadmap ejecutivo', 'Entregas por trimestre según fecha de fin proyectada (ventana móvil de 4 trimestres). Las barras Q muestran el periodo que abarca cada proyecto.', btn('Exportar CSV', 'roadcsv', { ic: 'down' })) + `
-    <div class="toolbar"><div class="seg"><button data-act="rshift" data-d="-1" aria-label="Trimestre anterior">${icon('chevl', 14)}</button><span class="seg-l" style="min-width:150px">Q${W[0].q} ${W[0].y} – Q${W[3].q} ${W[3].y}</span><button data-act="rshift" data-d="1" aria-label="Trimestre siguiente">${icon('chev', 14)}</button></div>${btn('Hoy', 'rshift', { d: { d: 0 } })}
+    <div class="toolbar">${planSeg()}<div class="seg"><button data-act="rshift" data-d="-1" aria-label="Trimestre anterior">${icon('chevl', 14)}</button><span class="seg-l" style="min-width:150px">Q${W[0].q} ${W[0].y} – Q${W[3].q} ${W[3].y}</span><button data-act="rshift" data-d="1" aria-label="Trimestre siguiente">${icon('chev', 14)}</button></div>${btn('Hoy', 'rshift', { d: { d: 0 } })}
       <div class="search"><span>${icon('search', 14)}</span><input data-key="rd-q" data-chg="flt" data-v="road" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div>
       <label class="tb-l">Carriles<select data-chg="flt" data-v="road" data-f="lane">${selOpts([{ v: 'area', t: 'Por área' }, { v: 'categoria', t: 'Por categoría' }, { v: 'lider', t: 'Por responsable' }, { v: 'fase', t: 'Por fase' }, { v: '', t: 'Sin carriles' }], f.lane)}</select></label>
       <label class="chk tb-c"><input type="checkbox" ${f.hideDone ? 'checked' : ''} data-chg="flt" data-v="road" data-f="hideDone" data-bool="1"> <span>Ocultar cerrados</span></label>
@@ -3333,7 +3342,7 @@ Views.roadmap = {
   }
 };
 Acts.rshift = d => { const f = F('road', {}); if (+d.d === 0) { f.y0 = +hoy().slice(0, 4); f.q0 = quarter(hoy()); } else { const n = f.y0 * 4 + (f.q0 - 1) + +d.d; f.y0 = Math.floor(n / 4); f.q0 = n % 4 + 1; } render(); };
-Acts.roadcsv = () => { const rows = scope(); download('APIH_roadmap_' + hoy() + '.csv', toCSV(rows, [{ h: 'ID', f: i => i.id }, { h: 'Iniciativa', f: i => i.titulo }, { h: 'Área', f: i => i.area }, { h: 'Fase', f: i => i.fase }, { h: 'Inicio plan', f: i => i.inicioPlan }, { h: 'Fin plan', f: i => i.finPlan }, { h: 'Fin proyectado', f: i => forecast(i) }, { h: 'Trimestre entrega', f: i => forecast(i) ? 'Q' + quarter(forecast(i)) + ' ' + forecast(i).slice(0, 4) : '' }, { h: 'RAG', f: i => i.rag }]), 'text/csv'); toast('Roadmap exportado'); };
+Acts.roadcsv = () => { const rows = scopeAll().filter(porTipo); download('APIH_roadmap_' + hoy() + '.csv', toCSV(rows, [{ h: 'ID', f: i => i.id }, { h: 'Iniciativa', f: i => i.titulo }, { h: 'Área', f: i => i.area }, { h: 'Fase', f: i => i.fase }, { h: 'Inicio plan', f: i => i.inicioPlan }, { h: 'Fin plan', f: i => i.finPlan }, { h: 'Fin proyectado', f: i => forecast(i) }, { h: 'Trimestre entrega', f: i => forecast(i) ? 'Q' + quarter(forecast(i)) + ' ' + forecast(i).slice(0, 4) : '' }, { h: 'RAG', f: i => i.rag }]), 'text/csv'); toast('Roadmap exportado'); };
 
 /* ======================= V22.53 · FASES: 4 miradas (Gantt por fases, Línea, Tablero, Riesgos en el tiempo) ======================= */
 const FZ_TABS = [['gantt', 'Gantt por fases'], ['linea', 'Línea de fases'], ['tablero', 'Tablero'], ['riesgos', 'Riesgos en el tiempo']];
@@ -3416,17 +3425,20 @@ function subfaseForm(s, iniId, fase) {
 Acts.sfnew = d => subfaseForm(null, d.id, d.f);
 Acts.sfedit = d => { const i = byId(d.id), s = i && subfasesDe(i).find(x => x.id === d.s); if (s) subfaseForm(s, d.id); };
 
+Acts.ptipo = d => { UI.planTipo = d.k; try { localStorage.setItem('apih_ptipo', d.k); } catch (e) { } render(); };
+Acts.fcat = d => { UI.fcat = Object.assign({}, UI.fcat || {}, { [d.t]: d.c }); render(); };
+
 Views.fases = {
   render() {
     const f = F('fases', { tab: 'gantt', q: '', open: {}, riesgos: true, id: '', fk: null });
-    const pool = scopeAll().filter(i => i.estado !== 'Cancelado' && i.inicioPlan && i.finPlan);
+    const pool = scopeAll().filter(i => porTipo(i) && i.estado !== 'Cancelado' && i.inicioPlan && i.finPlan);
     if (!pool.length) return pageHead('Fases', 'Fases, hitos y riesgos de cada iniciativa') + empty('Sin iniciativas con fechas para mostrar', 'gantt');
     if (!f.id || !pool.some(i => i.id === f.id)) f.id = (UI.sel && UI.sel.t === 'ini' && pool.some(i => i.id === UI.sel.id)) ? UI.sel.id : (pool.find(isLive) || pool[0]).id;
     const tabs = `<div class="fz-tabs" role="tablist">${FZ_TABS.map(([k, t]) => `<button role="tab" aria-selected="${f.tab === k}" class="${f.tab === k ? 'on' : ''}" data-act="fztab" data-k="${k}">${t}</button>`).join('')}</div>`;
     const selIni = `<label class="tb-l">Iniciativa<select data-chg="flt" data-v="fases" data-f="id">${selOpts(pool.slice().sort(by('id')).map(i => ({ v: i.id, t: i.id + ' · ' + i.titulo })), f.id)}</select></label>`;
     const body = f.tab === 'linea' ? this.linea(byId(f.id), f) : f.tab === 'tablero' ? this.tablero(byId(f.id)) : f.tab === 'riesgos' ? this.riesgos(byId(f.id)) : this.gantt(pool, f);
     return pageHead('Fases', 'Despliega cada iniciativa en sus fases: cronograma, línea de avance con compuerta, tablero de hitos y riesgos en el tiempo.') + tabs +
-      `<div class="toolbar">${f.tab === 'gantt' ? `<div class="search"><span>${icon('search', 14)}</span><input data-key="fz-q" data-chg="flt" data-v="fases" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div><label class="chk tb-c"><input type="checkbox" ${f.riesgos ? 'checked' : ''} data-chg="flt" data-v="fases" data-f="riesgos" data-bool="1"> <span>Riesgos en la línea</span></label>${btn(Object.keys(f.open).filter(k => f.open[k]).length ? 'Contraer todo' : 'Desplegar todo', 'fzall', { cls: 'sm' })}` : selIni}</div>` + body;
+      `<div class="toolbar">${planSeg()}${f.tab === 'gantt' ? `<div class="search"><span>${icon('search', 14)}</span><input data-key="fz-q" data-chg="flt" data-v="fases" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div><label class="chk tb-c"><input type="checkbox" ${f.riesgos ? 'checked' : ''} data-chg="flt" data-v="fases" data-f="riesgos" data-bool="1"> <span>Riesgos en la línea</span></label>${btn(Object.keys(f.open).filter(k => f.open[k]).length ? 'Contraer todo' : 'Desplegar todo', 'fzall', { cls: 'sm' })}` : selIni}</div>` + body;
   },
   gantt(pool, f) {
     let rows = pool; if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.id).toLowerCase().includes(q)); }
@@ -3491,7 +3503,7 @@ const pospSet = o => { try { localStorage.setItem('apih_posp', JSON.stringify(o)
 const pospOn = k => { const p = pospGet()[k]; return !!p && p > hoy(); };
 /* Pasos sugeridos de una iniciativa. u: 0 hoy · 1 esta semana · 2 próximo. prot: tenedor o compuerta que protege */
 function pasosDe(i) {
-  if (!i || esProp(i) || isDone(i)) return [];
+  if (!i || isDone(i)) return [];
   const H = hoy(), out = [], add = (k, u, tipo, t, por, prot, btn, act, d, f) => out.push({ k: i.id + ':' + k, u, tipo, t, por, prot, btn, act, d, f: f || H, ini: i });
   const hs = hitosDe(i.id).filter(h => !h.completado).sort(by('fecha'));
   hs.filter(h => h.fecha < H).forEach(h => add('hv' + h.id, 0, 'Hito vencido', 'Cierra o reprograma «' + h.nombre + '»', 'Venció hace ' + diffD(H, h.fecha) + ' d. Sin explicar, apaga el tenedor Hitos.', 'Hitos', 'Editar hito', 'edit', { t: 'hito', id: h.id }, h.fecha));
@@ -3509,7 +3521,7 @@ function pasosDe(i) {
   if (nx) {
     const g = gates(i, nx), falta = g.filter(x => !x.ok), V = fasesVentana(i), v = V.find(x => x.actual), cerca = v && v.fin && diffD(v.fin, H) <= 7;
     if (!falta.length) add('adv', 0, 'Compuerta', 'Avanza a ' + nx, 'Se cumplen todas las condiciones de la compuerta.', 'Compuerta', 'Avanzar', 'advance', { id: i.id });
-    else falta.filter(x => !/^Hitos de la fase/.test(x.t)).forEach((x, k) => add('g' + k, cerca ? 1 : 2, 'Compuerta', 'Para pasar a ' + nx + ': ' + x.t.charAt(0).toLowerCase() + x.t.slice(1), 'Condición pendiente de la compuerta' + (v && v.fin ? '; la fase ' + i.fase + ' cierra el ' + fzd(v.fin) : '') + '.', 'Compuerta', 'Editar proyecto', 'edit', { t: 'ini', id: i.id }));
+    else falta.filter(x => !/^Hitos de la fase/.test(x.t)).forEach((x, k) => add('g' + k, cerca ? 1 : 2, 'Compuerta', 'Para pasar a ' + nx + ': ' + x.t.charAt(0).toLowerCase() + x.t.slice(1), 'Condición pendiente de la compuerta' + (v && v.fin ? '; la fase ' + i.fase + ' cierra el ' + fzd(v.fin) : '') + '.', 'Compuerta', esProp(i) ? 'Editar propuesta' : 'Editar proyecto', 'edit', { t: 'ini', id: i.id }));
   }
   return out.filter(p => !pospOn(p.k)).sort(by(p => p.u + '|' + p.f));
 }
@@ -3526,7 +3538,7 @@ function planFichaHTML(i) {
   const steps = `<div class="fz-steps" style="--n:${V.length}">${V.map(x => `<div class="fz-step ${x.actual ? 'on act' : ''}" style="--c:${x.color};cursor:default"><span class="fz-st"><span class="fz-num">${x.k + 1}</span>${esc(x.fase)}</span><small class="fz-sm">${fzd(x.ini)} → ${fzd(x.fin)} · ${x.done}/${x.hitos.length} hitos</small><span class="fz-pb"><i style="width:${x.hitos.length ? Math.round(x.done / x.hitos.length * 100) : 0}%"></i></span></div>`).join('')}</div>`;
   const prox = [...hitosDe(i.id).filter(h => !h.completado && h.fecha >= H && diffD(h.fecha, H) <= 14).map(h => ({ f: h.fecha, k: 'Hito', c: '#0D446A', t: h.nombre })),
     ...riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev && r.fRev >= H && diffD(r.fRev, H) <= 14).map(r => ({ f: r.fRev, k: 'Riesgo', c: '#A4262C', t: 'Revisión: ' + r.desc }))].sort(by('f'));
-  const g = Views.fases.gantt([i], { q: '', open: { [i.id]: true }, riesgos: true });
+  const g = i.inicioPlan && i.finPlan ? Views.fases.gantt([i], { q: '', open: { [i.id]: true }, riesgos: true }) : `<div class="note">${icon('cal', 14)}<span>Define ${esProp(i) ? 'las fechas tentativas' : 'las fechas plan'} (inicio y fin) para ver el cronograma de fases con sus hitos y riesgos.</span></div>`;
   return `<div class="fz-2" style="margin-top:0"><div style="flex:999 1 620px;min-width:0;display:flex;flex-direction:column;gap:12px">
       <div class="fz-card" style="padding:12px 14px"><div class="fz-ch" style="padding:0 0 10px;border:0"><h3>Fases</h3><a class="lnk" data-act="fzir" data-id="${i.id}">Abrir en Planificación › Fases</a></div>${steps}${sfGrid(i, V)}</div>
       ${g}
@@ -3556,7 +3568,7 @@ const GZ = { week: { n: 'Semana', p: 11 }, month: { n: 'Mes', p: 4.2 }, quarter:
 Views.gantt = {
   render() {
     const f = F('gantt', { zoom: 'month', group: 'area', q: '', fases: 'all', deps: true, focus: '' });
-    let rows = scope().filter(i => i.inicioPlan && i.finPlan && i.estado !== 'Cancelado');
+    let rows = scopeAll().filter(i => porTipo(i) && i.inicioPlan && i.finPlan && i.estado !== 'Cancelado');
     if (f.fases === 'act') rows = rows.filter(i => FASES_ACT.includes(i.fase) && isLive(i)); else if (f.fases === 'pipe') rows = rows.filter(i => FASES_PIPE.includes(i.fase)); else if (f.fases === 'live') rows = rows.filter(isLive);
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider).toLowerCase().includes(q)); }
     rows = rows.slice().sort((a, b) => ((f.group === 'area' ? a.area.localeCompare(b.area) : f.group === 'fase' ? FASES.indexOf(a.fase) - FASES.indexOf(b.fase) : 0) || a.inicioPlan.localeCompare(b.inicioPlan)));
@@ -3585,7 +3597,7 @@ Views.gantt = {
     const tx = x(hoy());
     const grp = rows.map((i, k) => (k === 0 || (f.group === 'area' ? i.area !== rows[k - 1].area : f.group === 'fase' ? i.fase !== rows[k - 1].fase : false)) && f.group ? `<div class="g-gl" style="top:${k * RH}px">${esc(f.group === 'area' ? i.area : i.fase)}</div>` : '').join('');
     return pageHead('Gantt', `${N} proyectos · barra = plan/real con avance · línea gris = línea base · ◆ hitos · flechas = dependencias${rows.some(i => FASES_PIPE.includes(i.fase)) ? ' · rayado = fechas tentativas de propuestas' : ''}`, btn('Ir a hoy', 'gtoday', { ic: 'target' })) + `
-    <div class="toolbar"><div class="seg">${Object.entries(GZ).map(([k, v]) => `<button class="${f.zoom === k ? 'on' : ''}" data-act="gzoom" data-z="${k}">${v.n}</button>`).join('')}</div>
+    <div class="toolbar">${planSeg()}<div class="seg">${Object.entries(GZ).map(([k, v]) => `<button class="${f.zoom === k ? 'on' : ''}" data-act="gzoom" data-z="${k}">${v.n}</button>`).join('')}</div>
       <div class="search"><span>${icon('search', 14)}</span><input data-key="g-q" data-chg="flt" data-v="gantt" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div>
       <select data-chg="flt" data-v="gantt" data-f="fases">${selOpts([{ v: 'all', t: 'Todo el portafolio' }, { v: 'live', t: 'Solo vivas' }, { v: 'act', t: 'Solo en ejecución' }, { v: 'pipe', t: 'Solo pipeline' }], f.fases)}</select>
       <label class="tb-l">Agrupar<select data-chg="flt" data-v="gantt" data-f="group">${selOpts([{ v: 'area', t: 'Área' }, { v: 'fase', t: 'Fase' }, { v: '', t: 'Ninguno' }], f.group)}</select></label>
@@ -3606,7 +3618,7 @@ function heatColor(e) { return e >= 20 ? '#B3262B' : e >= 15 ? '#D13438' : e >= 
 Views.riesgos = {
   render() {
     const f = F('risk', { q: '', estado: '', cat: '', nivel: '', dueno: '', cell: '', ini: '', hideClosed: true });
-    let all = St.riesgos.filter(r => (!byId(r.ini) || inArea(byId(r.ini))) && respItem(r, 'dueno')); const open = all.filter(riesgoAbierto);
+    let all = St.riesgos.filter(r => (!byId(r.ini) || inArea(byId(r.ini))) && porTipo(byId(r.ini)) && respItem(r, 'dueno')); const open = all.filter(riesgoAbierto);
     let rows = all.slice();
     if (f.hideClosed) rows = rows.filter(riesgoAbierto);
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(r => (r.desc + r.id + nameOf(r.ini) + r.dueno).toLowerCase().includes(q)); }
@@ -3626,8 +3638,8 @@ Views.riesgos = {
       <div class="kpi"><div class="k-top"><span class="k-ic">${icon('trend', 16)}</span><span class="k-l">Exposición total</span></div><div class="k-v">${sum(open, expo)}</div><div class="k-s">En mitigación: ${open.filter(r => r.estado === 'En mitigación').length}</div></div></section>
     <div class="grid12"><section class="card c6"><header><h2>Matriz de calor 5×5</h2><small>${f.cell ? '<a class="lnk" data-act="hcell" data-c="' + f.cell + '">Quitar filtro de celda</a>' : 'Clic en una celda para filtrar'}</small></header>${heat}</section>
       <section class="card c6"><header><h2>Exposición por proyecto</h2><small>Suma de exposición de riesgos abiertos</small></header>${hbars(byIni, 0, v => v)}<div style="margin-top:14px"><h3 class="sub">Por categoría</h3>${hbars(RISK_CATS.map(c => ({ l: c, v: open.filter(r => r.cat === c).length, c: '#2a78d6' })).filter(x => x.v), 0)}</div></section></div>
-    <div class="toolbar" style="margin-top:14px"><div class="search"><span>${icon('search', 14)}</span><input data-key="rk-q" data-chg="flt" data-v="risk" data-f="q" type="search" placeholder="Buscar riesgo…" value="${esc(f.q)}"></div>
-      <select data-chg="flt" data-v="risk" data-f="ini">${selOpts(uniq(all.map(r => r.ini).filter(Boolean)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todos los proyectos')}</select><select data-chg="flt" data-v="risk" data-f="estado">${selOpts(RISK_ESTADOS, f.estado, 'Todos los estados')}</select><select data-chg="flt" data-v="risk" data-f="cat">${selOpts(RISK_CATS, f.cat, 'Todas las categorías')}</select>
+    <div class="toolbar" style="margin-top:14px">${planSeg()}<div class="search"><span>${icon('search', 14)}</span><input data-key="rk-q" data-chg="flt" data-v="risk" data-f="q" type="search" placeholder="Buscar riesgo…" value="${esc(f.q)}"></div>
+      <select data-chg="flt" data-v="risk" data-f="ini">${selOpts(uniq(all.map(r => r.ini).filter(Boolean)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todas las iniciativas')}</select><select data-chg="flt" data-v="risk" data-f="estado">${selOpts(RISK_ESTADOS, f.estado, 'Todos los estados')}</select><select data-chg="flt" data-v="risk" data-f="cat">${selOpts(RISK_CATS, f.cat, 'Todas las categorías')}</select>
       <select data-chg="flt" data-v="risk" data-f="nivel">${selOpts(['Crítico', 'Alto', 'Medio', 'Bajo'], f.nivel, 'Todos los niveles')}</select><select data-chg="flt" data-v="risk" data-f="dueno">${selOpts(uniq(St.riesgos.map(r => r.dueno).filter(Boolean)).sort(), f.dueno, 'Todos los dueños')}</select>
       <label class="chk tb-c"><input type="checkbox" ${f.hideClosed ? 'checked' : ''} data-chg="flt" data-v="risk" data-f="hideClosed" data-bool="1"> <span>Ocultar cerrados</span></label></div>
     <div class="tbl-w"><table class="tbl"><thead><tr><th>ID</th><th>Proyecto</th><th style="min-width:220px">Descripción</th><th class="n" title="Impacto">Imp.</th><th class="n" title="Probabilidad">Prob.</th><th class="n" title="Exposición">Exp.</th><th style="min-width:200px">Mitigación</th><th>Dueño</th><th>Estado</th></tr></thead><tbody>
@@ -3641,8 +3653,9 @@ Acts.riskcsv = () => { download('APIH_riesgos_' + hoy() + '.csv', toCSV(St.riesg
 /* ======================= HITOS ======================= */
 Views.hitos = {
   render() {
-    const f = F('hitos', { q: '', est: '', ini: '', resp: '' });
-    let all = HITOS().filter(h => byId(h.ini) && inArea(byId(h.ini)) && respItem(h, 'resp') && byId(h.ini).estado !== 'Cancelado'); let rows = all.slice();
+    const f = F('hitos', { q: '', est: '', ini: '', resp: '', cat: '' });
+    let all = HITOS().filter(h => byId(h.ini) && inArea(byId(h.ini)) && porTipo(byId(h.ini)) && respItem(h, 'resp') && byId(h.ini).estado !== 'Cancelado'); let rows = all.slice();
+    if (f.cat) rows = rows.filter(h => (h.cat || '') === (f.cat === '—' ? '' : f.cat));
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(h => (h.nombre + nameOf(h.ini)).toLowerCase().includes(q)); }
     if (f.ini) rows = rows.filter(h => h.ini === f.ini); if (f.resp) rows = rows.filter(h => h.resp === f.resp);
     if (f.est) rows = rows.filter(h => { const k = hitoEstado(h).k; return f.est === 'done' ? (k === 'done' || k === 'late') : k === f.est; });
@@ -3655,12 +3668,12 @@ Views.hitos = {
     return pageHead('Hitos', 'Semaforización automática según fecha plan y avance. Verde = completado a tiempo · Azul = en plazo · Ámbar = vence en ≤ 7 días o completado con retraso · Rojo = vencido.', `<span class="edit-only">${btn('Nuevo hito', 'new', { d: { t: 'hito' }, ic: 'plus', cls: 'pri' })}</span>${btn('Exportar CSV', 'hitocsv', { ic: 'down' })}`) + `
     <div class="chips-row">${chip('over', 'Vencidos', c('over'), 'bad')}${chip('soon', 'Vencen en ≤ 7 d', c('soon'), 'warn')}${chip('ok', 'En plazo', c('ok'), '')}${chip('done', 'Completados', c('done') + c('late'), 'good')}
       <div class="card wk"><header><h2>Hitos pendientes por semana</h2></header><div class="wkb">${wk.map(w => `<div title="${w.v} hitos · semana del ${w.l}"><b style="height:${w.v / mxw * 56}px"></b><small>${w.l.split(' ')[0]}</small></div>`).join('')}</div></div></div>
-    <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="h-q" data-chg="flt" data-v="hitos" data-f="q" type="search" placeholder="Buscar hito…" value="${esc(f.q)}"></div>
-      <select data-chg="flt" data-v="hitos" data-f="ini">${selOpts(uniq(all.map(h => h.ini)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todos los proyectos')}</select>
+    <div class="toolbar">${planSeg()}<div class="search"><span>${icon('search', 14)}</span><input data-key="h-q" data-chg="flt" data-v="hitos" data-f="q" type="search" placeholder="Buscar hito…" value="${esc(f.q)}"></div>
+      <select data-chg="flt" data-v="hitos" data-f="ini">${selOpts(uniq(all.map(h => h.ini)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todas las iniciativas')}</select><select data-chg="flt" data-v="hitos" data-f="cat" aria-label="Categoría">${selOpts([...hitoCats(), '—'].map(c => ({ v: c, t: c === '—' ? 'Sin categoría' : c })), f.cat, 'Todas las categorías')}</select>
       
       ${f.est || f.ini || f.resp || f.q ? btn('Limpiar', 'hclear', { ic: 'x' }) : ''}</div>
-    <div class="tbl-w"><table class="tbl"><thead><tr><th style="width:40px"></th><th>Proyecto</th><th style="min-width:240px">Hito</th><th>Fecha plan</th><th>Fecha real</th><th>Responsable</th><th>Estado</th></tr></thead><tbody>
-    ${rows.map(h => { const e = hitoEstado(h); return `<tr data-act="sel" data-t="hito" data-id="${h.id}" class="${UI.sel && UI.sel.id === h.id ? 'sel' : ''}"><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado" data-nostop="1"></td><td>${iniLink(h.ini)}</td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b></td><td>${fmtD(h.fecha)}<small>${rel(h.fecha)}</small></td><td>${fmtD(h.fechaReal)}</td><td>${esc(h.resp || '—')}</td><td><span class="pill" style="--c:${e.c}">${e.t}</span></td></tr>`; }).join('') || `<tr><td colspan="7">${empty('Sin hitos', 'flag')}</td></tr>`}</tbody></table></div>`;
+    <div class="tbl-w"><table class="tbl"><thead><tr><th style="width:40px"></th><th>Iniciativa</th><th style="min-width:240px">Hito</th><th>Fecha plan</th><th>Fecha real</th><th>Responsable</th><th>Estado</th></tr></thead><tbody>
+    ${rows.map(h => { const e = hitoEstado(h); return `<tr data-act="sel" data-t="hito" data-id="${h.id}" class="${UI.sel && UI.sel.id === h.id ? 'sel' : ''}"><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado" data-nostop="1"></td><td>${iniLink(h.ini)}</td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b><small>${esc(h.cat || 'Sin categoría')} · ${esc(h.fase || '')}</small></td><td>${fmtD(h.fecha)}<small>${rel(h.fecha)}</small></td><td>${fmtD(h.fechaReal)}</td><td>${esc(h.resp || '—')}</td><td><span class="pill" style="--c:${e.c}">${e.t}</span></td></tr>`; }).join('') || `<tr><td colspan="7">${empty('Sin hitos', 'flag')}</td></tr>`}</tbody></table></div>`;
   }
 };
 Acts.hest = d => { const f = F('hitos', {}); f.est = f.est === d.k ? '' : d.k; render(); };
@@ -4077,7 +4090,7 @@ Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
       nuevas.forEach(x => { const PR = x.tipo === 'Propuesta', pre = PR ? 'PROP' : 'PRJ', T = PR ? 'Propuesta' : 'Proyecto';
         const n = Object.assign({ id: nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))), tipo: T, legacy: '', creada: hoy(), faseDesde: hoy(), origen: 'importación', est: [], hist: [[hoy(), +x.avance || 0]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, estado: PR ? 'Vigente' : 'En curso', propuestaOrigen: null, estadoMotivo: '', estadoRev: null, rag: 'Verde', avance: 0, gastado: 0, proyecto: null, deps: [], area: 'BISE', fase: PR ? FASES_PROP[0] : 'Planificación', prioridad: 'Media', presupuesto: 0, logros: '', proximos: '', sponsor: '', lider: '', desc: '' }, x, { id: undefined, actualizada: hoy() });
         n.id = nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))); n.finEst = n.finEst || n.finPlan || null; delete n.hitos; delete n.riesgos; St.ini.push(n);
-        (x.hitos || []).forEach(h => { const f = h.fecha || addD(n.inicioPlan || hoy(), +h.dias || 0), ok = !!h.completado; St.hitos.push({ id: nextId('HIT', St.hitos), ini: n.id, nombre: h.nombre, fase: h.fase || n.fase, fecha: f, completado: ok, fechaReal: ok ? (h.fechaReal || f) : null, resp: h.resp || n.lider || '' }); nh++; });
+        (x.hitos || []).forEach(h => { const f = h.fecha || addD(n.inicioPlan || hoy(), +h.dias || 0), ok = !!h.completado; St.hitos.push({ id: nextId('HIT', St.hitos), ini: n.id, nombre: h.nombre, fase: h.fase || n.fase, fecha: f, completado: ok, fechaReal: ok ? (h.fechaReal || f) : null, resp: h.resp || n.lider || '', ...(h.cat && hitoCats().includes(h.cat) ? { cat: h.cat } : {}) }); nh++; });
         (x.riesgos || []).forEach(r => { St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: n.id, cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: n.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '', ...r }); nr++; });
         log('Cambio', n.id, T + ' importada: ' + n.titulo + (x.hitos ? ' (' + x.hitos.length + ' hitos' + (x.riesgos ? ', ' + x.riesgos.length + ' riesgos' : '') + ')' : '')); });
       toast(nuevas.length + ' iniciativa(s) importada(s), ' + nh + ' hitos, ' + nr + ' riesgos'); refresh(); }, 'Importar');
@@ -4112,7 +4125,7 @@ function iapExport(i) {
     pendientes: iapPendientes(i),
     solo_lectura: { fase: i.fase, estado: i.estado, area: i.area, id: i.id },
     proyecto: pr,
-    hitos: hitosDe(i.id).sort(by('fecha')).map(h => ({ id: h.id, nombre: h.nombre, fase: h.fase, fecha: h.fecha, completado: !!h.completado, fechaReal: h.fechaReal || null, resp: h.resp || '' })),
+    hitos: hitosDe(i.id).sort(by('fecha')).map(h => ({ id: h.id, nombre: h.nombre, cat: h.cat || '', fase: h.fase, fecha: h.fecha, completado: !!h.completado, fechaReal: h.fechaReal || null, resp: h.resp || '' })),
     riesgos: riesgosDe(i.id).map(r => ({ id: r.id, desc: r.desc, cat: r.cat, prob: r.prob, imp: r.imp, estado: r.estado, dueno: r.dueno || '', fIdent: r.fIdent || '', fRev: r.fRev || '', mit: r.mit || '' })),
     contexto_decisiones: St.decisiones.filter(d => d.ini === i.id).map(d => ({ id: d.id, titulo: d.titulo, estado: d.estado }))
   };
@@ -9688,8 +9701,8 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     return { kicker: kx ? kx.innerHTML : '', title: (f.querySelector('.pn-h h3') || {}).innerHTML || '', pills: (f.querySelector('.pn-p') || {}).innerHTML || '', acts: (f.querySelector('.pn-a') || {}).innerHTML || '', body: f.querySelector('.pn-b') };
   }
   const SECS = [
-    ['res', 'Resumen', 'list', true], ['pla', 'Planificación', 'gantt', true, 'prj'], ['cif', 'Cifras, fechas y responsables', 'money'], ['sal', 'Salud y recomendación', 'target'], ['dep', 'Dependencias', 'link'], ['log', 'Logros y próximos pasos', 'check'], ['cal', 'Calidad de datos', 'shield'],
-    ['hit', 'Hitos', 'flag', true, 'prj'], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Historial', 'book', true], ['ia', 'IA', 'spark'], ['doc', 'Documentación', 'book'], ['int', 'Notas internas del PMO', 'lock', true], ['nota', 'Comentarios del área', 'comment', true]
+    ['res', 'Resumen', 'list', true], ['pla', 'Planificación', 'gantt', true], ['cif', 'Cifras, fechas y responsables', 'money'], ['sal', 'Salud y recomendación', 'target'], ['dep', 'Dependencias', 'link'], ['log', 'Logros y próximos pasos', 'check'], ['cal', 'Calidad de datos', 'shield'],
+    ['hit', 'Hitos', 'flag', true], ['rie', 'Riesgos', 'shield'], ['dec', 'Decisiones', 'gavel'], ['com', 'Compromisos', 'users'], ['cam', 'Control de cambios', 'refresh', false, 'prj'], ['act', 'Historial', 'book', true], ['ia', 'IA', 'spark'], ['doc', 'Documentación', 'book'], ['int', 'Notas internas del PMO', 'lock', true], ['nota', 'Comentarios del área', 'comment', true]
   ];
   const SIMPLE_OPEN = ['res', 'cif', 'hit', 'rie', 'doc', 'int'];
   const fh = () => (UI.fh = UI.fh || (() => { try { return JSON.parse(lsGet('apih_fh') || '{}'); } catch (e) { return {}; } })());
@@ -9713,14 +9726,20 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     return '';
   };
   function secHitos(i) {
-    const hs = hitosDe(i.id).sort(by('fecha'));
-    if (!hs.length) return [0, V.emptyRich({ ic: 'flag', title: 'Este proyecto aún no tiene hitos', line: 'Sin hitos no se puede medir el avance esperado. Cárgalos con la plantilla de Excel o créalos uno a uno.', p: ['Cargar plantilla Excel', 'cargaxl', {}, 'up'], s: ['Crear hito', 'new', { t: 'hito', ini: i.id }, 'flag'] })];
-    return [hs.length, `<table class="tbl"><thead><tr><th></th><th>Hito</th><th>Fase</th><th>Fecha</th><th>Estado</th><th>Responsable</th><th></th></tr></thead><tbody>${hs.map(h => { const e = hitoEstado(h); return `<tr><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado"></td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b></td><td>${fasePill(h.fase)}${(x => x ? ` <small class="mut">› ${esc(x.nombre)}</small>` : '')(h.subfase && subfasesDe(byId(h.ini)).find(y => y.id === h.subfase))}</td><td>${fmtD(h.fecha)}</td><td style="color:${e.c}">${e.t}</td><td>${esc(h.resp || '—')}</td><td><button class="icon-btn sm" data-act="edit" data-t="hito" data-id="${h.id}" aria-label="Editar">${icon('edit', 14)}</button></td></tr>`; }).join('')}</tbody></table>`];
+    const all = hitosDe(i.id).sort(by('fecha')), fc = (UI.fcat || {}).h || '', hs = fc ? all.filter(h => (h.cat || '—') === fc) : all;
+    if (!all.length) return [0, V.emptyRich({ ic: 'flag', title: (esProp(i) ? 'Esta propuesta' : 'Este proyecto') + ' aún no tiene hitos', line: 'Sin hitos no se puede medir el avance esperado. Cárgalos con la plantilla de Excel o créalos uno a uno.', p: ['Cargar plantilla Excel', 'cargaxl', {}, 'up'], s: ['Crear hito', 'new', { t: 'hito', ini: i.id }, 'flag'] })];
+    return [all.length, catChips('h', all.map(h => h.cat || '—')) + `<table class="tbl"><thead><tr><th></th><th>Hito</th><th>Categoría</th><th>Fase</th><th>Fecha</th><th>Estado</th><th>Responsable</th><th></th></tr></thead><tbody>${hs.map(h => { const e = hitoEstado(h); return `<tr><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado"></td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b></td><td>${h.cat ? `<span class="pill soft">${esc(h.cat)}</span>` : '<span class="mut">—</span>'}</td><td>${fasePill(h.fase)}${(x => x ? ` <small class="mut">› ${esc(x.nombre)}</small>` : '')(h.subfase && subfasesDe(byId(h.ini)).find(y => y.id === h.subfase))}</td><td>${fmtD(h.fecha)}</td><td style="color:${e.c}">${e.t}</td><td>${esc(h.resp || '—')}</td><td><button class="icon-btn sm" data-act="edit" data-t="hito" data-id="${h.id}" aria-label="Editar">${icon('edit', 14)}</button></td></tr>`; }).join('')}</tbody></table>`];
+  }
+  /* chips de categoría con conteo; clic filtra la sección (h: hitos · r: riesgos) */
+  function catChips(t, cats) {
+    const cur = (UI.fcat || {})[t] || '', cnt = {}; cats.forEach(c => cnt[c] = (cnt[c] || 0) + 1); const ks = Object.keys(cnt).sort((a, b) => a === '—' ? 1 : b === '—' ? -1 : a.localeCompare(b));
+    if (ks.length < 2 && !cur) return '';
+    return `<div class="cat-chips" role="group" aria-label="Filtrar por categoría"><button class="chip ${!cur ? 'on' : ''}" aria-pressed="${!cur}" data-act="fcat" data-t="${t}" data-c="">Todas · ${cats.length}</button>${ks.map(c => `<button class="chip ${cur === c ? 'on' : ''}" aria-pressed="${cur === c}" data-act="fcat" data-t="${t}" data-c="${esc(c)}">${esc(c === '—' ? 'Sin categoría' : c)} · ${cnt[c]}</button>`).join('')}</div>`;
   }
   function secRiesgos(i) {
-    const rs = riesgosDe(i.id).sort(by(r => -expo(r)));
-    if (!rs.length) return [0, V.emptyRich({ ic: 'shield', title: 'Sin riesgos registrados', line: 'Registrar un riesgo a tiempo es más barato que explicarlo después.', p: ['Registrar riesgo', 'new', { t: 'risk', ini: i.id }, 'shield'] })];
-    return [rs.length, rs.map(r => { const n = nivelRiesgo(expo(r)); return `<button class="al" data-act="sel" data-t="risk" data-id="${r.id}"><span class="expo" style="background:${n.c}">${expo(r)}</span><span><b>${esc(r.desc)}</b><small>${r.estado} · ${esc(r.dueno || 'sin dueño')}</small></span></button>`; }).join('')];
+    const rall = riesgosDe(i.id).sort(by(r => -expo(r))), fr = (UI.fcat || {}).r || '', rs = fr ? rall.filter(r => (r.cat || '—') === fr) : rall;
+    if (!rall.length) return [0, V.emptyRich({ ic: 'shield', title: 'Sin riesgos registrados', line: 'Registrar un riesgo a tiempo es más barato que explicarlo después.', p: ['Registrar riesgo', 'new', { t: 'risk', ini: i.id }, 'shield'] })];
+    return [rall.length, catChips('r', rall.map(r => r.cat || '—')) + (rs.map(r => { const n = nivelRiesgo(expo(r)); return `<button class="al" data-act="sel" data-t="risk" data-id="${r.id}"><span class="expo" style="background:${n.c}">${expo(r)}</span><span><b>${esc(r.desc)}</b><small>${esc(r.cat || 'Sin categoría')} · ${r.estado} · ${esc(r.dueno || 'sin dueño')}</small></span></button>`; }).join('') || '<p class="mut">Sin riesgos en esta categoría.</p>')];
   }
   function secDec(i) {
     const ds = St.decisiones.filter(d => d.ini === i.id);
@@ -9829,11 +9848,11 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   Acts.hsmas = () => { UI.hs.n += 15; render(); };
   function fichaHTML(i) {
     const PR = esProp(i), R = parsePanel(i, 'resumen'), G = {};
-    [...R.body.children].forEach(el => { const k = PR ? 'res' : grupoResumen(el); (G[k] = G[k] || []).push(el.outerHTML); });
+    [...R.body.children].forEach(el => { const k = grupoResumen(el); (G[k] = G[k] || []).push(el.outerHTML); });
     const sec = {};
     ['res', 'cif', 'sal', 'dep', 'log', 'cal'].forEach(k => { if (G[k]) sec[k] = [null, G[k].join('')]; });
-    if (!PR) sec.pla = [pasosDe(i).length || null, planFichaHTML(i)];
-    if (!PR) sec.hit = secHitos(i);
+    sec.pla = [pasosDe(i).length || null, planFichaHTML(i)];
+    sec.hit = secHitos(i);
     sec.rie = secRiesgos(i); sec.dec = secDec(i); sec.com = secCom(i); if (!PR) sec.cam = secCam(i);
     sec.act = [St.bitacora.filter(x => x.ini === i.id).length, histHTML(i)];
     if (APIH_CONFIG.ia !== false) sec.ia = [null, parsePanel(i, 'ia').body.innerHTML];
@@ -9961,7 +9980,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.55', b: '16-10-2026 23:30' };
+  const VER = { v: 'V22.56', b: '17-10-2026 00:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
