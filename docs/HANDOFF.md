@@ -1,6 +1,6 @@
 # APIH — Documento de traspaso
 
-> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.54 · Corporativo C2.10)
+> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.55 · Corporativo C2.10)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -16,7 +16,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Congelado** (V22.52) con excepciones **V22.53** (vista Fases, ADR-006) y **V22.54** (Planificación en ficha + Siguientes pasos, ADR-007); **congelado nuevamente en V22.54** | En construcción, **C1.3** · producción objetivo **27-11-2026** (plan acelerado) |
+| Estado | **Congelado** (V22.52) con excepciones **V22.53** (vista Fases, ADR-006) y **V22.54** (Planificación en ficha + Siguientes pasos, ADR-007); **congelado nuevamente en V22.54**; excepción **V22.55** (subfases por proyecto, ADR-012), abierto hasta que se pida congelar | En construcción, **C1.3** · producción objetivo **27-11-2026** (plan acelerado) |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo, monorepo (carpetas vacías aún), luego repo de Aramark que indique TI |

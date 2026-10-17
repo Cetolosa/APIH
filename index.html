@@ -676,6 +676,11 @@ body{font:13px/1.45 var(--font)}
 .fz-g{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:13px}.fz-g b{width:14px;flex:none}
 .fz-cols{display:grid;grid-template-columns:repeat(var(--n),minmax(240px,1fr));gap:12px;overflow-x:auto;align-items:start}
 .fz-col{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;overflow:hidden}.fz-colh{color:#fff;padding:10px 12px}.fz-colh small{display:block;opacity:.9;font-size:12px}
+.sf-grid{display:grid;grid-template-columns:repeat(var(--n),minmax(150px,1fr));gap:8px;margin-top:8px}.sf-colw{display:flex;flex-direction:column;gap:6px}
+.sf-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--bd);border-left:4px solid var(--c);border-radius:6px;padding:6px 8px;background:var(--card);color:var(--tx);font:inherit;font-size:12px;cursor:pointer}.sf-chip.cur{border-color:var(--c);box-shadow:0 0 0 1px var(--c)}.sf-chip.bad{border-color:var(--red)}.sf-chip small{color:var(--tx2,#605E5C)}
+.sf-add{border:1px dashed var(--bd);border-radius:6px;background:transparent;color:var(--pri);font:inherit;font-size:12px;padding:5px 8px;cursor:pointer;text-align:left}
+.sf-h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:12px;font-weight:600;padding:6px 2px 2px;border-bottom:1px solid var(--bd)}.sf-h small{font-weight:400}
+.fz-rng{white-space:nowrap}.fz-subt{white-space:nowrap;color:var(--pri);font-weight:600}
 .fz-colb{padding:10px;display:flex;flex-direction:column;gap:8px}.fz-it{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:8px 10px;font-size:13px}.fz-itm{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
 .fz-ri{display:flex;gap:8px;align-items:center;font-size:12px}.fz-rt{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;margin-top:4px}
 .fz-exp{min-width:24px;text-align:center;font-weight:700;border-radius:4px;padding:1px 4px;font-size:12px;flex:none}
@@ -2299,7 +2304,7 @@ function panelIni(i) {
     <div class="pn-sec"><h4>Historial de avance</h4><div style="margin:6px 0">${spark(i.hist.map(x => x[1]), 300, 46)}</div><small class="mut">${i.hist.length} registros de ciclo</small></div>`;
   }
   const fin = isDone(i), canAprobar = PR && !fin && i.fase === 'Aprobación' && i.estado === 'Vigente';
-  return pnHead(`${tipoLbl(i)} ${i.id} · ${esc(i.area)}`, esc(i.titulo), `${tipoPill(i)} ${PR ? '' : ragPill(i.rag)} ${fasePill(i.fase)} ${estPill(i.estado)} ${prioPill(i.prioridad)} ${PR ? '' : starsMini(i)}`,
+  return pnHead(`${tipoLbl(i)} ${i.id} · ${esc(i.area)}`, esc(i.titulo), `${tipoPill(i)} ${PR ? '' : ragPill(i.rag)} ${faseTag(i)} ${estPill(i.estado)} ${prioPill(i.prioridad)} ${PR ? '' : starsMini(i)}`,
     `${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' }) + btn('Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm' })}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
     `<div class="tabs sm">${tabs.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="ptab" data-tab="${k}">${n}</button>`).join('')}</div><div class="pn-b">${b}</div>`;
 }
@@ -2844,12 +2849,15 @@ Chg.hitotoggle = el => toggleHito(el.dataset.id); Acts.hitotoggle = d => toggleH
 
 /* ---------- Hito ---------- */
 function hitoForm(h, ini) {
-  const nw = !h, v = h ? clone(h) : { ini: ini || (UI.sel && UI.sel.t === 'ini' ? UI.sel.id : ''), fecha: addD(hoy(), 14), completado: false, resp: '' };
+  const nw = !h, v = h ? clone(h) : { ini: ini || (UI.sel && UI.sel.t === 'ini' ? UI.sel.id : ''), fecha: addD(hoy(), 14), completado: false, resp: '', subfase: '' }, hi = byId(v.ini);
   openForm({ pres: true,
     title: nw ? 'Nuevo hito' : 'Editar hito', values: v, danger: nw ? null : 'Eliminar', saveLabel: nw ? 'Crear' : 'Guardar',
-    fields: [{ k: 'ini', l: 'Iniciativa', t: 'select', opts: iniOpts(), req: true, w: 3 }, { k: 'nombre', l: 'Hito', req: true, w: 3 }, { k: 'fase', l: 'Fase', t: 'select', opts: ['', ...FASES], hint: 'Opcional: al avanzar de fase se exige cerrar los hitos de la fase' }, { k: 'fecha', l: 'Fecha plan', t: 'date', req: true }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'completado', l: 'Estado', t: 'check', lbl: 'Completado' }, { k: 'fechaReal', l: 'Fecha real', t: 'date' }],
+    fields: [{ k: 'ini', l: 'Iniciativa', t: 'select', opts: iniOpts(), req: true, w: 3 }, { k: 'nombre', l: 'Hito', req: true, w: 3 }, { k: 'fase', l: 'Fase', t: 'select', opts: ['', ...FASES.map(x => { const w = hi && ventanaDe(hi, x); return { v: x, t: x + (w && w.ini ? ' · ' + rangoTx(w.ini, w.fin) : '') }; })], hint: 'Opcional: al avanzar de fase se exige cerrar los hitos de la fase' }, { k: 'subfase', l: 'Subfase', t: 'select', opts: [{ v: '', t: '— sin subfase —' }, ...subfasesDe(hi).map(x => ({ v: x.id, t: x.fase + ' › ' + x.nombre + ' · ' + rangoTx(x.inicio, x.fin) }))], hint: hi && subfasesDe(hi).length ? 'Opcional. Debe ser de la misma fase del hito' : 'Este proyecto aún no tiene subfases' }, { k: 'fecha', l: 'Fecha plan', t: 'date', req: true }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'completado', l: 'Estado', t: 'check', lbl: 'Completado' }, { k: 'fechaReal', l: 'Fecha real', t: 'date' }],
     onDanger: () => { St.hitos = St.hitos.filter(x => x.id !== h.id); log('Cambio', h.ini, 'Hito eliminado: ' + h.nombre); toast('Hito eliminado'); UI.sel = null; refresh(); },
-    onSave(o) { if (o.completado && !o.fechaReal) o.fechaReal = hoy(); if (!o.completado) o.fechaReal = null; if (nw) { const n = { id: nextId('HIT', St.hitos), ...o }; St.hitos.push(n); log('Cambio', o.ini, 'Hito creado: ' + o.nombre + ' (' + fmtD(o.fecha) + ')'); toast('Hito creado'); } else { Object.assign(h, o); log('Cambio', h.ini, 'Hito actualizado: ' + h.nombre); toast('Hito guardado'); } const i = byId(o.ini); if (i) i.actualizada = hoy(); refresh(); }
+    onSave(o) { if (o.completado && !o.fechaReal) o.fechaReal = hoy(); if (!o.completado) o.fechaReal = null;
+      if (o.subfase) { const sx = subfasesDe(byId(o.ini)).find(x => x.id === o.subfase); if (!sx) { toast('La subfase elegida no es de esta iniciativa', 'err'); return false; } if (!o.fase) o.fase = sx.fase; if (o.fase !== sx.fase) { toast('La subfase «' + sx.nombre + '» es de ' + sx.fase + ': el hito debe estar en esa fase', 'err'); return false; } if (o.fecha < sx.inicio || o.fecha > sx.fin) toast('Aviso: la fecha del hito queda fuera de la subfase «' + sx.nombre + '» (' + rangoTx(sx.inicio, sx.fin) + ')', 'warn'); } else delete o.subfase;
+      if (!nw && !o.subfase) delete h.subfase;
+      if (nw) { const n = { id: nextId('HIT', St.hitos), ...o }; St.hitos.push(n); log('Cambio', o.ini, 'Hito creado: ' + o.nombre + ' (' + fmtD(o.fecha) + ')'); toast('Hito creado'); } else { Object.assign(h, o); log('Cambio', h.ini, 'Hito actualizado: ' + h.nombre); toast('Hito guardado'); } const i = byId(o.ini); if (i) i.actualizada = hoy(); refresh(); }
   });
 }
 
@@ -3136,7 +3144,7 @@ const PCOLS = [
   { k: 'sponsor', h: 'Sponsor', w: 140, f: i => i.sponsor, s: i => i.sponsor, r: i => `${esc(i.sponsor || '—')}${estTag(i, 'sponsor')}` },
   { k: 'lider', h: 'Responsable', w: 140, f: i => i.lider, s: i => i.lider, r: i => `<span class="pp">${avatar(i.lider, 20)}${esc(i.lider)}</span>` },
   { k: 'area', h: 'Área', w: 100, f: i => i.area, s: i => i.area, r: i => esc(i.area.replace(/,/g, ', ')) },
-  { k: 'fase', h: 'Fase', w: 130, f: i => i.fase, s: i => FASES.indexOf(i.fase), r: i => fasePill(i.fase) },
+  { k: 'fase', h: 'Fase', w: 130, f: i => i.fase, s: i => FASES.indexOf(i.fase), r: i => faseTag(i) },
   { k: 'estado', h: 'Estado', w: 100, f: i => i.estado, s: i => ESTADOS.indexOf(i.estado), r: i => estPill(i.estado) },
   { k: 'rag', h: 'RAG', w: 82, t: 'j', f: i => i.rag, s: i => RAGS.indexOf(i.rag), r: i => ragPill(i.rag) },
   { k: 'prioridad', h: 'Prioridad', w: 88, f: i => i.prioridad, s: i => PRIOS.indexOf(i.prioridad), r: i => prioPill(i.prioridad) },
@@ -3235,6 +3243,7 @@ Views.proyectos = {
     let rows = scope(); if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.id).toLowerCase().includes(q)); } if (f.resp) rows = rows.filter(i => i.lider === f.resp); if (f.hideDone) rows = rows.filter(isLive);
     const card = i => { const hs = hitosDe(i.id), hd = hs.filter(h => h.completado).length, nh = nextHito(i); return `<article tabindex="0" role="button" class="icard ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini">
       <div class="ic-t"><span class="mono">${i.id}</span>${i.estado !== 'En curso' ? estPill(i.estado) : ''}${ragPill(i.rag)}</div><h3>${esc(i.titulo)}</h3>
+      <div class="ic-ph" style="font-size:12px;margin:-2px 0 4px">${faseTag(i)}</div>
       ${f.mode === 'cards' ? `<p class="ic-d">${esc((i.resumen || i.desc || '').slice(0, 150))}</p>` : ''}
       ${planBars(i)}
       <div class="ic-f"><span class="pp">${avatar(i.lider, 20)}<small>${esc(i.lider.split(' ')[0])}</small></span>${prioPill(i.prioridad)}${desv(i) > cfgI(i,'tolDesv') ? `<span class="pill bad">+${desv(i)} d</span>` : ''}${starsCnt(i) ? `<span class="xtra">${starsCnt(i)}</span>` : ''}</div>
@@ -3339,7 +3348,7 @@ function fasesVentana(i) {
     let ini = k === 0 ? (i.inicioPlan || (h[0] && h[0].fecha) || null) : (prev ? addD(prev, 1) : ((h[0] && h[0].fecha) || null));
     let fin = h.length ? h[h.length - 1].fecha : (k === FS.length - 1 ? (i.finPlan || ini) : ini);
     if (ini && fin && fin < ini) fin = ini; if (!ini) ini = fin; if (fin) prev = fin;
-    return { fase: f, k, ini, fin, hitos: h, done: h.filter(x => x.completado).length, color: FASE_COLOR[f] || '#605E5C', actual: i.fase === f, pasada: FS.indexOf(i.fase) > k };
+    return { fase: f, k, ini, fin, hitos: h, subs: subfasesDe(i).filter(s => s.fase === f).sort(by('inicio')), done: h.filter(x => x.completado).length, color: FASE_COLOR[f] || '#605E5C', actual: i.fase === f, pasada: FS.indexOf(i.fase) > k };
   });
 }
 const fzRiesgosFase = (i, v) => riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev && v.ini && v.fin && r.fRev >= v.ini && r.fRev <= v.fin);
@@ -3352,6 +3361,60 @@ function fzEscala(d0, d1, W) {
 const fzGrid = (E, head) => E.ticks.map(t => `<i class="fz-wk" style="left:${t.x}px">${head ? esc(t.t) : ''}</i>`).join('') + (hoy() >= E.d0 && hoy() <= E.d1 ? `<i class="fz-hoy" style="left:${E.x(hoy())}px"></i>` : '');
 const fzHito = (E, h) => { const e = hitoEstado(h); return `<i class="fz-h ${h.completado ? 'done' : e.k === 'over' ? 'over' : ''}" style="left:${E.x(h.fecha) - 6}px" title="${esc(h.nombre + ' · ' + fzd(h.fecha) + ' · ' + e.t + (h.resp ? ' · ' + h.resp : ''))}"></i>`; };
 const fzRsk = (E, r) => { const n = nivelRiesgo(expo(r)); return `<i class="fz-r" style="left:${E.x(r.fRev) - 6}px;--c:${n.c}" title="${esc(r.desc + ' · ' + n.n + ' (' + expo(r) + ') · revisión ' + fzd(r.fRev))}"></i>`; };
+
+/* ======================= V22.55 · Subfases por proyecto (ADR-012) =======================
+   Una subfase pertenece a UNA fase obligatoria del proyecto. Nace con el inicio y fin de esa fase (los hereda si se dejan vacíos)
+   y no puede extenderse fuera de ella. Se guarda dentro de la iniciativa (i.subfases); el hito la referencia con h.subfase. */
+const subfasesDe = i => (i && Array.isArray(i.subfases) ? i.subfases : []);
+const ventanaDe = (i, f) => fasesVentana(i).find(v => v.fase === f) || null;
+const rangoTx = (a, b) => fzd(a) + ' → ' + fzd(b);
+const subFuera = (s, v) => !v || !v.ini || !v.fin || s.inicio < v.ini || s.fin > v.fin;
+const hitosSub = (i, s) => hitosDe(i.id).filter(h => h.subfase === s.id);
+function subActual(i) { const v = ventanaDe(i, i.fase), H = hoy(); return v ? v.subs.find(s => s.inicio <= H && s.fin >= H) || null : null; }
+/* La fase de un proyecto se muestra siempre con su inicio y fin (y la subfase en curso, si la hay) */
+function faseTag(i, f) {
+  f = f || i.fase; const v = ventanaDe(i, f), s = f === i.fase ? subActual(i) : null;
+  return `${fasePill(f)}${v && v.ini ? ` <small class="mut fz-rng" title="Inicio y fin de la fase ${esc(f)}">${rangoTx(v.ini, v.fin)}</small>` : ''}${s ? ` <small class="fz-subt" title="Subfase en curso · ${rangoTx(s.inicio, s.fin)}">› ${esc(s.nombre)}</small>` : ''}`;
+}
+const sfChip = (i, v, s) => { const hs = hitosSub(i, s), d = hs.filter(h => h.completado).length, H = hoy(), cur = v.actual && s.inicio <= H && s.fin >= H, bad = subFuera(s, v);
+  return `<button class="sf-chip ${cur ? 'cur' : ''} ${bad ? 'bad' : ''}" style="--c:${v.color}" data-act="sfedit" data-id="${i.id}" data-s="${esc(s.id)}" title="Editar subfase"><b>${esc(s.nombre)}</b><small>${rangoTx(s.inicio, s.fin)} · ${d}/${hs.length} hitos${cur ? ' · en curso' : ''}</small>${bad ? `<small style="color:var(--red)">Fuera de la fase (${rangoTx(v.ini, v.fin)})</small>` : ''}</button>`; };
+const sfAddBtn = (i, f) => `<button class="sf-add edit-only" data-act="sfnew" data-id="${i.id}" data-f="${esc(f)}">+ Subfase</button>`;
+/* Fila de subfases alineada bajo las fases (ficha › Planificación) */
+const sfGrid = (i, V) => `<div class="sf-grid" style="--n:${V.length}">${V.map(v => `<div class="sf-colw">${v.subs.map(s => sfChip(i, v, s)).join('')}${sfAddBtn(i, v.fase)}</div>`).join('')}</div>`;
+/* Agrupa la lista de hitos de una fase por subfase (con sus fechas); los hitos sin subfase quedan al final */
+function sfAgrupa(v, render) {
+  if (!v.subs.length) return v.hitos.map(render).join('');
+  const ids = v.subs.map(s => s.id), resto = v.hitos.filter(h => !ids.includes(h.subfase));
+  return v.subs.map(s => `<div class="sf-h"><span>${esc(s.nombre)}</span><small class="mut">${rangoTx(s.inicio, s.fin)}</small></div>${v.hitos.filter(h => h.subfase === s.id).map(render).join('') || '<p class="mut" style="font-size:12px;margin:4px 2px">Sin hitos.</p>'}`).join('')
+    + (resto.length ? `<div class="sf-h"><span>Sin subfase</span></div>${resto.map(render).join('')}` : '');
+}
+const sfNextId = i => { let n = 0; subfasesDe(i).forEach(s => { const m = /SF(\d+)$/.exec(s.id || ''); if (m) n = Math.max(n, +m[1]); }); return i.id + '-SF' + (n + 1); };
+function subfaseForm(s, iniId, fase) {
+  const i = byId(iniId); if (!i) return toast('Iniciativa no encontrada', 'err');
+  const nw = !s, FS = fasesDe(i), f0 = (s && s.fase) || (FS.includes(fase) ? fase : i.fase), w0 = ventanaDe(i, f0) || {};
+  const v = s ? clone(s) : { fase: f0, nombre: '', inicio: w0.ini || '', fin: w0.fin || '', resp: i.lider || '' };
+  openForm({
+    title: (nw ? 'Nueva subfase' : 'Editar subfase') + ' · ' + i.titulo, values: v, danger: nw ? null : 'Eliminar', saveLabel: nw ? 'Crear' : 'Guardar',
+    fields: [{ k: 'fase', l: 'Fase obligatoria', t: 'select', req: true, w: 3, opts: FS.map(x => { const w = ventanaDe(i, x) || {}; return { v: x, t: x + (w.ini ? ' · ' + rangoTx(w.ini, w.fin) : ' · sin fechas') }; }), hint: 'La subfase vive completa dentro de una sola fase obligatoria' },
+      { k: 'nombre', l: 'Nombre de la subfase', req: true, w: 3 }, { k: 'inicio', l: 'Inicio', t: 'date', hint: 'Vacío: hereda el inicio de la fase' }, { k: 'fin', l: 'Fin', t: 'date', hint: 'Vacío: hereda el fin de la fase' }, { k: 'resp', l: 'Responsable', list: people() }],
+    extra: '<p class="mut" style="font-size:12px;margin:10px 0 0">Regla: una subfase no puede extenderse fuera del inicio y fin de su fase. Los hitos de la subfase deben ser de esa misma fase.</p>',
+    onDanger: () => { const hs = hitosSub(i, s); i.subfases = subfasesDe(i).filter(x => x.id !== s.id); hs.forEach(h => { delete h.subfase; }); i.actualizada = hoy(); log('Cambio', i.id, 'Subfase eliminada: ' + s.nombre + ' (' + s.fase + ')' + (hs.length ? ' · ' + hs.length + ' hitos quedan sin subfase' : '')); toast('Subfase eliminada'); refresh(); },
+    onSave(o) {
+      const w = ventanaDe(i, o.fase);
+      if (!w || !w.ini || !w.fin) { toast('La fase ' + o.fase + ' no tiene inicio y fin: define las fechas plan del proyecto', 'err'); return false; }
+      if (nw && o.fase !== f0 && o.inicio === (w0.ini || '') && o.fin === (w0.fin || '')) { o.inicio = ''; o.fin = ''; }   // cambió de fase sin tocar las fechas: hereda las de la nueva fase
+      if (!o.inicio) o.inicio = w.ini; if (!o.fin) o.fin = w.fin;
+      if (o.fin < o.inicio) { toast('El fin de la subfase no puede ser anterior a su inicio', 'err'); return false; }
+      if (o.inicio < w.ini || o.fin > w.fin) { toast('La subfase debe quedar dentro de ' + o.fase + ' (' + rangoTx(w.ini, w.fin) + ')', 'err'); return false; }
+      if (subfasesDe(i).some(x => x.id !== (s && s.id) && x.fase === o.fase && _nrm(x.nombre) === _nrm(o.nombre))) { toast('Ya existe una subfase «' + o.nombre + '» en ' + o.fase, 'err'); return false; }
+      if (nw) { i.subfases = subfasesDe(i).concat([{ id: sfNextId(i), ...o }]); log('Cambio', i.id, 'Subfase creada: ' + o.nombre + ' · ' + o.fase + ' · ' + rangoTx(o.inicio, o.fin)); toast('Subfase creada'); }
+      else { const cf = s.fase !== o.fase; Object.assign(s, o); if (cf) hitosSub(i, s).forEach(h => { h.fase = o.fase; }); log('Cambio', i.id, 'Subfase actualizada: ' + o.nombre + ' · ' + o.fase + ' · ' + rangoTx(o.inicio, o.fin)); toast('Subfase guardada'); }
+      i.actualizada = hoy(); refresh();
+    }
+  });
+}
+Acts.sfnew = d => subfaseForm(null, d.id, d.f);
+Acts.sfedit = d => { const i = byId(d.id), s = i && subfasesDe(i).find(x => x.id === d.s); if (s) subfaseForm(s, d.id); };
 
 Views.fases = {
   render() {
@@ -3379,7 +3442,7 @@ Views.fases = {
         <div class="fz-trk" style="width:${E.W}px">${fzGrid(E)}${segs(i, 12, 20, 1)}${!open && f.riesgos ? rk.map(r => fzRsk(E, r)).join('') : ''}</div></div>`;
       if (!open) return head;
       return head + V[i.id].map(v => `<div class="fz-row fz-sub"><div class="fz-lab" style="padding-left:52px"><span class="fz-sw" style="background:${v.color}"></span><span style="min-width:0"><span>${esc(v.fase)}${v.actual ? ' <b class="fz-act">actual</b>' : ''}</span><small class="fz-sm">${fzd(v.ini)} → ${fzd(v.fin)} · ${v.done}/${v.hitos.length} hitos</small></span></div>
-        <div class="fz-trk" style="width:${E.W}px">${fzGrid(E)}${v.ini && v.fin ? `<i class="fz-bar" style="left:${E.x(v.ini)}px;width:${Math.max(3, E.x(addD(v.fin, 1)) - E.x(v.ini))}px;top:16px;height:12px;background:${v.color};opacity:.35"></i>` : ''}${v.hitos.map(h => fzHito(E, h)).join('')}${f.riesgos ? fzRiesgosFase(i, v).map(r => fzRsk(E, r)).join('') : ''}</div></div>`).join('');
+        <div class="fz-trk" style="width:${E.W}px">${fzGrid(E)}${v.ini && v.fin ? `<i class="fz-bar" style="left:${E.x(v.ini)}px;width:${Math.max(3, E.x(addD(v.fin, 1)) - E.x(v.ini))}px;top:16px;height:12px;background:${v.color};opacity:.35"></i>` : ''}${v.hitos.map(h => fzHito(E, h)).join('')}${f.riesgos ? fzRiesgosFase(i, v).map(r => fzRsk(E, r)).join('') : ''}</div></div>` + v.subs.map(s => { const hs = hitosSub(i, s); return `<div class="fz-row fz-sub"><div class="fz-lab" style="padding-left:76px"><span style="min-width:0"><a class="lnk" data-act="sfedit" data-id="${i.id}" data-s="${esc(s.id)}">${esc(s.nombre)}</a><small class="fz-sm">${rangoTx(s.inicio, s.fin)} · ${hs.filter(h => h.completado).length}/${hs.length} hitos${subFuera(s, v) ? ' · <b style="color:var(--red)">fuera de la fase</b>' : ''}</small></span></div><div class="fz-trk" style="width:${E.W}px">${fzGrid(E)}<i class="fz-bar" style="left:${E.x(s.inicio)}px;width:${Math.max(3, E.x(addD(s.fin, 1)) - E.x(s.inicio))}px;top:17px;height:10px;border-radius:5px;background:var(--card);border:2px solid ${v.color};box-sizing:border-box" title="${esc(s.nombre + ' · ' + rangoTx(s.inicio, s.fin))}"></i>${hs.map(h => fzHito(E, h)).join('')}</div></div>`; }).join('')).join('');
     }).join('');
     return `<div class="fz-box" data-keep="fzg"><div style="min-width:${320 + E.W}px"><div class="fz-row fz-head"><div class="fz-lab"><b>Iniciativa / fase</b></div><div class="fz-trk" style="width:${E.W}px;height:36px">${fzGrid(E, true)}</div></div>${out}</div></div>
       <div class="fz-leg"><span><i class="fz-h done fz-lg"></i>Hito cumplido</span><span><i class="fz-h fz-lg"></i>Hito pendiente</span><span><i class="fz-h over fz-lg"></i>Hito vencido</span><span><i class="fz-r fz-lg" style="--c:#D13438"></i>Revisión de riesgo (color = nivel)</span><span><i class="fz-hoy fz-lg"></i>Hoy</span></div>`;
@@ -3387,18 +3450,18 @@ Views.fases = {
   linea(i, f) {
     const V = fasesVentana(i), cur = Math.max(0, V.findIndex(v => v.actual)), k = f.fk != null && V[f.fk] && f.fid === i.id ? f.fk : cur, v = V[k];
     const steps = `<div class="fz-steps" style="--n:${V.length}">${V.map(x => `<button class="fz-step ${x.k === k ? 'on' : ''} ${x.actual ? 'act' : ''}" style="--c:${x.color}" data-act="fzsel" data-k="${x.k}" data-id="${i.id}"><span class="fz-st"><span class="fz-num">${x.k + 1}</span>${esc(x.fase)}</span><small class="fz-sm">${fzd(x.ini)} → ${fzd(x.fin)}${x.ini && x.fin ? ' · ' + (diffD(x.fin, x.ini) + 1) + ' días' : ''}</small><span class="fz-pb"><i style="width:${x.hitos.length ? Math.round(x.done / x.hitos.length * 100) : 0}%"></i></span><small>${x.done}/${x.hitos.length} hitos · ${x.actual ? 'En curso' : x.pasada ? 'Completada' : 'Por iniciar'}</small></button>`).join('')}</div>`;
-    const lista = v.hitos.length ? v.hitos.map(h => { const e = hitoEstado(h); return `<div class="fz-li"><span class="fz-ck" style="border-color:${e.c};background:${h.completado ? e.c : 'transparent'}">${h.completado ? '✓' : ''}</span><span style="flex:1 1 auto">${esc(h.nombre)}</span><span class="fz-pill" style="color:${fzTx(e.c)};border:1px solid ${e.c}">${esc(e.t)}</span><small class="mut">${esc(h.resp || '')}</small><b style="width:46px;text-align:right">${fzd(h.fecha)}</b></div>`; }).join('') : '<p class="mut" style="padding:12px 16px">Sin hitos en esta fase.</p>';
+    const lista = v.hitos.length || v.subs.length ? sfAgrupa(v, h => { const e = hitoEstado(h); return `<div class="fz-li"><span class="fz-ck" style="border-color:${e.c};background:${h.completado ? e.c : 'transparent'}">${h.completado ? '✓' : ''}</span><span style="flex:1 1 auto">${esc(h.nombre)}</span><span class="fz-pill" style="color:${fzTx(e.c)};border:1px solid ${e.c}">${esc(e.t)}</span><small class="mut">${esc(h.resp || '')}</small><b style="width:46px;text-align:right">${fzd(h.fecha)}</b></div>`; }) : '<p class="mut" style="padding:12px 16px">Sin hitos en esta fase.</p>';
     const FS = fasesDe(i), nx = FS[FS.indexOf(i.fase) + 1];
     let gate = '<p class="mut">Última fase: no hay compuerta siguiente.</p>';
     if (nx) { const g = gates(i, nx), okN = g.filter(x => x.ok).length; gate = `<div class="mut" style="font-size:12px;margin-bottom:8px">${okN} de ${g.length} condiciones cumplidas</div>${g.map(x => `<div class="fz-g"><b style="color:${x.ok ? 'var(--green)' : 'var(--red)'}">${x.ok ? '✓' : '✕'}</b><span>${esc(x.t)}</span></div>`).join('') || '<p class="mut">Sin condiciones para esta fase.</p>'}<span class="edit-only">${btn('Avanzar a ' + nx, 'advance', { d: { id: i.id }, cls: okN === g.length ? 'pri' : '' })}</span>`; }
-    return steps + `<div class="fz-2"><div class="fz-card" style="flex:999 1 560px;min-width:0"><div class="fz-ch"><h3>Hitos de ${esc(v.fase)}</h3><small class="mut">${fzd(v.ini)} → ${fzd(v.fin)}</small></div>${lista}</div>
+    return steps + `<div class="fz-2"><div class="fz-card" style="flex:999 1 560px;min-width:0"><div class="fz-ch"><h3>Hitos de ${esc(v.fase)}</h3><small class="mut">${fzd(v.ini)} → ${fzd(v.fin)}</small></div><div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px">${v.subs.map(s => sfChip(i, v, s)).join('')}${sfAddBtn(i, v.fase)}</div>${lista}</div>
       <div class="fz-card" style="flex:1 1 320px;min-width:0;padding:14px 16px"><h3 style="margin:0 0 4px">Compuerta${nx ? ' hacia ' + esc(nx) : ''}</h3>${gate}</div></div>`;
   },
   tablero(i) {
     const V = fasesVentana(i);
     return `<div class="fz-cols" style="--n:${V.length}">${V.map(v => { const rk = fzRiesgosFase(i, v).sort(by(r => -expo(r)));
       return `<div class="fz-col"><div class="fz-colh" style="background:${v.color}"><b>${esc(v.fase)}${v.actual ? ' · actual' : ''}</b><small>${fzd(v.ini)} → ${fzd(v.fin)} · ${v.done}/${v.hitos.length} hitos</small></div><div class="fz-colb">
-        ${v.hitos.map(h => { const e = hitoEstado(h); return `<div class="fz-it"><div>${esc(h.nombre)}</div><div class="fz-itm"><span class="fz-pill" style="color:${fzTx(e.c)};border:1px solid ${e.c}">${esc(e.t)}</span><small class="mut">${fzd(h.fecha)}</small></div></div>`; }).join('') || '<p class="mut">Sin hitos.</p>'}
+        ${sfAgrupa(v, h => { const e = hitoEstado(h); return `<div class="fz-it"><div>${esc(h.nombre)}</div><div class="fz-itm"><span class="fz-pill" style="color:${fzTx(e.c)};border:1px solid ${e.c}">${esc(e.t)}</span><small class="mut">${fzd(h.fecha)}</small></div></div>`; }) || '<p class="mut">Sin hitos.</p>'}${sfAddBtn(i, v.fase)}
         ${rk.length ? `<div class="fz-rt">Riesgos que se revisan en esta fase</div>${rk.map(r => { const n = nivelRiesgo(expo(r)); return `<div class="fz-it fz-ri"><span class="fz-exp" style="background:${n.c};color:${fzOn(n.c)}">${expo(r)}</span><span style="flex:1 1 auto">${esc(r.desc)}</span><small class="mut">${fzd(r.fRev)}</small></div>`; }).join('')}` : ''}</div></div>`; }).join('')}</div>`;
   },
   riesgos(i) {
@@ -3465,7 +3528,7 @@ function planFichaHTML(i) {
     ...riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev && r.fRev >= H && diffD(r.fRev, H) <= 14).map(r => ({ f: r.fRev, k: 'Riesgo', c: '#A4262C', t: 'Revisión: ' + r.desc }))].sort(by('f'));
   const g = Views.fases.gantt([i], { q: '', open: { [i.id]: true }, riesgos: true });
   return `<div class="fz-2" style="margin-top:0"><div style="flex:999 1 620px;min-width:0;display:flex;flex-direction:column;gap:12px">
-      <div class="fz-card" style="padding:12px 14px"><div class="fz-ch" style="padding:0 0 10px;border:0"><h3>Fases</h3><a class="lnk" data-act="fzir" data-id="${i.id}">Abrir en Planificación › Fases</a></div>${steps}</div>
+      <div class="fz-card" style="padding:12px 14px"><div class="fz-ch" style="padding:0 0 10px;border:0"><h3>Fases</h3><a class="lnk" data-act="fzir" data-id="${i.id}">Abrir en Planificación › Fases</a></div>${steps}${sfGrid(i, V)}</div>
       ${g}
       <div class="fz-card" style="padding:12px 14px"><h3 style="margin:0 0 6px">Próximos 14 días</h3>${prox.length ? prox.map(p => `<div class="fz-li" style="padding:7px 0"><b style="width:44px">${fzd(p.f)}</b><span class="fz-pill" style="color:${p.c};border:1px solid ${p.c}">${p.k}</span><span>${esc(p.t)}</span></div>`).join('') : '<p class="mut">Nada programado en los próximos 14 días.</p>'}</div></div>
     <div class="fz-card" style="flex:1 1 340px;min-width:0;padding:12px 14px"><div class="fz-ch" style="padding:0 0 4px;border:0"><h3>Siguientes pasos</h3><small class="mut">${P.length} sugerido${P.length === 1 ? '' : 's'}</small></div><p class="mut" style="font-size:12px;margin:0 0 10px">Calculados con las reglas de APIH: hitos, compuerta de fase, riesgos, compromisos y tenedores.</p>${P.length ? P.map(p => pasoHTML(p)).join('') : '<p class="mut">Sin pasos pendientes. ¡Todo al día!</p>'}</div></div>`;
@@ -9652,7 +9715,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   function secHitos(i) {
     const hs = hitosDe(i.id).sort(by('fecha'));
     if (!hs.length) return [0, V.emptyRich({ ic: 'flag', title: 'Este proyecto aún no tiene hitos', line: 'Sin hitos no se puede medir el avance esperado. Cárgalos con la plantilla de Excel o créalos uno a uno.', p: ['Cargar plantilla Excel', 'cargaxl', {}, 'up'], s: ['Crear hito', 'new', { t: 'hito', ini: i.id }, 'flag'] })];
-    return [hs.length, `<table class="tbl"><thead><tr><th></th><th>Hito</th><th>Fase</th><th>Fecha</th><th>Estado</th><th>Responsable</th><th></th></tr></thead><tbody>${hs.map(h => { const e = hitoEstado(h); return `<tr><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado"></td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b></td><td>${fasePill(h.fase)}</td><td>${fmtD(h.fecha)}</td><td style="color:${e.c}">${e.t}</td><td>${esc(h.resp || '—')}</td><td><button class="icon-btn sm" data-act="edit" data-t="hito" data-id="${h.id}" aria-label="Editar">${icon('edit', 14)}</button></td></tr>`; }).join('')}</tbody></table>`];
+    return [hs.length, `<table class="tbl"><thead><tr><th></th><th>Hito</th><th>Fase</th><th>Fecha</th><th>Estado</th><th>Responsable</th><th></th></tr></thead><tbody>${hs.map(h => { const e = hitoEstado(h); return `<tr><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado"></td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b></td><td>${fasePill(h.fase)}${(x => x ? ` <small class="mut">› ${esc(x.nombre)}</small>` : '')(h.subfase && subfasesDe(byId(h.ini)).find(y => y.id === h.subfase))}</td><td>${fmtD(h.fecha)}</td><td style="color:${e.c}">${e.t}</td><td>${esc(h.resp || '—')}</td><td><button class="icon-btn sm" data-act="edit" data-t="hito" data-id="${h.id}" aria-label="Editar">${icon('edit', 14)}</button></td></tr>`; }).join('')}</tbody></table>`];
   }
   function secRiesgos(i) {
     const rs = riesgosDe(i.id).sort(by(r => -expo(r)));
@@ -9795,7 +9858,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       const [n, html0] = sec[k], ab = fAbierta(k), oc = fOculta(k); let html = html0, hx = '', fx = '';
       if (k === 'res') {   /* fase actual en la cabecera y «incluir en presentación» en el pie */
         const f = tpl(html0), fl = f.querySelector('.flow'), fs = fl && fl.closest('.pn-sec');
-        if (fs) { const lab = fs.querySelector('.flow-l span'), lnk = fs.querySelector('.flow-l a'), pl = lab && [...pf.querySelectorAll('.pill')].find(x => x.textContent.trim() === lab.textContent.trim()); phLab = lab ? lab.textContent.trim() : ''; phX = `<div class="fl-ph"><span class="fl-phl">Fase actual:</span>${pl ? pl.outerHTML : lab ? `<b>${lab.innerHTML}</b>` : ''}${fl.outerHTML}${lnk ? lnk.outerHTML.replace(/>([^<]*)<\/a>/, (m, tx) => '><span class="lk-l">' + tx + '</span><span class="lk-s">Avanzar →</span></a>') : ''}</div>`; fs.remove(); }
+        if (fs) { const lab = fs.querySelector('.flow-l span'), lnk = fs.querySelector('.flow-l a'), pl = lab && [...pf.querySelectorAll('.pill')].find(x => x.textContent.trim() === lab.textContent.trim()); phLab = lab ? lab.textContent.trim() : ''; phX = `<div class="fl-ph"><span class="fl-phl">Fase actual:</span>${pl ? pl.outerHTML : lab ? `<b>${lab.innerHTML}</b>` : ''}${i && i.fase ? faseTag(i).replace(fasePill(i.fase), '') : ''}${fl.outerHTML}${lnk ? lnk.outerHTML.replace(/>([^<]*)<\/a>/, (m, tx) => '><span class="lk-l">' + tx + '</span><span class="lk-s">Avanzar →</span></a>') : ''}</div>`; fs.remove(); }
         const ib = f.querySelector('.incbox'); if (ib) { fx = `<footer class="fl-ft">${ib.innerHTML}</footer>`; ib.remove(); }
         html = [...f.children].map(e => e.outerHTML).join('');
       }
@@ -9837,7 +9900,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       const fl = f.querySelector('.pn-b .flow'), fs = fl && fl.closest('.pn-sec');
       if (fs) {
         const lnk = fs.querySelector('.flow-l a'), dv = document.createElement('div'); dv.className = 'pn-sec pn-ph2';
-        dv.innerHTML = `<div class="ph-top"><span class="lbl">Fase:</span>${fasePill(i.fase)}<span class="ph-sp"></span>${lnk ? lnk.outerHTML : ''}</div>${fl.outerHTML}`; fs.replaceWith(dv);
+        dv.innerHTML = `<div class="ph-top"><span class="lbl">Fase:</span>${faseTag(i)}<span class="ph-sp"></span>${lnk ? lnk.outerHTML : ''}</div>${fl.outerHTML}`; fs.replaceWith(dv);
       }
       h = [...f.childNodes].map(n => n.outerHTML || n.textContent || '').join('');
     } catch (e) { }
@@ -9898,7 +9961,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.54', b: '16-10-2026 02:00' };
+  const VER = { v: 'V22.55', b: '16-10-2026 23:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
