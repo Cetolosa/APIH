@@ -22,6 +22,11 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 | C1.1 | 15-10-2026 | `c1.1-contrato-iniciativa` · 3008881 | Contrato de Iniciativa: esquema (58 campos), 8 operaciones, 10 reglas, errores, REST sugerido; validador en core; 12 pruebas de contrato + adaptador en memoria. | core C1.1, contracts C1.1, tests/contract C1.1 |
 | C1.0 | 15-10-2026 | `c1.0-core-fechas-riesgo` · b296da5 | `packages/core`: fechas y riesgo copiados de V22.52; prueba de equivalencia (68.256 casos). | core C1.0, tests/unit C1.0 |
 
+## Excepciones del Prototipo
+| Versión | Fecha | Cambio | Decisión |
+| --- | --- | --- | --- |
+| V22.55 | 16-10-2026 | Subfases por proyecto dentro de las fases obligatorias: heredan inicio y fin de la fase, no pueden salir de ella; la fase se muestra siempre con sus fechas. e2e `sf1`. | [ADR-012](docs/decisiones/ADR-012-subfases-por-proyecto.md) |
+
 ## Cómo se documenta cada versión
 1. Rama `c<n>.<m>-<tema>` → pruebas → merge a `main` → push → tag `c<n>.<m>`.
 2. Una fila en este registro y, si cambió el core, en `packages/core/README.md`.
