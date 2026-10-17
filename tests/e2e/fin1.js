@@ -19,9 +19,9 @@ const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').ini
   const r = {}, n = s => p.$$eval(s, a => a.length);
   // 2) Planificación: Gantt, Roadmap, Fases, Hitos y Riesgos con selector de tipo
   r.ganttAmbos = await p.$$eval('.g-bar', a => a.map(x => x.dataset.id).filter(id => /050/.test(id)).join(','));
-  await p.click('[data-act="ptipo"][data-k="prop"]'); await p.waitForTimeout(200); r.ganttProp = await p.$$eval('.g-bar', a => a.map(x => x.dataset.id).join(','));
-  await p.click('[data-act="ptipo"][data-k="all"]');
-  for (const v of ['roadmap', 'fases', 'hitos', 'riesgos']) { await p.evaluate(v => { UI.view = v; render(); }, v); await p.waitForTimeout(250); r['seg_' + v] = await n('[data-act="ptipo"]'); }
+  await p.selectOption('[data-chg="ptipo"]', 'prop'); await p.waitForTimeout(200); r.ganttProp = await p.$$eval('.g-bar', a => a.map(x => x.dataset.id).join(','));
+  await p.selectOption('[data-chg="ptipo"]', 'all');
+  for (const v of ['roadmap', 'fases', 'hitos', 'riesgos']) { await p.evaluate(v => { UI.view = v; render(); }, v); await p.waitForTimeout(250); r['seg_' + v] = await n('[data-chg="ptipo"] option'); }
   await p.evaluate(() => { UI.view = 'roadmap'; render(); }); await p.waitForTimeout(200); r.roadmapProp = await p.evaluate(() => document.body.innerText.includes('Propuesta Planificador de Menús'));
   await p.evaluate(() => { UI.view = 'fases'; F('fases', {}).id = 'PRO-050'; F('fases', {}).tab = 'linea'; render(); }); await p.waitForTimeout(250); r.fasesProp = await p.$$eval('.fz-step', a => a.map(x => x.textContent.split(' ')[0]).length);
   // 3) Categorías: filtro en Hitos
@@ -42,9 +42,10 @@ const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').ini
   await p.evaluate(() => Acts.new({ t: 'hito', ini: 'PRO-050' })); await p.waitForTimeout(200); r.campoCat = await n('#f_cat option');
   // V22.57 · Tabla y Tablero con ambos tipos; panel de propuesta con Hitos; propuesta sin fechas tentativas igual muestra fases
   await p.evaluate(() => { Modal.close && Modal.close(); UI.view = 'portfolio'; render(); }); await p.waitForTimeout(250);
+  await p.screenshot({ path: '/tmp/t/fin-tabla.png' }); r.tablaCols = await p.$$eval('.tbl thead th', a => a.map(x => x.textContent.trim()).filter(Boolean).join('|')); r.menuIni = await p.evaluate(() => document.body.innerText.includes('Pipeline de propuestas'));
   r.tablaIds = await p.$$eval('tr[data-t="ini"]', a => a.map(x => x.dataset.id).filter(id => /050/.test(id)).sort().join(','));
   await p.evaluate(() => { UI.view = 'proyectos'; F('prj', {}).mode = 'board'; render(); }); await p.waitForTimeout(250);
-  r.tableroCols = await p.$$eval('.kcol', a => a.length); r.tableroProp = await p.$$eval('.kcol[data-fase="Evaluación"] .icard', a => a.map(x => x.dataset.id).join(','));
+  await p.screenshot({ path: '/tmp/t/fin-tablero.png' }); r.tableroCols = await p.$$eval('.kcol', a => a.length); r.tableroProp = await p.$$eval('.kcol[data-fase="Evaluación"] .icard', a => a.map(x => x.dataset.id).join(','));
   await p.evaluate(() => { const b = St.ini.find(x => x.id === 'PRO-050'); St.ini.push(Object.assign({}, b, { id: 'PRO-051', titulo: 'Propuesta sin fechas', inicioPlan: null, finPlan: null, creada: '2026-10-01' }));
     St.hitos.push({ id: nextId('HIT', St.hitos), ini: 'PRO-051', nombre: 'Evaluar', fase: 'Evaluación', fecha: '2026-10-25', completado: false, resp: 'Christian Tolosa' }); selectEntity('ini', 'PRO-051', 'resumen'); }); await p.waitForTimeout(300);
   r.panelTabs = await p.$$eval('#panel [role=tab], #panel .tabs button', a => a.map(x => x.textContent.trim()).join('|'));
