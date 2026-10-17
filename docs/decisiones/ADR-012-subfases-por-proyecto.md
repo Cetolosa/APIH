@@ -7,4 +7,4 @@
 **Fechas de la fase.** Se usan las ventanas de V22.53 (`fasesVentana`): desde el día siguiente al fin de la fase anterior hasta su último hito. Si la ventana cambia después (p. ej. se mueve un hito), la subfase que quede fuera se marca en rojo «Fuera de la fase».
 **Datos.** `i.subfases = [{ id: '<ini>-SF<n>', nombre, fase, inicio, fin, resp }]` dentro de la iniciativa (viaja en DatosJSON, sin cambios de esquema); el hito guarda `h.subfase`.
 **Dónde se ve.** Ficha (cabecera, Planificación, tabla de hitos), panel, Proyectos (tabla y tablero), Fases (Gantt, Línea, Tablero) y formulario de hito.
-**Pendiente.** Importador/exportador JSON e IA aún no leen ni escriben subfases. Llevar las reglas al core del Corporativo (`validarSubfase`) con equivalencia.
+**Importar/exportar (V22.59).** Archivo de iniciativas y «Con IA» leen y escriben subfases (por nombre o id) con las mismas reglas; el respaldo completo las incluye. Reglas en el core del Corporativo desde C2.11.
