@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C2.11', b: '17-10-2026', origen: 'V22.56' };
+  const VERSION = { v: 'C2.12', b: '17-10-2026', origen: 'V22.57' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -120,7 +120,7 @@
     const FS = fasesDe(i), hs = hitos || []; let prev = null;
     return FS.map((f, k) => {
       const h = hs.filter(x => x.fase === f).slice().sort(porFecha);
-      let ini = k === 0 ? (i.inicioPlan || (h[0] && h[0].fecha) || null) : (prev ? addD(prev, 1) : ((h[0] && h[0].fecha) || null));
+      let ini = k === 0 ? (i.inicioPlan || (i.tipo === 'Propuesta' && i.creada) || (h[0] && h[0].fecha) || null) : (prev ? addD(prev, 1) : ((h[0] && h[0].fecha) || null));
       let fin = h.length ? h[h.length - 1].fecha : (k === FS.length - 1 ? (i.finPlan || ini) : ini);
       if (ini && fin && fin < ini) fin = ini; if (!ini) ini = fin; if (fin) prev = fin;
       return { fase: f, k, ini, fin, hitos: h, subs: (Array.isArray(i.subfases) ? i.subfases : []).filter(s => s.fase === f).slice().sort((x, y) => x.inicio < y.inicio ? -1 : x.inicio > y.inicio ? 1 : 0), done: h.filter(x => x.completado).length, color: FASE_COLOR[f] || '#605E5C', actual: i.fase === f, pasada: FS.indexOf(i.fase) > k };
