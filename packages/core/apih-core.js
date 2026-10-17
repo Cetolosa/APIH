@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C2.16', b: '17-10-2026', origen: 'V22.59' };
+  const VERSION = { v: 'C2.17', b: '17-10-2026', origen: 'V22.61' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -57,6 +57,7 @@
     if (i.moneda != null && !MONEDAS.includes(i.moneda)) err('moneda', 'CLP, USD o UF');
     if (i.area != null && (!Array.isArray(i.area) || !i.area.length)) err('area', 'lista con al menos un área');
     ['avance', 'avanceFase'].forEach(k => { if (i[k] != null && !(typeof i[k] === 'number' && i[k] >= 0 && i[k] <= 100)) err(k, '0 a 100'); });
+    if (i.faseNota != null) { if (typeof i.faseNota !== 'object' || Array.isArray(i.faseNota)) err('faseNota', 'objeto {fase: texto}'); else Object.entries(i.faseNota).forEach(([fx, v]) => { if (FASES[T] && !FASES[T].includes(fx)) err('faseNota.' + fx, 'fase de ' + T); if (typeof v !== 'string' || v.length > 500) err('faseNota.' + fx, 'texto de hasta 500 caracteres'); }); }
     ['presupuesto', 'gastado', 'beneficio', 'ahorroReal'].forEach(k => { if (i[k] != null && !(typeof i[k] === 'number' && i[k] >= 0)) err(k, 'número >= 0'); });
     ['inicioPlan', 'finPlan', 'finEst', 'inicioReal', 'finReal', 'estadoRev'].forEach(k => { if (i[k] != null && !fechaOk(i[k])) err(k, 'fecha AAAA-MM-DD válida'); });
     if (i.score != null) ['estrategia', 'valor', 'esfuerzo', 'riesgo'].forEach(k => { const v = i.score[k]; if (v != null && !(Number.isInteger(v) && v >= 1 && v <= 5)) err('score.' + k, 'entero 1 a 5'); });
@@ -138,6 +139,7 @@
     if (h.completado && !h.fechaReal) err('fechaReal', 'obligatoria si está completado');
     if (h.cat != null && h.cat !== '' && !HITO_CATS.includes(h.cat)) err('cat', 'categoría de hito válida o vacía');
     if (h.subfase != null && h.subfase !== '' && (typeof h.subfase !== 'string' || !/^(PROP|PRJ|PRO)-\d+-SF\d+$/.test(h.subfase))) err('subfase', 'id de subfase (<iniciativa>-SF<n>)');
+    if (h.desc != null && (typeof h.desc !== 'string' || h.desc.length > 500)) err('desc', 'texto de hasta 500 caracteres');
     return e;
   }
   function validarRiesgo(r, umbral) {
@@ -171,7 +173,8 @@
       if (typeof s.id !== 'string' || !/^(PROP|PRJ|PRO)-\d+-SF\d+$/.test(s.id) || ids.has(s.id)) err(c + '.id', 'obligatorio, único, <iniciativa>-SF<n>'); ids.add(s.id);
       if (typeof s.nombre !== 'string' || !s.nombre.trim() || s.nombre.length > 120) err(c + '.nombre', 'texto obligatorio de hasta 120 caracteres');
       if (s.resp != null && (typeof s.resp !== 'string' || s.resp.length > 120)) err(c + '.resp', 'texto de hasta 120 caracteres');
-      const extra = Object.keys(s).filter(k => !['id', 'nombre', 'fase', 'inicio', 'fin', 'resp'].includes(k)); if (extra.length) err(c, 'campos no permitidos: ' + extra.join(', '));
+      if (s.desc != null && (typeof s.desc !== 'string' || s.desc.length > 500)) err(c + '.desc', 'texto de hasta 500 caracteres');
+      const extra = Object.keys(s).filter(k => !['id', 'nombre', 'fase', 'inicio', 'fin', 'resp', 'desc'].includes(k)); if (extra.length) err(c, 'campos no permitidos: ' + extra.join(', '));
       if (!FS.includes(s.fase)) return err(c + '.fase', 'una fase de ' + i.tipo);
       if (!fechaOk(s.inicio) || !fechaOk(s.fin)) return err(c + '.fechas', 'inicio y fin AAAA-MM-DD (nace con las fechas de su fase)');
       if (s.fin < s.inicio) return err(c + '.fin', 'no anterior al inicio');

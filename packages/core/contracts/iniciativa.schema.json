@@ -75,7 +75,8 @@
     "issue":         { "type": "string" },
     "riesgoTxt":     { "type": "string" },
     "tags":          { "type": "array", "items": { "type": "string" } },
-    "subfases":      { "type": "array", "description": "C2.11 · subfases propias, cada una dentro de una sola fase", "items": { "type": "object", "required": ["id", "nombre", "fase", "inicio", "fin"], "additionalProperties": false, "properties": { "id": { "type": "string", "pattern": "^(PROP|PRJ)-\\d+-SF\\d+$" }, "nombre": { "type": "string", "minLength": 1 }, "fase": { "type": "string" }, "inicio": { "$ref": "#/$defs/fecha" }, "fin": { "$ref": "#/$defs/fecha" }, "resp": { "type": "string" } } } }
+    "faseNota":      { "type": "object", "description": "C2.17 · nota por fase en este proyecto", "additionalProperties": { "type": "string", "maxLength": 500 } },
+    "subfases":      { "type": "array", "description": "C2.11 · subfases propias, cada una dentro de una sola fase", "items": { "type": "object", "required": ["id", "nombre", "fase", "inicio", "fin"], "additionalProperties": false, "properties": { "id": { "type": "string", "pattern": "^(PROP|PRJ)-\\d+-SF\\d+$" }, "nombre": { "type": "string", "minLength": 1 }, "fase": { "type": "string" }, "inicio": { "$ref": "#/$defs/fecha" }, "fin": { "$ref": "#/$defs/fecha" }, "resp": { "type": "string" }, "desc": { "type": "string", "maxLength": 500 } } } }
   },
   "allOf": [
     { "if": { "properties": { "tipo": { "const": "Propuesta" } } },

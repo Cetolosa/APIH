@@ -16,7 +16,7 @@ let plan0;
   assert.match(schema.$id, /\/C\d+\.\d+$/, 'el esquema declara su versión C');
   const sh = JSON.parse(fs.readFileSync(path.join(raiz, 'packages/core/contracts/hito.schema.json'), 'utf8')), sr = JSON.parse(fs.readFileSync(path.join(raiz, 'packages/core/contracts/riesgo.schema.json'), 'utf8'));
   assert.deepStrictEqual(sh.properties.fase.enum, ['', ...I.FASES.Propuesta, ...I.FASES.Proyecto]);
-  assert.deepStrictEqual(sh.properties.cat.enum, ['', ...core.HITO.HITO_CATS]);
+  assert.deepStrictEqual(sh.properties.cat.enum, ['', ...core.HITO.HITO_CATS]); assert.strictEqual(sh.properties.desc.maxLength, 500);
   assert.deepStrictEqual(sr.properties.cat.enum, core.RIESGO.RISK_CATS); assert.deepStrictEqual(sr.properties.estado.enum, core.RIESGO.RISK_ESTADOS);
   plan0 = JSON.parse(fs.readFileSync(path.join(raiz, 'docs/APIH_iniciativas_con_plan.json'), 'utf8'));
   plan0.iniciativas.forEach(x => { (x.hitos || []).forEach(h => { const hh = Object.assign({ ini: 'PRJ-1' }, h); if (hh.completado && !hh.fechaReal) hh.fechaReal = hh.fecha; assert.deepStrictEqual(core.validarHito(hh), [], 'hito ' + h.nombre); });
