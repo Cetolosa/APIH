@@ -2386,7 +2386,7 @@ function panelHome() {
 }
 function panelIni(i) {
   const PR = esProp(i);
-  const tabs = PR ? [['resumen', 'Resumen'], ['riesgos', 'Riesgos (' + riesgosDe(i.id).length + ')'], ['actividad', 'Actividad'], ['ia', 'IA']] : [['resumen', 'Resumen'], ['hitos', 'Hitos (' + hitosDe(i.id).length + ')'], ['riesgos', 'Riesgos (' + riesgosDe(i.id).length + ')'], ['actividad', 'Actividad'], ['ia', 'IA']];
+  const tabs = [['resumen', 'Resumen'], ['hitos', 'Hitos (' + hitosDe(i.id).length + ')'], ['riesgos', 'Riesgos (' + riesgosDe(i.id).length + ')'], ['actividad', 'Actividad'], ['ia', 'IA']];
   if (APIH_CONFIG.ia === false) tabs.splice(tabs.findIndex(t => t[0] === 'ia'), 1);
   const t = tabs.some(x => x[0] === UI.tab) ? UI.tab : 'resumen';
   let b = '';
@@ -3287,7 +3287,7 @@ function portfolioRows() {
 }
 Views.portfolio = {
   render() {
-    const f = F('portfolio', { tipo: 'Proyecto', q: '', fase: '', estado: '', rag: '', prio: '', resp: '', area: '', group: '', sort: 'id', dir: 1, cols: ['id','tipo','titulo','lider','fase','estado','rag','avance','presupuesto','desv','score'], hideDone: false, dens: 'n', col: {} });
+    const f = F('portfolio', { tipo: 'Todo', q: '', fase: '', estado: '', rag: '', prio: '', resp: '', area: '', group: '', sort: 'id', dir: 1, cols: ['id','tipo','titulo','lider','fase','estado','rag','avance','presupuesto','desv','score'], hideDone: false, dens: 'n', col: {} });
     const rows = portfolioRows(), cols = pcols().filter(c => !(['tini', 'sponsor'].includes(c.k) && rows.length && rows.every(i => !c.f(i)))), all = f.tipo === 'Propuesta' ? scopeP() : f.tipo === 'Todo' ? scopeAll() : scope(), nPrj = scope().length, nProp = scopeP().length;
     const grp = f.group; let body = '';
     const rowH = i => `<tr data-act="sel" data-t="ini" data-id="${i.id}" class="${UI.sel && UI.sel.id === i.id ? 'sel' : ''}">${cols.map(c => `<td class="${c.num ? 'n' : ''} c-${c.k}">${PCELL(c, i)}</td>`).join('')}</tr>`;
@@ -3352,19 +3352,20 @@ function starsCnt(i) {
 Views.proyectos = {
   render() {
     const f = F('prj', { q: '', mode: 'board', resp: '', hideDone: true });
-    let rows = scope(); if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.id).toLowerCase().includes(q)); } if (f.resp) rows = rows.filter(i => i.lider === f.resp); if (f.hideDone) rows = rows.filter(isLive);
+    let rows = scopeAll().filter(porTipo); if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.id).toLowerCase().includes(q)); } if (f.resp) rows = rows.filter(i => i.lider === f.resp); if (f.hideDone) rows = rows.filter(isLive);
+    const KF = planTipo() === 'prj' ? FASES_PRJ : planTipo() === 'prop' ? FASES_PROP : [...FASES_PROP, ...FASES_PRJ];
     const card = i => { const hs = hitosDe(i.id), hd = hs.filter(h => h.completado).length, nh = nextHito(i); return `<article tabindex="0" role="button" class="icard ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini">
-      <div class="ic-t"><span class="mono">${i.id}</span>${i.estado !== 'En curso' ? estPill(i.estado) : ''}${ragPill(i.rag)}</div><h3>${esc(i.titulo)}</h3>
+      <div class="ic-t"><span class="mono">${i.id}</span>${esProp(i) ? tipoPill(i) : ''}${!['En curso', 'Vigente'].includes(i.estado) ? estPill(i.estado) : ''}${esProp(i) ? '' : ragPill(i.rag)}</div><h3>${esc(i.titulo)}</h3>
       <div class="ic-ph" style="font-size:12px;margin:-2px 0 4px">${faseTag(i)}</div>
       ${f.mode === 'cards' ? `<p class="ic-d">${esc((i.resumen || i.desc || '').slice(0, 150))}</p>` : ''}
       ${planBars(i)}
       <div class="ic-f"><span class="pp">${avatar(i.lider, 20)}<small>${esc(i.lider.split(' ')[0])}</small></span>${prioPill(i.prioridad)}${desv(i) > cfgI(i,'tolDesv') ? `<span class="pill bad">+${desv(i)} d</span>` : ''}${starsCnt(i) ? `<span class="xtra">${starsCnt(i)}</span>` : ''}</div>
       ${f.mode === 'cards' ? `<div class="ic-x"><span>${icon('flag', 13)} ${hd}/${hs.length} hitos</span><span>${icon('shield', 13)} ${riesgosDe(i.id).filter(riesgoAbierto).length}</span><span>${icon('money', 13)} ${fmtMon(i.presupuesto, monOf(i))}</span><span>${icon('cal', 13)} ${fmtD(forecast(i))}</span></div>${nh ? `<small class="mut">Próx. hito: ${esc(nh.nombre)} · ${fmtD(nh.fecha)}</small>` : ''}` : ''}</article>`; };
     const body = f.mode === 'board'
-      ? `<div class="kanban k4c" data-keep="kb" style="grid-template-columns:repeat(${FASES_PRJ.length},minmax(200px,1fr))">${FASES_PRJ.map(fs => { const it = rows.filter(i => i.fase === fs); return `<div class="kcol" data-fase="${fs}"><div class="k-h"><i style="background:${FASE_COLOR[fs]}"></i><b>${fs}</b><em>${it.length}</em>${it.length ? `<small class="mut" style="margin-left:auto" title="Promedio de avance de la fase activa">fase ${Math.round(it.reduce((s, x) => s + avFase(x).v, 0) / it.length)}%</small>` : ''}</div><div class="k-b">${it.map(card).join('') || '<div class="k-e">Arrastra aquí</div>'}</div></div>`; }).join('')}</div>`
+      ? `<div class="kanban k4c" data-keep="kb" style="grid-template-columns:repeat(${KF.length},minmax(200px,1fr));overflow-x:auto">${KF.map(fs => { const it = rows.filter(i => i.fase === fs); return `<div class="kcol" data-fase="${fs}"><div class="k-h"><i style="background:${FASE_COLOR[fs]}"></i><b>${fs}</b><em>${it.length}</em>${it.length ? `<small class="mut" style="margin-left:auto" title="Promedio de avance de la fase activa">fase ${Math.round(it.reduce((s, x) => s + avFase(x).v, 0) / it.length)}%</small>` : ''}</div><div class="k-b">${it.map(card).join('') || '<div class="k-e">Arrastra aquí</div>'}</div></div>`; }).join('')}</div>`
       : `<div class="cards">${rows.sort(by(i => -critScore(i))).map(card).join('') || empty('Sin proyectos')}</div>`;
-    return pageHead('Proyectos', `${rows.length} proyectos · Planificación → Ejecución → Transición → Cierre, con compuertas de gobierno. Arrastra una tarjeta para cambiar de fase. Los proyectos nacen al aprobar una propuesta.`, `<span class="edit-only">${btn('Ir a Propuestas', 'go', { d: { v: 'propuestas' }, ic: 'bulb', cls: 'pri' })}${btn('Alta directa', 'new', { d: { t: 'prj' }, ic: 'plus' })}</span>`) + `
-    <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="in-q" data-chg="flt" data-v="prj" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div>
+    return pageHead('Iniciativas', `${rows.length} iniciativas (${rows.filter(esProp).length} propuestas · ${rows.filter(i => !esProp(i)).length} proyectos) · Propuesta: Recepción → Aprobación · Proyecto: Planificación → Cierre. Arrastra una tarjeta para cambiar de fase dentro de su tipo; una propuesta pasa a proyecto al aprobarse.`, `<span class="edit-only">${btn('Ir a Propuestas', 'go', { d: { v: 'propuestas' }, ic: 'bulb', cls: 'pri' })}${btn('Alta directa', 'new', { d: { t: 'prj' }, ic: 'plus' })}</span>`) + `
+    <div class="toolbar">${planSeg()}<div class="search"><span>${icon('search', 14)}</span><input data-key="in-q" data-chg="flt" data-v="prj" data-f="q" type="search" placeholder="Buscar…" value="${esc(f.q)}"></div>
       
       <label class="chk tb-c"><input type="checkbox" ${f.hideDone ? 'checked' : ''} data-chg="flt" data-v="prj" data-f="hideDone" data-bool="1"> <span>Ocultar cerrados</span></label>
       <div class="seg" style="margin-left:auto"><button class="${f.mode === 'board' ? 'on' : ''}" data-act="imode" data-m="board">${icon('board', 14)} Tablero</button><button class="${f.mode === 'cards' ? 'on' : ''}" data-act="imode" data-m="cards">${icon('list2', 14)} Tarjetas</button></div></div>${body}`;
@@ -3375,7 +3376,7 @@ Acts.imode = d => { F('prj', {}).mode = d.m; render(); };
 function bindDnD() {
   $$('.icard[draggable]').forEach(c => { c.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', c.dataset.id); c.classList.add('drag'); }); c.addEventListener('dragend', () => c.classList.remove('drag')); });
   $$('.kcol').forEach(col => { col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('over'); }); col.addEventListener('dragleave', () => col.classList.remove('over'));
-    col.addEventListener('drop', e => { e.preventDefault(); col.classList.remove('over'); const id = e.dataTransfer.getData('text/plain'), i = byId(id); if (!i || i.fase === col.dataset.fase) return; if (!puedeEditarIni(i)) return NO_PERM('Sin permiso para mover iniciativas del área ' + i.area); if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); Acts.advance({ id }); setTimeout(() => { const s = $('#adv_to'); if (s) { s.value = col.dataset.fase; Chg.advto(s); } }, 20); }); });
+    col.addEventListener('drop', e => { e.preventDefault(); col.classList.remove('over'); const id = e.dataTransfer.getData('text/plain'), i = byId(id); if (!i || i.fase === col.dataset.fase) return; if (!fasesDe(i).includes(col.dataset.fase)) return toast(esProp(i) ? 'Una propuesta pasa a proyecto al aprobarse en el comité' : 'Un proyecto no vuelve a fases de propuesta', 'err'); if (!puedeEditarIni(i)) return NO_PERM('Sin permiso para mover iniciativas del área ' + i.area); if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); Acts.advance({ id }); setTimeout(() => { const s = $('#adv_to'); if (s) { s.value = col.dataset.fase; Chg.advto(s); } }, 20); }); });
 }
 
 /* ======================= PROPUESTAS (Innovation Pipeline) ======================= */
@@ -3457,7 +3458,7 @@ function fasesVentana(i) {
   const FS = fasesDe(i), hs = hitosDe(i.id); let prev = null;
   return FS.map((f, k) => {
     const h = hs.filter(x => x.fase === f).sort(by('fecha'));
-    let ini = k === 0 ? (i.inicioPlan || (h[0] && h[0].fecha) || null) : (prev ? addD(prev, 1) : ((h[0] && h[0].fecha) || null));
+    let ini = k === 0 ? (i.inicioPlan || (esProp(i) && i.creada) || (h[0] && h[0].fecha) || null) : (prev ? addD(prev, 1) : ((h[0] && h[0].fecha) || null));
     let fin = h.length ? h[h.length - 1].fecha : (k === FS.length - 1 ? (i.finPlan || ini) : ini);
     if (ini && fin && fin < ini) fin = ini; if (!ini) ini = fin; if (fin) prev = fin;
     return { fase: f, k, ini, fin, hitos: h, subs: subfasesDe(i).filter(s => s.fase === f).sort(by('inicio')), done: h.filter(x => x.completado).length, color: FASE_COLOR[f] || '#605E5C', actual: i.fase === f, pasada: FS.indexOf(i.fase) > k };
@@ -3641,7 +3642,7 @@ function planFichaHTML(i) {
   const steps = `<div class="fz-steps" style="--n:${V.length}">${V.map(x => `<div class="fz-step ${x.actual ? 'on act' : ''}" style="--c:${x.color};cursor:default"><span class="fz-st"><span class="fz-num">${x.k + 1}</span>${esc(x.fase)}</span><small class="fz-sm">${fzd(x.ini)} → ${fzd(x.fin)} · ${x.done}/${x.hitos.length} hitos</small><span class="fz-pb"><i style="width:${x.hitos.length ? Math.round(x.done / x.hitos.length * 100) : 0}%"></i></span></div>`).join('')}</div>`;
   const prox = [...hitosDe(i.id).filter(h => !h.completado && h.fecha >= H && diffD(h.fecha, H) <= 14).map(h => ({ f: h.fecha, k: 'Hito', c: '#0D446A', t: h.nombre })),
     ...riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev && r.fRev >= H && diffD(r.fRev, H) <= 14).map(r => ({ f: r.fRev, k: 'Riesgo', c: '#A4262C', t: 'Revisión: ' + r.desc }))].sort(by('f'));
-  const g = i.inicioPlan && i.finPlan ? Views.fases.gantt([i], { q: '', open: { [i.id]: true }, riesgos: true }) : `<div class="note">${icon('cal', 14)}<span>Define ${esProp(i) ? 'las fechas tentativas' : 'las fechas plan'} (inicio y fin) para ver el cronograma de fases con sus hitos y riesgos.</span></div>`;
+  const g = V.some(v => v.ini) ? Views.fases.gantt([i], { q: '', open: { [i.id]: true }, riesgos: true }) : `<div class="note">${icon('cal', 14)}<span>Define ${esProp(i) ? 'las fechas tentativas' : 'las fechas plan'} (inicio y fin) para ver el cronograma de fases con sus hitos y riesgos.</span></div>`;
   return `<div class="fz-2" style="margin-top:0"><div style="flex:999 1 620px;min-width:0;display:flex;flex-direction:column;gap:12px">
       <div class="fz-card" style="padding:12px 14px"><div class="fz-ch" style="padding:0 0 10px;border:0"><h3>Fases</h3><a class="lnk" data-act="fzir" data-id="${i.id}">Abrir en Planificación › Fases</a></div>${steps}${sfGrid(i, V)}</div>
       ${g}
@@ -10083,7 +10084,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'C2.11', b: '17-10-2026 01:00' };
+  const VER = { v: 'C2.12', b: '17-10-2026 00:40' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;

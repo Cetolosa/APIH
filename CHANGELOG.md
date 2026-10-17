@@ -5,6 +5,7 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 
 | Versión | Fecha | Rama · commit | Cambio | Componentes |
 | --- | --- | --- | --- | --- |
+| C2.12 | 17-10-2026 | `c2.12-ambos-tipos` | Traspaso de V22.57: Tabla y Tablero con propuestas y proyectos; panel de propuesta con Hitos; fases de propuesta sin fecha tentativa desde su creación. | apps/corporativo C2.12, core C2.12 |
 | C2.11 | 17-10-2026 | `c2.11-traspaso-final` | Traspaso de V22.55–V22.56: subfases (ADR-012), ficha de propuesta con Planificación e Hitos, Planificación con propuestas (Proyectos · Propuestas · Ambos), categorías de hitos y filtros (ADR-013). Core: `HITO_CATS`, `validarSubfases`, `validarHitoSubfase`, `fasesVentana` con `subs`; API valida subfases y categoría (422). Esquemas hito/iniciativa actualizados. e2e `corp3`, unit `subfases-categorias`. | apps/corporativo C2.11, core C2.11, contracts C2.11, services/api C2.11 |
 | C2.10 | 16-10-2026 | `c2.10-powerbi` | Power BI: vistas de reporte `rpt.*` en modelo estrella (`db/azure-sql/003_reportes.sql`: iniciativas, áreas, avance histórico, tramos de fase desde el historial temporal, hitos y riesgos con las reglas del core, gobierno, montos aparte como Confidencial, permisos por grupo de Entra), medidas DAX y guía (`powerbi/`). Prueba de coherencia DAX ↔ vistas ↔ core. Pendiente validar en dev (sin SQL Server ni Power BI Desktop en este entorno). | db/azure-sql C2.10, powerbi C2.10 |
 | C2.9 | 16-10-2026 | `c2.9-operacion` | Documentos de operación en `docs/operacion/`: guion de UAT (26 casos con prioridad y criterio de aceptación), manual de usuario, runbook (responsabilidades propuestas, salud, usuarios, incidentes, respaldo y restauración, despliegue y vuelta atrás, notificaciones, paso a producción) y borrador de clasificación de datos (puntos 14 y 15). | docs |
@@ -26,6 +27,7 @@ Cada componente declara la última versión C en que cambió ([ADR-005](docs/dec
 ## Excepciones del Prototipo
 | Versión | Fecha | Cambio | Decisión |
 | --- | --- | --- | --- |
+| V22.57 | 17-10-2026 | Tabla (por defecto «Todo») y Tablero (columnas de propuesta y de proyecto, selector Proyectos · Propuestas · Ambos; no se arrastra entre tipos) con ambos tipos; panel de propuesta con pestaña Hitos; la planificación de una propuesta sin fecha tentativa parte en su creación. | [ADR-013](docs/decisiones/ADR-013-version-final-propuestas-categorias.md) |
 | V22.56 | 17-10-2026 | Versión final: ficha de propuesta con Planificación e Hitos; Planificación con selector Proyectos · Propuestas · Ambos; categorías de hitos y filtros por categoría (hitos y riesgos). e2e `fin1`. | [ADR-013](docs/decisiones/ADR-013-version-final-propuestas-categorias.md) |
 | V22.55 | 16-10-2026 | Subfases por proyecto dentro de las fases obligatorias: heredan inicio y fin de la fase, no pueden salir de ella; la fase se muestra siempre con sus fechas. e2e `sf1`. | [ADR-012](docs/decisiones/ADR-012-subfases-por-proyecto.md) |
 

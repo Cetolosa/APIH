@@ -40,8 +40,18 @@ const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').ini
   r.chipsR = await n('.cat-chips [data-t="r"]');
   // hito form tiene categoría
   await p.evaluate(() => Acts.new({ t: 'hito', ini: 'PRO-050' })); await p.waitForTimeout(200); r.campoCat = await n('#f_cat option');
+  // V22.57 · Tabla y Tablero con ambos tipos; panel de propuesta con Hitos; propuesta sin fechas tentativas igual muestra fases
+  await p.evaluate(() => { Modal.close && Modal.close(); UI.view = 'portfolio'; render(); }); await p.waitForTimeout(250);
+  r.tablaIds = await p.$$eval('tr[data-t="ini"]', a => a.map(x => x.dataset.id).filter(id => /050/.test(id)).sort().join(','));
+  await p.evaluate(() => { UI.view = 'proyectos'; F('prj', {}).mode = 'board'; render(); }); await p.waitForTimeout(250);
+  r.tableroCols = await p.$$eval('.kcol', a => a.length); r.tableroProp = await p.$$eval('.kcol[data-fase="Evaluación"] .icard', a => a.map(x => x.dataset.id).join(','));
+  await p.evaluate(() => { const b = St.ini.find(x => x.id === 'PRO-050'); St.ini.push(Object.assign({}, b, { id: 'PRO-051', titulo: 'Propuesta sin fechas', inicioPlan: null, finPlan: null, creada: '2026-10-01' }));
+    St.hitos.push({ id: nextId('HIT', St.hitos), ini: 'PRO-051', nombre: 'Evaluar', fase: 'Evaluación', fecha: '2026-10-25', completado: false, resp: 'Christian Tolosa' }); selectEntity('ini', 'PRO-051', 'resumen'); }); await p.waitForTimeout(300);
+  r.panelTabs = await p.$$eval('#panel [role=tab], #panel .tabs button', a => a.map(x => x.textContent.trim()).join('|'));
+  await p.click('button:has-text("Ficha")'); await p.waitForTimeout(400); r.sinFechasPasos = await p.$$eval('.fz-steps .fz-step small', a => a[0] ? a[0].textContent : ''); r.sinFechasGantt = await p.$$eval('.fz-box .fz-row', a => a.length);
+  await p.screenshot({ path: '/tmp/t/fin-c.png' });
   r.errores = errs; console.log(JSON.stringify(r, null, 1));
   const ok = r.ganttAmbos.includes('PRJ-050') && r.ganttAmbos.includes('PRO-050') && r.ganttProp.includes('PRO-050') && !r.ganttProp.includes('PRJ-050') && ['roadmap', 'fases', 'hitos', 'riesgos'].every(v => r['seg_' + v] === 3) && r.roadmapProp && r.fasesProp === 4
-    && r.hitosGob === r.hitosGobEsperado && r.hitosGob < r.hitosTodos && r.hitosTodos === 25 && /Planificación/.test(r.tabsFicha) && /Hitos/.test(r.tabsFicha) && r.planProp === 4 && r.ganttFicha > 1 && r.chipsH >= 3 && r.filasHitoEntregable === 2 && r.campoCat === 8 && !errs.length;
+    && r.hitosGob === r.hitosGobEsperado && r.hitosGob < r.hitosTodos && r.hitosTodos === 25 && /Planificación/.test(r.tabsFicha) && /Hitos/.test(r.tabsFicha) && r.planProp === 4 && r.ganttFicha > 1 && r.chipsH >= 3 && r.filasHitoEntregable === 2 && r.campoCat === 8 && r.tablaIds === 'PRJ-050,PRO-050' && r.tableroCols === 8 && r.tableroProp === 'PRO-050' && /Hitos/.test(r.panelTabs) && /^01-10/.test(r.sinFechasPasos) && r.sinFechasGantt > 1 && !errs.length;
   console.log(ok ? 'OK fin1' : 'FALLA fin1'); await b.close(); process.exit(ok ? 0 : 1);
 })();
