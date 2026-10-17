@@ -32,7 +32,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 - **Reemplazado (16-10):** en vez de 6 preguntas, se envía la propuesta técnica construida (`docs/propuesta/`), con 15 puntos para revisar y tono colaborativo.
 
 ## 4. Documentos y datos creados
-- Propuesta técnica para TI: **fuente vigente = Claude Docs** «APIH Corporativo · Propuesta técnica para revisión con TI» (https://claude.ai/code/artifact/ae0913ea-ba10-4bfd-a8b2-609b4d7e9754), **versión 2 (17-10)** con lo construido hasta C2.15; el PDF se descarga desde el doc. Enviada a TI: `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf` (v1). `APIH_Corporativo_Propuesta_TI.pdf` es la v1 previa al envío.
+- Propuesta técnica para TI: **fuente vigente = Claude Docs** «APIH Corporativo · Propuesta técnica para revisión con TI» (https://claude.ai/code/artifact/ae0913ea-ba10-4bfd-a8b2-609b4d7e9754), **versión 2 (17-10)** con lo construido hasta C2.16, incluido el pentest interno (sección Seguridad); el PDF se descarga desde el doc. Enviada a TI: `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf` (v1). `APIH_Corporativo_Propuesta_TI.pdf` es la v1 previa al envío.
 - Documentos de operación (C2.15): `docs/operacion/` (guion UAT con casos V4, V5, F1–F3, I2; manual de usuario; runbook; clasificación de datos) y `docs/seguridad.md`.
 - Plan vigente importable a APIH: `docs/APIH_Corporativo_plan_C2.15.json` (estado al 17-10). El de C1.3 queda como histórico.
 - Plan y brechas (Claude Docs, privado): https://claude.ai/artifact/2GquKhzaERtSspc3J9n8ay
@@ -77,6 +77,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.14 | API valida solo subfases nuevas o modificadas; `correr-corporativo.sh` |
 | C2.15 | Importar/exportar subfases y categorías (archivo de iniciativas, «Con IA»); la iniciativa con subfases se sincroniza antes que sus hitos |
 | C2.16 | Revisión de seguridad: `docs/revision-seguridad-2026-10-17.md` (5 hallazgos corregidos, e2e `xss1`) |
+| Pentest | Pentest de caja gris de ambas versiones: `docs/pentest-2026-10-17.md` + `tests/seguridad/defensas-api.js` (25 ataques). Incorporado a la propuesta v2 y a la página de entregable a TI |
 | Docs 17-10 | Propuesta v2 (Claude Docs), docs de operación, seguridad y plan C2.15 actualizados |
 | Envío | 16-10-2026: propuesta enviada a TI (versión en `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf`, sin la nota de login en Teams del punto 6). Cambios posteriores se acumulan para una v2 que se envía solo si TI la pide o al responder sus comentarios |
 
