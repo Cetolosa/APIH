@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C2.17', b: '17-10-2026', origen: 'V22.61' };
+  const VERSION = { v: 'C2.18', b: '17-10-2026', origen: 'V22.62' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');

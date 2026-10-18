@@ -617,8 +617,8 @@ body{font:13px/1.45 var(--font)}
 #panel .pn-b .kv a,#panel .pn-b .kv .lnk{font-size:14px;font-weight:600}
 #panel .pn-b .chk{font-size:13px;font-weight:500;color:var(--tx2)}
 
-/* con el panel abierto el encabezado de página es angosto: las acciones bajan en vez de pisar el título */
-#main>.ph{flex-wrap:wrap!important}#main>.ph>div:first-child{min-width:min-content!important}#main>.ph>div:first-child p{flex:1 1 60px;min-width:60px}
+/* con el panel abierto el encabezado de página es angosto: el subtítulo se recorta con «…» y las acciones quedan en la línea del título (solo bajan si de verdad no caben) */
+#main>.ph{flex-wrap:wrap!important}#main>.ph>div:first-child{min-width:0!important;flex:1 1 0!important}#main>.ph>div:first-child p{flex:1 1 0;min-width:0}
 /* ---------- V22.47: menú lateral contraíble (solo iconos; al pasar el mouse se expande sobre el contenido) ---------- */
 .rail-t{border:0;background:none;width:100%;text-align:left;font:inherit;cursor:pointer;color:var(--tx2);margin:0 0 4px;border-bottom:1px solid var(--bd2);border-radius:0;padding-bottom:10px}
 @media (min-width:981px){
@@ -10051,7 +10051,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.61', b: '17-10-2026 10:30' };
+  const VER = { v: 'V22.62', b: '17-10-2026 23:15' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
