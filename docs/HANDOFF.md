@@ -1,6 +1,6 @@
 # APIH — Documento de traspaso
 
-> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (15-10-2026 · Prototipo V22.59 · Corporativo C2.15)
+> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (18-10-2026 · Prototipo V22.62 · Corporativo C2.18)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -16,7 +16,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Abierto** (V22.61, ADR-015: descripciones por objeto). Congelar cuando el usuario lo pida | **C2.16** · revisión de seguridad 17-10 aplicada · `tests/e2e/correr-corporativo.sh` 9/9 · producción objetivo **27-11-2026** |
+| Estado | **Abierto** (V22.62: descripciones por objeto ADR-015, encabezado compacto en 2 líneas). Congelar cuando el usuario lo pida | **C2.18** · descripciones + encabezado compacto · `tests/e2e/correr-corporativo.sh` 10/10 · seguridad 25/25 · producción objetivo **27-11-2026** |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo: `apps/corporativo`, `services/api`, `packages/core`, `db/`, `infra/`, `powerbi/`, `tests/`; luego repo de Aramark que indique TI |
@@ -77,6 +77,8 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.14 | API valida solo subfases nuevas o modificadas; `correr-corporativo.sh` |
 | C2.15 | Importar/exportar subfases y categorías (archivo de iniciativas, «Con IA»); la iniciativa con subfases se sincroniza antes que sus hitos |
 | C2.16 | Revisión de seguridad: `docs/revision-seguridad-2026-10-17.md` (5 hallazgos corregidos, e2e `xss1`) |
+| C2.17 | Descripción/instrucciones por objeto (V22.61, ADR-015): `faseDesc` global + `faseNota` por proyecto, `desc` en subfase e hito; se ven en Mi cocina, ficha y Fases; core valida ≤500 y escapa; e2e `corp3` verifica round-trip al servidor |
+| C2.18 | Encabezado compacto en 2 líneas (V22.62): el subtítulo se recorta con «…» y las acciones quedan en la línea del título (antes «Ver todo» caía a una línea propia con aire); solo CSS, sin cambio de lógica |
 | Pentest | Pentest de caja gris de ambas versiones: `docs/pentest-2026-10-17.md` + `tests/seguridad/defensas-api.js` (25 ataques). Incorporado a la propuesta v2 y a la página de entregable a TI |
 | Docs 17-10 | Propuesta v2 (Claude Docs), docs de operación, seguridad y plan C2.15 actualizados |
 | Envío | 16-10-2026: propuesta enviada a TI (versión en `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf`, sin la nota de login en Teams del punto 6). Cambios posteriores se acumulan para una v2 que se envía solo si TI la pide o al responder sus comentarios |
@@ -87,6 +89,6 @@ Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con
 - **TI:** comentarios a la propuesta (esperados hacia el 21-10, sin presión); habilitar ambiente dev (04-11). La v2 de la propuesta se envía solo si TI la pide o al responder sus comentarios.
 - **Al habilitar dev:** desplegar, validar en Azure (`tests/contract/run-azure-sql.js`), ejecutar el guion UAT.
 - **Pendiente funcional:** editor de listas de categorías en Administración; selector Tipo en Calendario y Capacidad; funciones diferidas (Pronóstico, Ruta crítica, Escenarios): el usuario aún no decide; core: `pasosDe` y contratos propios de decisiones, compromisos, bitácora y comités (C1.5).
-- **Prototipo:** abierto (V22.61, ADR-015). Congelar cuando el usuario lo pida.
+- **Prototipo:** abierto (V22.62, ADR-015). Congelar cuando el usuario lo pida.
 - **Usuario:** que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); (opcional) usuario «Bot IA» con rol Editor.
 - **Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren canal de TI; tags pueden no subir desde la nube (crear en GitHub Releases).
