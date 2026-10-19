@@ -213,7 +213,7 @@ table.mini{width:100%;border-collapse:collapse;font-size:12px}table.mini th{text
 
 
 /* ---------- V4: tema oscuro ---------- */
-:root[data-theme=dark]{color-scheme:dark;--pri:#4BA0F0;--pri-d:#8CC4FA;--pri-l:#16324F;--bg:#14181D;--bg2:#1B2027;--card:#1F252D;--bd:#313A45;--bd2:#2A323C;--bd3:#475260;--tx:#E8EAED;--tx2:#A9B2BD;--tx3:#8D98A5;--green:#4CC24C;--amber:#F5B83D;--red:#F0646A;--redbg:#4A1F23;--ambbg:#473912;--sh:0 1px 2px rgba(0,0,0,.4);--shl:0 8px 28px rgba(0,0,0,.6)}
+:root[data-theme=dark]{color-scheme:dark;--fzamb:#F2B33D;--pri:#4BA0F0;--pri-d:#8CC4FA;--pri-l:#16324F;--bg:#14181D;--bg2:#1B2027;--card:#1F252D;--bd:#313A45;--bd2:#2A323C;--bd3:#475260;--tx:#E8EAED;--tx2:#A9B2BD;--tx3:#8D98A5;--green:#4CC24C;--amber:#F5B83D;--red:#F0646A;--redbg:#4A1F23;--ambbg:#473912;--sh:0 1px 2px rgba(0,0,0,.4);--shl:0 8px 28px rgba(0,0,0,.6)}
 :root[data-theme=dark] .top{background:linear-gradient(90deg,#0A1B30,#0B2E52)}
 :root[data-theme=dark] .gs-res,:root[data-theme=dark] .pop,:root[data-theme=dark] .modal{background:var(--card);color:var(--tx)}
 :root[data-theme=dark] .nav:hover,:root[data-theme=dark] .btn:hover{background:#2A323C}
@@ -675,7 +675,7 @@ body{font:13px/1.45 var(--font)}
 .fz-pill{font-size:11px;padding:1px 8px;border-radius:10px;white-space:nowrap;background:var(--card)}
 .fz-g{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:13px}.fz-g b{width:14px;flex:none}
 .fz-cols{display:grid;grid-template-columns:repeat(var(--n),minmax(240px,1fr));gap:12px;overflow-x:auto;align-items:start}
-.fz-col{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;overflow:hidden}.fz-colh{color:#fff;padding:10px 12px}.fz-colh small{display:block;opacity:.9;font-size:12px}
+.fz-col{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;overflow:hidden}.fz-colh{color:#fff;padding:10px 12px}.fz-colh small{display:block;opacity:.9;font-size:12px;color:inherit}   /* N-V-01 */
 .cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.cat-chips .chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:14px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer;min-height:28px}.cat-chips .chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .sf-grid{display:grid;grid-template-columns:repeat(var(--n),minmax(150px,1fr));gap:8px;margin-top:8px}.sf-colw{display:flex;flex-direction:column;gap:6px}
 .sf-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--bd);border-left:4px solid var(--c);border-radius:6px;padding:6px 8px;background:var(--card);color:var(--tx);font:inherit;font-size:12px;cursor:pointer}.sf-chip.cur{border-color:var(--c);box-shadow:0 0 0 1px var(--c)}.sf-chip.bad{border-color:var(--red)}.sf-chip small{color:var(--tx2,#605E5C)}
@@ -921,7 +921,7 @@ const monKeys = o => ['CLP', 'USD', 'UF'].filter(k => o && o[k]);
 const monMain = o => monKeys(o)[0] || 'CLP';
 const fmtTot = (o, sep) => monKeys(o).map(k => fmtMon(o[k], k)).join(sep || ' · ') || fmtMon(0, 'CLP');
 /* ROI = (beneficio − costo) / costo; solo si ambos están en una única moneda comparable; si no, «—» */
-const roiTxt = (b, p) => { const kp = Object.keys(p || {}), kb = Object.keys(b || {}); if (!kp.length || kp.length > 1 || kb.length > 1 || (kb.length && kb[0] !== kp[0]) || !p[kp[0]]) return '—'; return Math.round(((b[kp[0]] || 0) - p[kp[0]]) / p[kp[0]] * 100) + '%'; };
+const roiTxt = (b, p) => { const kp = Object.keys(p || {}), kb = Object.keys(b || {}); if (!kp.length || kp.length > 1 || kb.length > 1 || (kb.length && kb[0] !== kp[0]) || !p[kp[0]]) return '—'; const v = ((b[kp[0]] || 0) - p[kp[0]]) / p[kp[0]] * 100; return isFinite(v) ? Math.round(v) + '%' : '—'; };   // V-19: nunca NaN
 const fmtBig = o => { const m = monMain(o); return fmtN((o && o[m]) || 0) + ' ' + MONEDAS[m].big; };
 const restTxt = o => monKeys(o).length > 1 ? '+ ' + monKeys(o).slice(1).map(k => fmtMon(o[k], k)).join(' + ') + ' · ' : '';
 const pctMon = (g, p) => { const m = monMain(p); return p && p[m] ? Math.round(((g && g[m]) || 0) / p[m] * 100) : 0; };
@@ -977,6 +977,7 @@ const CATS_DEF = ['Transformación Operacional', 'Innovación', 'Arquitectura', 
 
 /* ---------- iconos ---------- */
 const IC = {
+  info: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M12 16v-4M12 8h.01',   // N-V-05/V-14: icono faltante
   up: 'M12 19V5M5 12l7-7 7 7',
   dots: 'M5 12h.01M12 12h.01M19 12h.01',
   dashboard: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z', portfolio: 'M3 7h18v13H3zM8 7V4h8v3M3 13h18',
@@ -2939,7 +2940,7 @@ Acts.resolvedec = d => {
       if (i && isDone(i) && ['Pausar', 'Cancelar'].includes(x.tipo)) toast('El proyecto ya está cerrado: no se aplica el efecto', 'err');
       if (o.estado === 'Aprobada' && o.aplicar && i) {
         const mot = o.resolucion || 'Decisión de comité ' + (x.comite || '');
-        if (x.tipo === 'Iniciar' && esProp(i) && i.estado !== 'Aprobada' && !isDone(i)) { i.fase = 'Aprobación'; const n = aprobarPropuesta(i, mot); toast('Proyecto ' + n.id + ' creado desde ' + i.id); x.aplicada = true; }
+        if (x.tipo === 'Iniciar' && esProp(i) && i.estado !== 'Aprobada' && !isDone(i)) { const falta = gatesAprobar(i).filter(g => !g.ok).map(g => g.t); if (falta.length) toast('No se crea el proyecto. Falta: ' + falta.join('; '), 'err'); else { i.fase = 'Aprobación'; const n = aprobarPropuesta(i, mot); toast('Proyecto ' + n.id + ' creado desde ' + i.id); x.aplicada = true; } }   // F-15c
         else if (x.tipo === 'Acelerar' && !esProp(i)) { i.prioridad = 'Alta'; if (i.estado === 'Pausado') { i.estado = 'En curso'; i.estadoMotivo = ''; i.estadoRev = null; } x.aplicada = true; }
         else if (x.tipo === 'Pausar' && !isDone(i)) { i.estado = esProp(i) ? 'En espera' : 'Pausado'; i.estadoMotivo = mot; i.estadoRev = addD(hoy(), 30); x.aplicada = true; }
         else if (x.tipo === 'Cancelar' && !isDone(i)) { i.estado = esProp(i) ? 'Rechazada' : 'Cancelado'; i.estadoMotivo = mot; i.estadoRev = null; x.aplicada = true; }
@@ -3106,7 +3107,7 @@ function myWork() {
   HITOS().forEach(h => { const i = byId(h.ini); if (!i || i.lider !== me || h.completado || !isLive(i) || !inArea(i)) return; if (L(h.fecha) <= 14) items.push({ k: 'hito', id: h.id, t: h.nombre, s: i.titulo, when: h.fecha, over: L(h.fecha) < 0, ic: 'flag' }); });
   St.riesgos.forEach(r => { if (r.dueno === me && riesgoAbierto(r) && r.fRev && L(r.fRev) <= 14) items.push({ k: 'risk', id: r.id, t: 'Revisar riesgo: ' + r.desc, s: nameOf(r.ini), when: r.fRev, over: L(r.fRev) < 0, ic: 'shield' }); });
   St.decisiones.forEach(d => { if (d.estado === 'Pendiente' && d.solicita === me && d.limite && L(d.limite) <= 14) items.push({ k: 'dec', id: d.id, t: 'Decisión: ' + d.titulo, s: d.ini ? nameOf(d.ini) : '', when: d.limite, over: L(d.limite) < 0, ic: 'gavel' }); });
-  St.comites.forEach(c => [...c.acciones.map(a => ({ ...a, tp: 'Acción' })), ...c.compromisos.map(a => ({ ...a, tp: 'Compromiso' }))].forEach(a => { if (a.resp === me && ['Abierta', 'Abierto'].includes(a.estado) && a.limite && L(a.limite) <= 14) items.push({ k: 'acc', id: a.id, t: a.tp + ': ' + a.texto, s: a.ini ? nameOf(a.ini) : c.nombre, when: a.limite, over: L(a.limite) < 0, ic: 'check' }); }));
+  St.comites.forEach(c => [...(c.acciones || []).map(a => ({ ...a, tp: 'Acción' })), ...(c.compromisos || []).map(a => ({ ...a, tp: 'Compromiso' }))].forEach(a => { if (a.resp === me && ['Abierta', 'Abierto'].includes(a.estado) && a.limite && L(a.limite) <= 14) items.push({ k: 'acc', id: a.id, t: a.tp + ': ' + a.texto, s: a.ini ? nameOf(a.ini) : c.nombre, when: a.limite, over: L(a.limite) < 0, ic: 'check' }); }));
   (St.compromisos || []).forEach(a => { if (a.resp === me && a.estado === 'Abierto' && a.limite && L(a.limite) <= 14) items.push({ k: 'acu', id: a.id, t: 'Compromiso: ' + a.texto, s: a.ini ? nameOf(a.ini) : (a.tema || 'General'), when: a.limite, over: L(a.limite) < 0, ic: 'check' }); });
   St.ini.forEach(i => { if (i.lider === me && isLive(i) && FASES_ACT.includes(i.fase) && diasSinUpd(i) > cfgI(i,'diasSinUpdate') && inArea(i)) items.push({ k: 'upd', id: i.id, t: 'Actualizar avance (hace ' + diasSinUpd(i) + ' d)', s: i.titulo, when: addD(i.actualizada, cfgI(i,'diasSinUpdate')), over: true, ic: 'refresh' }); });
   return items.sort(by('when'));
@@ -3389,7 +3390,7 @@ Acts.roadcsv = () => { const rows = scopeAll().filter(porTipo); download('APIH_r
 /* ======================= V22.53 · FASES: 4 miradas (Gantt por fases, Línea, Tablero, Riesgos en el tiempo) ======================= */
 const FZ_TABS = [['gantt', 'Gantt por fases'], ['linea', 'Línea de fases'], ['tablero', 'Tablero'], ['riesgos', 'Riesgos en el tiempo']];
 const fzd = s => s ? s.slice(8, 10) + '-' + s.slice(5, 7) : '—';
-const fzTx = c => c === '#F2A100' ? '#8A6100' : c;                       // texto legible sobre blanco
+const fzTx = c => c === '#F2A100' ? 'var(--fzamb,#8A6100)' : c;   // N-V-02: ámbar legible en tema oscuro                       // texto legible sobre blanco
 const fzOn = c => c === '#F2A100' ? '#201F1E' : '#fff';                  // texto sobre fondo de color
 /* Ventana de cada fase: desde el día siguiente al fin de la anterior (la 1ª desde inicioPlan) hasta su último hito (la última hasta finPlan si no tiene hitos) */
 function fasesVentana(i) {
@@ -4155,7 +4156,7 @@ Chg.impfile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
     const cmp = ks.map(([k, n]) => n + ': ' + len(St, k) + ' → ' + len(o, k)).join(' · '), loss = len(o, 'ini') < len(St, 'ini') * 0.5 && len(St, 'ini') >= 4;
     const msg = 'Se reemplazarán TODOS los datos actuales por el respaldo' + (DataService.svc ? ' y el cambio se sincronizará para todos los usuarios' : '') + '.<br><br>Actual → Respaldo<br>' + cmp + (loss ? '<br><br>⚠ El respaldo tiene menos de la mitad de las iniciativas actuales.' : '') + '<br><br>Antes de importar se descargará una copia de los datos actuales. ¿Continuar?';
     confirmBox(msg, () => { try { download('APIH_antes_de_importar_' + hoy() + '.json', JSON.stringify(St, null, 1), 'application/json'); } catch (e) { }
-      St = migrateV5(o); ['hitos', 'riesgos', 'decisiones', 'comites', 'bitacora', 'usuarios', 'eventos', 'compromisos', 'cambios', 'notas', 'documentos'].forEach(k => { St[k] = St[k] || []; }); St.cfgU = St.cfgU || {}; sanSt(St); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; toast('Respaldo importado (copia previa descargada)'); shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true);
+      St = migrateV5(o); ['hitos', 'riesgos', 'decisiones', 'comites', 'bitacora', 'usuarios', 'eventos', 'compromisos', 'cambios', 'notas', 'documentos', 'pres'].forEach(k => { St[k] = St[k] || []; }); St.comites.forEach(c => { if (c && typeof c === 'object') ['acciones', 'compromisos', 'decisiones'].forEach(k => { if (!Array.isArray(c[k])) c[k] = []; }); }); St.cfgU = St.cfgU || {}; St.ini.forEach(x => { if (!x || typeof x !== 'object') return; ['deps', 'subfases', 'hist', 'est', 'tags'].forEach(k => { if (!Array.isArray(x[k])) x[k] = []; }); if (!x.faseNota || typeof x.faseNota !== 'object') x.faseNota = {}; ['titulo', 'lider', 'sponsor', 'negocio', 'proveedor', 'desc', 'bc', 'resumen', 'proximos', 'folio', 'oc', 'estadoMotivo', 'tipoIni'].forEach(k => { if (typeof x[k] !== 'string') x[k] = x[k] == null ? '' : String(x[k]); }); if (typeof x.area !== 'string') x.area = 'BISE'; if (typeof x.rag !== 'string') x.rag = 'Verde'; if (typeof x.prioridad !== 'string') x.prioridad = 'Media'; if (typeof x.moneda !== 'string') x.moneda = 'CLP'; if (typeof x.estado !== 'string') x.estado = 'En curso'; if (typeof x.fase !== 'string') x.fase = 'Planificación'; }); /* F-03: respaldo parcial */ sanSt(St); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; toast('Respaldo importado (copia previa descargada)'); shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true);
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 /* V22.50: importar iniciativas (suma registros, no reemplaza) */
 const INI_PLANTILLA = () => ({ formato: 'apih-iniciativas', v: 1, iniciativas: [
@@ -9724,6 +9725,8 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   .fl2{position:sticky;top:-10px;z-index:6;background:var(--card);border:1px solid var(--bd);border-radius:14px;margin-bottom:8px;box-shadow:var(--sh)}
   .fl2-top{display:flex;align-items:center;gap:10px;padding:8px 14px;flex-wrap:nowrap}.fl2-top>*{flex:none}.fl2-id{display:flex;align-items:center;gap:10px;flex:none!important}.fl2-t2 h1,.fl2-top h1{margin:0;font-weight:700}.fl2-t2 h1{white-space:normal}.fl2-k{font-size:12px;color:var(--tx2);text-transform:uppercase;letter-spacing:.3px;flex:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fl2-top .btn,.fl2-bar .fl2-tab{white-space:nowrap}.fl2-p{flex-wrap:nowrap!important}.fl2-a .btn{padding:0 10px}.fl2-sep{width:1px;height:22px;background:var(--bd)}.fl2-p{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.fl2-sp{flex:1 1 0;min-width:0}
   .fl2-a{display:flex;gap:8px;align-items:center;margin-left:auto}
+  @media (max-width:640px){.fl2-top{flex-wrap:wrap!important}.fl2-a{margin-left:0;flex-wrap:wrap}}   /* N-V-03 */
+  .v22-row select{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:4px 6px}   /* V-01 */
   .fl2-bar{display:flex;align-items:center;gap:2px;flex-wrap:nowrap;padding:0 14px;border-top:1px solid var(--bd2)}.fl2-l{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--tx2);margin-right:6px}
   .fl2-tab{height:34px;padding:0 12px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;font:inherit;font-size:13px;color:var(--tx2);cursor:pointer}.fl2-tab:hover{color:var(--tx)}.fl2-tab.on{border-bottom-color:var(--pri);color:var(--tx);font-weight:700}.fl2-tab.off{opacity:.55;text-decoration:line-through}
   .fl2-lk{background:none;border:0;font:inherit;font-size:13px;color:var(--tx2);cursor:pointer;padding:4px 6px}.fl2-lk:hover{color:var(--pri);text-decoration:underline}#pop-flsec .off{opacity:.6}
