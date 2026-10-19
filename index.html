@@ -2258,7 +2258,21 @@ function fitMain() {
   const skip = e => e.id === 'bannerBox' || /\b(crumbs|ph|flt-bar|guia|guia-min|kpis|strip|banner|fit)\b/.test(e.className || '');
   [...mn.children].filter(e => !skip(e) && e.offsetHeight > 0).forEach(e => { if (e.offsetHeight > 220) e.classList.add('fit'); });
 }
-function refresh() { save(); render(); try { if (typeof chkInsignias === 'function') chkInsignias(); } catch (e) { } }
+/* A-1: saneamiento de ids y enums en todas las fuentes (remoto, importaciones, IA, Excel).
+   Ids: solo [A-Za-z0-9_-]. Enums: sin <>"`=\ . Aplicado a la misma transformación en todas las filas,
+   así que las referencias (ini, comite, subfase, deps) siguen coincidiendo. El texto libre se escapa al render. */
+const SAN_IDK = ['id', 'ini', 'comite', 'subfase', 'proyecto'], SAN_ENK = ['fase', 'estado', 'tipo', 'rag', 'prioridad', 'moneda', 'area', 'categoria', 'cat', 'dueno', 'resp', 'lider', 'sponsor', 'negocio', 'proveedor', 'origen'];
+const sanId = s => typeof s === 'string' ? s.replace(/[^A-Za-z0-9_\-]/g, '').slice(0, 30) : s;
+const sanEnum = s => typeof s === 'string' ? s.replace(/[<>"`=\\]/g, '') : s;
+function sanRow(r) { if (!r || typeof r !== 'object' || Array.isArray(r)) return r;
+  Object.keys(r).forEach(k => { const v = r[k];
+    if (SAN_IDK.includes(k)) { if (typeof v === 'string') r[k] = sanId(v); }
+    else if (SAN_ENK.includes(k)) { if (typeof v === 'string') r[k] = sanEnum(v); }
+    else if (k === 'deps' && Array.isArray(v)) r[k] = v.map(d => typeof d === 'string' ? sanId(d) : d);
+    else if (k === 'subfases' && Array.isArray(v)) v.forEach(sanRow); });
+  return r; }
+function sanSt(S) { ['ini', 'hitos', 'riesgos', 'decisiones', 'comites', 'compromisos', 'cambios', 'bitacora', 'notas', 'eventos'].forEach(k => { if (Array.isArray(S[k])) S[k].forEach(sanRow); }); return S; }
+function refresh() { sanSt(St); save(); render(); try { if (typeof chkInsignias === 'function') chkInsignias(); } catch (e) { } }
 
 /* ---------- panel contextual ---------- */
 function selectEntity(t, id, tab) { UI.sel = { t, id }; if (tab) UI.tab = tab; else if (t === 'ini') UI.tab = UI.tab || 'resumen'; UI.panel = true; render(); }
@@ -4117,7 +4131,7 @@ Chg.impfile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
     const cmp = ks.map(([k, n]) => n + ': ' + len(St, k) + ' → ' + len(o, k)).join(' · '), loss = len(o, 'ini') < len(St, 'ini') * 0.5 && len(St, 'ini') >= 4;
     const msg = 'Se reemplazarán TODOS los datos actuales por el respaldo' + (DataService.svc ? ' y el cambio se sincronizará para todos los usuarios' : '') + '.<br><br>Actual → Respaldo<br>' + cmp + (loss ? '<br><br>⚠ El respaldo tiene menos de la mitad de las iniciativas actuales.' : '') + '<br><br>Antes de importar se descargará una copia de los datos actuales. ¿Continuar?';
     confirmBox(msg, () => { try { download('APIH_antes_de_importar_' + hoy() + '.json', JSON.stringify(St, null, 1), 'application/json'); } catch (e) { }
-      St = migrateV5(o); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; toast('Respaldo importado (copia previa descargada)'); shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true);
+      St = migrateV5(o); ['hitos', 'riesgos', 'decisiones', 'comites', 'bitacora', 'usuarios', 'eventos', 'compromisos', 'cambios', 'notas', 'documentos'].forEach(k => { St[k] = St[k] || []; }); St.cfgU = St.cfgU || {}; sanSt(St); St.cfg = Object.assign(defaultCfg(), St.cfg); St.ptpl = St.ptpl || []; St.psnap = St.psnap || {}; toast('Respaldo importado (copia previa descargada)'); shell(); refresh(); if (DataService.svc) save(); }, 'Importar', true);
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 /* V22.50: importar iniciativas (suma registros, no reemplaza) */
 const INI_PLANTILLA = () => ({ formato: 'apih-iniciativas', v: 1, iniciativas: [
@@ -4257,20 +4271,23 @@ Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = '';
       ch.push((ex ? 'Subfase ' + ex.nombre + ': ' : 'Subfase NUEVA: ') + x.nombre + ' · ' + x.fase + ' · ' + rangoTx(x.inicio || w.ini, x.fin || w.fin)); ap.push(() => sfImportar(i, [x], m => toast(m, 'err'))); });
     const sfVal = (ref, fase) => { if (!ref) return ''; const s0 = sfRef(i, ref, fase) || sfN.find(s => s.id === ref || (_nrm(s.nombre) === _nrm(ref) && (!fase || s.fase === fase))) || sfN.find(s => _nrm(s.nombre) === _nrm(ref)); if (!s0) return 'subfase «' + ref + '» no existe'; if (fase && s0.fase !== fase) return 'la subfase «' + s0.nombre + '» es de ' + s0.fase + ' y el hito de ' + fase; return ''; };
     (o.hitos || []).forEach(h => { if (!h || typeof h !== 'object') return;
-      if (h.id) { const x = St.hitos.find(y => y.id === h.id); if (!x || x.ini !== i.id) return err.push('Hito ' + h.id + ' no pertenece a este proyecto'); const c = [];
+      if (h.id) { const x = St.hitos.find(y => y.id === h.id); if (!x || x.ini !== i.id) return err.push('Hito ' + h.id + ' no pertenece a este proyecto'); const c = [], e0 = err.length;
         ['nombre', 'fase', 'resp'].forEach(k => { if (h[k] !== undefined && h[k] !== x[k]) { if (typeof h[k] !== 'string' || (k === 'nombre' && !h[k].trim())) return err.push(h.id + '.' + k + ' inválido'); if (k === 'fase' && h[k] && !FASES.includes(h[k])) return err.push(h.id + ': fase inválida'); c.push(k + ' ' + ver(x[k]) + ' → ' + ver(h[k])); } });
         ['fecha', 'fechaReal'].forEach(k => { if (h[k] !== undefined && h[k] !== (x[k] || null)) { if (h[k] !== null && !iapFecha(h[k])) return err.push(h.id + '.' + k + ' fecha inválida'); if (k === 'fecha' && !h[k]) return err.push(h.id + '.fecha vacía'); c.push(k + ' ' + ver(x[k]) + ' → ' + ver(h[k])); } });
         if (h.cat !== undefined && (h.cat || '') !== (x.cat || '')) { if (h.cat && !hitoCats().includes(h.cat)) return err.push(h.id + ': categoría inválida (' + h.cat + ')'); c.push('cat ' + ver(x.cat) + ' → ' + ver(h.cat)); }
         if (h.desc !== undefined && (h.desc || '') !== (x.desc || '')) { if (String(h.desc).length > DESC_MAX) return err.push(h.id + ': descripción supera ' + DESC_MAX); c.push('descripción'); }
         if (h.subfase !== undefined && (h.subfase || '') !== (x.subfase || '')) { const e1 = sfVal(h.subfase, h.fase !== undefined ? h.fase : x.fase); if (e1) return err.push(h.id + ': ' + e1); c.push('subfase ' + ver(x.subfase) + ' → ' + ver(h.subfase)); }
         if (h.completado !== undefined && !!h.completado !== !!x.completado) c.push('completado ' + !!x.completado + ' → ' + !!h.completado);
+        if (err.length > e0) return;   // A-1: un hito con algún campo inválido se omite completo (F-01)
         if (c.length) { ch.push('Hito ' + h.id + ': ' + c.join('; ')); ap.push(() => { ['nombre', 'fase', 'resp', 'fecha'].forEach(k => { if (h[k] !== undefined) x[k] = h[k]; }); if (h.desc !== undefined) { if (String(h.desc).trim()) x.desc = cutDesc(String(h.desc).trim()); else delete x.desc; } if (h.cat !== undefined) { if (h.cat) x.cat = h.cat; else delete x.cat; } if (h.desc !== undefined) { if (String(h.desc).trim()) x.desc = cutDesc(String(h.desc).trim()); else delete x.desc; } if (h.subfase !== undefined) { const sf = sfRef(i, h.subfase, x.fase); if (sf) x.subfase = sf.id; else delete x.subfase; } if (h.completado !== undefined) { x.completado = !!h.completado; x.fechaReal = x.completado ? (h.fechaReal || x.fechaReal || hoy()) : null; } else if (h.fechaReal !== undefined && x.completado) x.fechaReal = h.fechaReal; }); } }
-      else { if (!String(h.nombre || '').trim() || !iapFecha(h.fecha)) return err.push('Hito nuevo sin nombre o con fecha inválida: ' + JSON.stringify(h).slice(0, 60)); if (h.fase && !FASES.includes(h.fase)) return err.push('Hito nuevo «' + h.nombre + '»: fase inválida');
+      else { if (typeof h.nombre !== 'string' || !h.nombre.trim() || !iapFecha(h.fecha) || (h.resp !== undefined && typeof h.resp !== 'string') || (h.completado !== undefined && typeof h.completado !== 'boolean')) return err.push('Hito nuevo sin nombre o con fecha inválida: ' + JSON.stringify(h).slice(0, 60)); if (h.fase && !FASES.includes(h.fase)) return err.push('Hito nuevo «' + h.nombre + '»: fase inválida');
         if (St.hitos.some(y => y.ini === i.id && _nrm(y.nombre) === _nrm(h.nombre))) return err.push('Hito nuevo «' + h.nombre + '» ya existe (se omite)');
         if (h.cat && !hitoCats().includes(h.cat)) return err.push('Hito nuevo «' + h.nombre + '»: categoría inválida'); if (h.subfase) { const e2 = sfVal(h.subfase, h.fase || i.fase); if (e2) return err.push('Hito nuevo «' + h.nombre + '»: ' + e2); }
         ch.push('Hito NUEVO: ' + h.nombre + ' · ' + (h.fase || i.fase) + ' · ' + h.fecha); ap.push(() => { const ok = !!h.completado; const nw = { id: nextId('HIT', St.hitos), ini: i.id, nombre: h.nombre, fase: h.fase || i.fase, fecha: h.fecha, completado: ok, fechaReal: ok ? (h.fechaReal || h.fecha) : null, resp: h.resp || i.lider || '' }; if (h.cat) nw.cat = h.cat; if (typeof h.desc === 'string' && h.desc.trim()) nw.desc = cutDesc(h.desc.trim()); const sf = h.subfase && sfRef(i, h.subfase, nw.fase); if (sf) nw.subfase = sf.id; St.hitos.push(nw); }); } });
     (o.riesgos || []).forEach(q => { if (!q || typeof q !== 'object') return; const x = q.id ? St.riesgos.find(y => y.id === q.id) : null; if (q.id && (!x || x.ini !== i.id)) return err.push('Riesgo ' + q.id + ' no pertenece a este proyecto');
-      const v = Object.assign({}, x || { cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: i.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '' }, q); delete v.id;
+      const qq = {}; ['desc', 'cat', 'prob', 'imp', 'estado', 'dueno', 'fIdent', 'fRev', 'mit'].forEach(k => { if (q[k] !== undefined) qq[k] = q[k]; });   // A-1: solo campos de riesgo (sin id/ini)
+      if (['desc', 'dueno', 'mit'].some(k => qq[k] !== undefined && typeof qq[k] !== 'string')) return err.push((q.id || 'Riesgo nuevo') + ': texto inválido');
+      const v = Object.assign({}, x || { cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: i.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '' }, qq);
       if (!x && !String(q.desc || '').trim()) return err.push('Riesgo nuevo sin descripción'); if (!RISK_CATS.includes(v.cat)) return err.push((q.id || 'Riesgo nuevo') + ': categoría inválida'); if (!RISK_ESTADOS.includes(v.estado)) return err.push((q.id || 'Riesgo nuevo') + ': estado inválido');
       if (![v.prob, v.imp].every(n => Number.isInteger(n) && n >= 1 && n <= 5)) return err.push((q.id || 'Riesgo nuevo') + ': prob e imp deben ser enteros 1-5');
       if (['fIdent', 'fRev'].some(k => v[k] && !iapFecha(v[k]))) return err.push((q.id || 'Riesgo nuevo') + ': fecha inválida');
