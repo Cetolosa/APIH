@@ -784,6 +784,7 @@ body{font:13px/1.45 var(--font)}
 .cs-stm path{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;opacity:0;animation:csst 3s infinite}.cs-stm path:nth-child(2){animation-delay:1s}.cs-stm path:nth-child(3){animation-delay:2s}
 @keyframes csst{0%{opacity:0;transform:translateY(8px)}35%{opacity:.9}100%{opacity:0;transform:translateY(-18px)}}
 @media(prefers-reduced-motion:reduce){.cs-in *{animation:none!important}}
+.gsearch .res button.kb,#gsres button.kb{background:var(--hover,#EEF3F8);outline:2px solid #0D446A;outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -2210,7 +2211,7 @@ function shell() {
     <button class="icon-btn hamb" data-act="side" aria-label="Menú">${icon('menu', 18)}</button>
     <div class="brand" data-act="go" data-v="dashboard"><img class="brand-img" src="${LOGO.arBR}" alt="Aramark"><span class="b-t app"><b>APIH</b><small>Portfolio Intelligence Hub</small></span></div>
     <button class="icon-btn gstog" data-act="gstog" aria-label="Buscar">${icon('search', 18)}</button>
-    <div class="gsearch"><span class="gs-i">${icon('search', 15)}</span><input id="gs" data-key="gs" type="search" placeholder="Buscar proyectos, propuestas, riesgos, hitos…  ( / )" autocomplete="off" data-chg="gsearch"><div class="gs-res" id="gsres"></div></div>
+    <div class="gsearch"><span class="gs-i">${icon('search', 15)}</span><input id="gs" data-key="gs" type="search" placeholder="Buscar proyectos, riesgos, hitos, subfases…  ( / )  ·  Ctrl+K: ir a pantallas y acciones" autocomplete="off" data-chg="gsearch"><div class="gs-res" id="gsres"></div></div>
     <div class="top-r">
       <button class="sync" id="syncChip" data-act="syncgo" title="Estado de la conexión"></button>
       <div class="popw"><button class="btn pri" data-act="pop" data-id="pop-new">${icon('plus', 15)}<span>Nuevo</span></button>
@@ -2265,7 +2266,7 @@ function render() {
   const act = document.activeElement, key = act && act.dataset ? act.dataset.key : null, ss = act && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
   const keep = {}; $$('[data-keep]').forEach(e => keep[e.dataset.keep] = [e.scrollLeft, e.scrollTop]);
   const mn = $('#main'), sc = mn.scrollTop;
-  try { mn.innerHTML = crumbs() + '<div id="bannerBox">' + banner() + '</div>' + filtrosHTML() + guiaHTML() + v.render();  kbFocusables(); } catch (e) { console.error(e); mn.innerHTML = `<div class="empty">${icon('warn', 28)}<p>Error al renderizar la vista: ${esc(e.message)}</p></div>`; }
+  try { mn.innerHTML = (FL.verComo ? '<div class="note" role="status" style="margin:0 0 8px;position:sticky;top:0;z-index:5;background:#FFF4CE;border:1px solid #E0C060;color:#4A3600"><span>Viendo como <b>' + esc(FL.verComo) + '</b> (simulación) · <button class="lnk" data-act="vercomo" data-n="">Volver a mi usuario</button></span></div>' : '') + crumbs() + '<div id="bannerBox">' + banner() + '</div>' + filtrosHTML() + guiaHTML() + v.render();  kbFocusables(); } catch (e) { console.error(e); mn.innerHTML = `<div class="empty">${icon('warn', 28)}<p>Error al renderizar la vista: ${esc(e.message)}</p></div>`; }
   mn.scrollTop = sc;
   $$('[data-keep]').forEach(e => { const k = keep[e.dataset.keep]; if (k) { e.scrollLeft = k[0]; e.scrollTop = k[1]; } });
   fitMain(); try { simplify(); } catch (e) { console.error(e); } try { incMarks(); } catch (e) { console.error(e); } try { presLayout(); } catch (e) { console.error(e); } try { cocFit(); } catch (e) { console.error(e); }
@@ -2382,6 +2383,7 @@ function gsearch(q) {
   St.riesgos.forEach(r => { if ((r.desc + ' ' + r.id).toLowerCase().includes(q)) m.push({ t: 'risk', id: r.id, l: r.desc, s: r.id + ' · riesgo ' + expo(r), ic: 'shield' }); });
   HITOS().forEach(h => { if (h.nombre.toLowerCase().includes(q)) m.push({ t: 'hito', id: h.id, l: h.nombre, s: 'Hito · ' + nameOf(h.ini), ic: 'flag' }); });
   St.decisiones.forEach(d => { if ((d.titulo + d.id).toLowerCase().includes(q)) m.push({ t: 'dec', id: d.id, l: d.titulo, s: d.id + ' · decisión ' + d.tipo, ic: 'gavel' }); });
+  St.ini.forEach(i => (i.subfases || []).forEach(sf => { if (String(sf.nombre || '').toLowerCase().includes(q)) m.push({ t: 'ini', id: i.id, l: sf.nombre, s: 'Subfase · ' + i.titulo, ic: 'list' }); }));   /* N-U-16 */
   box.innerHTML = m.slice(0, 9).map(x => `<button data-act="gsel" data-t="${x.t}" data-id="${x.id}">${icon(x.ic, 15)}<span><b>${esc(x.l)}</b><small>${esc(x.s)}</small></span></button>`).join('') || '<div class="empty-s">Sin resultados</div>';
   box.classList.add('open');
 }
@@ -2406,7 +2408,7 @@ document.addEventListener('keydown', e => {
 });
 Acts.mclose = () => Modal.close();
 Acts.ftab = d => { $$('.ftabs button').forEach(b => b.classList.toggle('on', b.dataset.t === d.t)); $$('.ftab').forEach(x => x.classList.toggle('on', x.dataset.t === d.t)); };
-Acts.msave = () => { const o = Modal.cur && Modal.cur.form; if (!o) return; const { out, errs } = readForm(); if (errs.length) { toast('Completa: ' + errs.join(', '), 'err'); return; } if (o.onSave(out) !== false) Modal.close(); };
+Acts.msave = () => { const o = Modal.cur && Modal.cur.form; if (!o) return; const { out, errs } = readForm(); if (errs.length) { toast('Completa: ' + errs.join(', '), 'err'); const bad = $('#mform .bad'); if (bad) { const tp = bad.closest('.ftab'); if (tp && !tp.classList.contains('on')) Acts.ftab({ t: tp.dataset.t }); bad.scrollIntoView({ block: 'center' }); bad.focus(); } return; } if (o.onSave(out) !== false) Modal.close(); };
 Acts.mdanger = () => { const o = Modal.cur.form; if (o.onDanger) { const f = o.onDanger; Modal.close(); f(); } };
 Acts.mconfirm = () => { const y = Modal.cur && Modal.cur.yes; Modal.close(); if (y) y(); };
 Acts.go = d => go(d.v);
@@ -2419,6 +2421,13 @@ Acts.sel = d => selectEntity(d.t, d.id);
 Acts.gfix = d => { Modal.close(); selectEntity('ini', d.id); };   // U-12: lleva a la ficha para corregir la compuerta
 Acts.panelx = () => { UI.sel = null; UI.panel = false; renderChrome(); renderPanel(); saveUI(); };
 Acts.unsel = () => { UI.sel = null; renderPanel(); saveUI(); };
+document.addEventListener('keydown', e => {   /* N-U-16: ↓/↑/Enter en la búsqueda global */
+  const g = e.target && e.target.id === 'gs' ? e.target : null, box = $('#gsres'); if (!g || !box || !box.classList.contains('open')) return;
+  const bs = $$('button', box); if (!bs.length) return; const cur = bs.findIndex(b => b.classList.contains('kb'));
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = (cur + (e.key === 'ArrowDown' ? 1 : -1) + bs.length) % bs.length; bs.forEach((b, k) => b.classList.toggle('kb', k === n)); bs[n].scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'Enter') { e.preventDefault(); (bs[cur >= 0 ? cur : 0]).click(); }
+  else if (e.key === 'Escape') box.classList.remove('open');
+});
 Acts.gsel = d => { $('#gsres').classList.remove('open'); $('#gs').value = ''; selectEntity(d.t, d.id); };
 Acts.ptab = d => { UI.tab = d.tab; renderPanel(); };
 Acts.alertgo = d => { closePops(); if (d.id) selectEntity('ini', d.id, 'ia'); else go('ia'); };
@@ -2910,7 +2919,7 @@ function hitoForm(h, ini) {
   const nw = !h, v = h ? clone(h) : { ini: ini || (UI.sel && UI.sel.t === 'ini' ? UI.sel.id : ''), fecha: addD(hoy(), 14), completado: false, resp: '', subfase: '' }, hi = byId(v.ini);
   openForm({ pres: true,
     title: nw ? 'Nuevo hito' : 'Editar hito', values: v, danger: nw ? null : 'Eliminar', saveLabel: nw ? 'Crear' : 'Guardar',
-    fields: [{ k: 'ini', l: 'Iniciativa', t: 'select', opts: iniOpts(), req: true, w: 3 }, { k: 'nombre', l: 'Hito', req: true, w: 3 }, { k: 'fase', l: 'Fase', t: 'select', opts: ['', ...FASES.map(x => { const w = hi && ventanaDe(hi, x); return { v: x, t: x + (w && w.ini ? ' · ' + rangoTx(w.ini, w.fin) : '') }; })], hint: 'Opcional: al avanzar de fase se exige cerrar los hitos de la fase' }, { k: 'subfase', l: 'Subfase', t: 'select', opts: [{ v: '', t: '— sin subfase —' }, ...subfasesDe(hi).map(x => ({ v: x.id, t: x.fase + ' › ' + x.nombre + ' · ' + rangoTx(x.inicio, x.fin) }))], hint: hi && subfasesDe(hi).length ? 'Opcional. Debe ser de la misma fase del hito' : 'Este proyecto aún no tiene subfases' }, { k: 'fecha', l: 'Fecha plan', t: 'date', req: true }, { k: 'cat', l: 'Categoría', t: 'select', opts: [{ v: '', t: '— sin categoría —' }, ...hitoCats()] }, { k: 'desc', l: 'Descripción / instrucciones', t: 'textarea', w: 3, rows: 3, hint: 'Opcional. Recordatorio del hito; se ve en Mi cocina.' }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'completado', l: 'Estado', t: 'check', lbl: 'Completado' }, { k: 'fechaReal', l: 'Fecha real', t: 'date' }],
+    fields: [{ k: 'ini', l: 'Iniciativa', t: 'select', opts: [{ v: '', t: '— Elige la iniciativa —' }, ...iniOpts()], req: true, w: 3 }, { k: 'nombre', l: 'Hito', req: true, w: 3 }, { k: 'fase', l: 'Fase', t: 'select', opts: ['', ...FASES.map(x => { const w = hi && ventanaDe(hi, x); return { v: x, t: x + (w && w.ini ? ' · ' + rangoTx(w.ini, w.fin) : '') }; })], hint: 'Opcional: al avanzar de fase se exige cerrar los hitos de la fase' }, { k: 'subfase', l: 'Subfase', t: 'select', opts: [{ v: '', t: '— sin subfase —' }, ...subfasesDe(hi).map(x => ({ v: x.id, t: x.fase + ' › ' + x.nombre + ' · ' + rangoTx(x.inicio, x.fin) }))], hint: hi && subfasesDe(hi).length ? 'Opcional. Debe ser de la misma fase del hito' : 'Este proyecto aún no tiene subfases' }, { k: 'fecha', l: 'Fecha plan', t: 'date', req: true }, { k: 'cat', l: 'Categoría', t: 'select', opts: [{ v: '', t: '— sin categoría —' }, ...hitoCats()] }, { k: 'desc', l: 'Descripción / instrucciones', t: 'textarea', w: 3, rows: 3, hint: 'Opcional. Recordatorio del hito; se ve en Mi cocina.' }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'completado', l: 'Estado', t: 'check', lbl: 'Completado' }, { k: 'fechaReal', l: 'Fecha real', t: 'date' }],
     onDanger: () => confirmBox('¿Eliminar este hito?', () => { St.hitos = St.hitos.filter(x => x.id !== h.id); log('Cambio', h.ini, 'Hito eliminado: ' + h.nombre); toast('Hito eliminado'); UI.sel = null; refresh(); }, 'Eliminar', true),
     onSave(o) { if (o.completado && !o.fechaReal) o.fechaReal = hoy(); if (!o.completado) o.fechaReal = null;
       if (o.subfase) { const sx = subfasesDe(byId(o.ini)).find(x => x.id === o.subfase); if (!sx) { toast('La subfase elegida no es de esta iniciativa', 'err'); return false; } if (!o.fase) o.fase = sx.fase; if (o.fase !== sx.fase) { toast('La subfase «' + sx.nombre + '» es de ' + sx.fase + ': el hito debe estar en esa fase', 'err'); return false; } if (o.fecha < sx.inicio || o.fecha > sx.fin) toast('Aviso: la fecha del hito queda fuera de la subfase «' + sx.nombre + '» (' + rangoTx(sx.inicio, sx.fin) + ')', 'warn'); } else delete o.subfase;
@@ -2938,7 +2947,7 @@ function riskForm(r, ini, pre) {
   const nw = !r, v = r ? clone(r) : { ini: ini || (UI.sel && UI.sel.t === 'ini' ? UI.sel.id : ''), cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: St.cfg.usuario, fIdent: hoy(), fRev: addD(hoy(), 30), mit: '', ...(pre || {}) };
   openForm({ pres: true,
     title: nw ? 'Nuevo riesgo' : 'Editar riesgo ' + r.id, values: v, danger: nw ? null : 'Eliminar', saveLabel: nw ? 'Registrar' : 'Guardar',
-    fields: [{ k: 'ini', l: 'Proyecto / iniciativa', t: 'select', opts: iniOpts(), req: true, w: 3 }, { k: 'desc', l: 'Descripción del riesgo', req: true, t: 'textarea', w: 3 }, { k: 'cat', l: 'Categoría', t: 'select', opts: RISK_CATS }, { k: 'estado', l: 'Estado', t: 'select', opts: RISK_ESTADOS }, { k: 'dueno', l: 'Dueño', list: people() },
+    fields: [{ k: 'ini', l: 'Proyecto / iniciativa', t: 'select', opts: [{ v: '', t: '— Elige la iniciativa —' }, ...iniOpts()], req: true, w: 3 }, { k: 'desc', l: 'Descripción del riesgo', req: true, t: 'textarea', w: 3 }, { k: 'cat', l: 'Categoría', t: 'select', opts: RISK_CATS }, { k: 'estado', l: 'Estado', t: 'select', opts: RISK_ESTADOS }, { k: 'dueno', l: 'Dueño', list: people() },
       { k: 'prob', l: 'Probabilidad (1–5)', t: 'range', min: 1, max: 5 }, { k: 'imp', l: 'Impacto (1–5)', t: 'range', min: 1, max: 5 }, { k: 'mit', l: 'Plan de mitigación', t: 'textarea', w: 3 }, { k: 'fIdent', l: 'Identificado', t: 'date' }, { k: 'fRev', l: 'Próxima revisión', t: 'date' }],
     onDanger: () => confirmBox('¿Eliminar este riesgo?', () => { St.riesgos = St.riesgos.filter(x => x.id !== r.id); log('Riesgo', r.ini, 'Riesgo eliminado: ' + r.desc); UI.sel = null; toast('Riesgo eliminado'); refresh(); }, 'Eliminar', true),
     onSave(o) { if (riesgoAbierto(o) && expo(o) >= cfgI(byId(o.ini), 'umbralCritico') && !String(o.mit || '').trim()) { toast('Un riesgo crítico requiere plan de mitigación', 'err'); return false; }
@@ -3073,7 +3082,7 @@ Acts.aprobargo = d => {
   if (miss.length && !force) return toast(`Hay ${miss.length} compuerta(s) sin cumplir. Pulsa «Corregir» en cada una o marca «Forzar cambio» (solo Gasto).`, 'err');   // U-12
   const nota = ($('#apr_nota') || {}).value || '';
   const n = aprobarPropuesta(p, (miss.length ? '[forzado: ' + miss.map(m => m.t).join(', ') + '] ' : '') + nota.trim());
-  Modal.close(); UI.sel = { t: 'ini', id: n.id }; UI.tab = 'resumen'; toast('Proyecto ' + n.id + ' creado'); refresh();
+  Modal.close(); UI.sel = { t: 'ini', id: n.id }; UI.tab = 'resumen'; toast('Proyecto ' + n.id + ' creado. Siguiente paso: planifica sus hitos y riesgos'); refresh();
 };
 
 /* Cambio de estado con motivo y fecha de revisión */
@@ -3117,7 +3126,7 @@ Acts.reopen = d => {
 function propResumen(i) {
   const F_ = FASES_PROP, idx = F_.indexOf(i.fase), last = idx === F_.length - 1, sf = semFase(i), r = roi(i), c = completitud(i), fin = isDone(i);
   const g = last ? gatesAprobar(i) : gates(i, F_[idx + 1]), sc = i.score || {};
-  const link = fin ? '' : last ? `<a class="lnk" data-act="aprobar" data-id="${i.id}">Aprobar y crear proyecto →</a>` : `<a class="lnk" data-act="advance" data-id="${i.id}">Avanzar a ${F_[idx + 1]} →</a>`;
+  const link = fin ? '' : last ? `<a class="lnk edit-only" data-act="aprobar" data-id="${i.id}">Aprobar y crear proyecto →</a>` : `<a class="lnk edit-only" data-act="advance" data-id="${i.id}">Avanzar a ${F_[idx + 1]} →</a>`;
   const bar = (l, v, inv) => `<div class="kv"><span>${l}</span><b>${prog(v / 5 * 100, (inv ? v >= 4 : v <= 2) ? 'Rojo' : (inv ? v <= 2 : v >= 4) ? 'Verde' : 'Ámbar', 5)} ${v || '—'}/5</b></div>`;
   return `${i.proyecto ? `<div class="pn-sec"><div class="note">${icon('play', 14)}<span>Aprobada · proyecto generado ${iniLink(i.proyecto, i.proyecto + ' · ' + nameOf(i.proyecto))}</span></div></div>` : ''}${i.estadoMotivo && !i.proyecto ? `<div class="pn-sec"><div class="note warn">${icon('warn', 14)}<span><b>${esc(i.estado)}:</b> ${esc(i.estadoMotivo)}${i.estadoRev ? ' · revisión ' + fmtD(i.estadoRev) : ''}</span></div></div>` : ''}
   <div class="pn-sec"><div class="flow">${F_.map((x, k) => `<span class="${k < idx ? 'done' : k === idx ? 'cur' : ''}" title="${x}"></span>`).join('')}</div><div class="flow-l"><span>${i.fase}</span>${link}</div></div>
@@ -3165,7 +3174,7 @@ Views.dashboard = {
     return pageHead('Dashboard ejecutivo', `Portafolio TI Operaciones · ${esc(St.cfg.areaGlobal === 'Todas' ? 'Todas las áreas' : St.cfg.areaGlobal)} · al ${fmtDL(hoy())}`, btn('Presentación ejecutiva', 'go', { d: { v: 'presentaciones' }, ic: 'slides' }) + btn('Agentes IA', 'go', { d: { v: 'ia' }, ic: 'spark', cls: 'pri' })) + `
     <section class="kpis" aria-label="Indicadores clave">
       ${kp('', 'play', 'Proyectos Activos', K.activos, `${K.total} proyectos · ${K.cerradas} completados`, stackBar(FASES_ACT.map(f => ({ l: f, v: L.filter(i => i.fase === f && isActive(i)).length, c: FASE_COLOR[f] })), 6), 'proyectos')}
-      ${kp(K.atrasados ? 'bad' : 'good', 'clock', 'Atrasados', K.atrasados, K.atrasados ? `${Math.round(K.atrasados / Math.max(1, K.activos) * 100)}% de los activos · desv. &gt; ${cfgMi('tolDesv')} d` : 'Sin desviaciones relevantes', '', 'gantt')}
+      ${kp(K.atrasados ? 'bad' : 'good', 'clock', 'Atrasados', K.atrasados, K.atrasados ? `${Math.round(K.atrasados / Math.max(1, K.activos) * 100)}% de los activos · desv. &gt; ${cfgMi('tolDesv')} d` : (hv ? `Proyectos sin desvío, pero ${hv} ${hv === 1 ? 'hito vencido' : 'hitos vencidos'}` : 'Sin desviaciones relevantes'), '', 'gantt')}
       ${kp(K.riesgosCrit ? 'bad' : 'good', 'shield', 'Riesgos Críticos', K.riesgosCrit, `Exposición ≥ ${cfgMi('umbralCritico')} · ${St.riesgos.filter(riesgoAbierto).length} riesgos abiertos`, '', 'riesgos')}
       ${kp(K.ontrackPct >= 60 ? 'good' : K.ontrackPct >= 35 ? 'warn' : 'bad', 'check', '% On Track', pct(K.ontrackPct), `${K.ontrack} de ${K.activos} activos en verde y a tiempo`, prog(K.ontrackPct, K.ontrackPct >= 60 ? 'Verde' : K.ontrackPct >= 35 ? 'Ámbar' : 'Rojo', 6), 'portfolio')}
     </section>
@@ -3422,7 +3431,7 @@ Acts.roadcsv = () => { const rows = scopeAll().filter(porTipo); download('APIH_r
 
 /* ======================= V22.53 · FASES: 4 miradas (Gantt por fases, Línea, Tablero, Riesgos en el tiempo) ======================= */
 const FZ_TABS = [['gantt', 'Gantt por fases'], ['linea', 'Línea de fases'], ['tablero', 'Tablero'], ['riesgos', 'Riesgos en el tiempo']];
-const fzd = s => s ? s.slice(8, 10) + '-' + s.slice(5, 7) : '—';
+const fzd = s => s ? s.slice(8, 10) + '-' + s.slice(5, 7) + (s.slice(0, 4) !== hoy().slice(0, 4) ? '-' + s.slice(2, 4) : '') : '—';   /* N-U-20: año visible si no es el actual */
 const fzTx = c => c === '#F2A100' ? 'var(--fzamb,#8A6100)' : c;   // N-V-02: ámbar legible en tema oscuro                       // texto legible sobre blanco
 const fzOn = c => c === '#F2A100' ? '#201F1E' : '#fff';                  // texto sobre fondo de color
 /* Ventana de cada fase: desde el día siguiente al fin de la anterior (la 1ª desde inicioPlan) hasta su último hito (la última hasta finPlan si no tiene hitos) */
@@ -3477,6 +3486,8 @@ function faseNotaForm(i, fase) {
     onSave(o) { if ((o.nota || '').length > DESC_MAX) { toast('La nota no puede superar ' + DESC_MAX + ' caracteres', 'err'); return false; }
       i.faseNota = Object.assign({}, i.faseNota); if (String(o.nota || '').trim()) i.faseNota[o.fase] = cutDesc(o.nota.trim()); else delete i.faseNota[o.fase];
       i.actualizada = hoy(); log('Cambio', i.id, 'Nota de fase ' + o.fase + (String(o.nota || '').trim() ? ' actualizada' : ' eliminada')); toast('Nota guardada'); refresh(); } });
+  const sel = $('#f_fase'), ta = $('#f_nota');   /* N-U-05: al cambiar la fase se carga la nota de esa fase (no se pisa la de otra) */
+  if (sel && ta) sel.addEventListener('change', () => { ta.value = faseNotaP(i, sel.value) || ''; const ex = $('#mform') && $('#mform').parentNode.querySelector('p.mut'); if (ex) { const f = faseDescG(sel.value); ex.textContent = f ? 'Descripción global de «' + sel.value + '»: ' + f : ''; } });
 }
 Acts.fnota = d => faseNotaForm(byId(d.id), d.f);
 
@@ -3759,7 +3770,7 @@ Views.riesgos = {
     <div class="grid12"><section class="card c6"><header><h2>Matriz de calor 5×5</h2><small>${f.cell ? '<a class="lnk" data-act="hcell" data-c="' + f.cell + '">Quitar filtro de celda</a>' : 'Clic en una celda para filtrar'}</small></header>${heat}</section>
       <section class="card c6"><header><h2>Exposición por proyecto</h2><small>Suma de exposición de riesgos abiertos</small></header>${hbars(byIni, 0, v => v)}<div style="margin-top:14px"><h3 class="sub">Por categoría</h3>${hbars(RISK_CATS.map(c => ({ l: c, v: open.filter(r => r.cat === c).length, c: '#2a78d6' })).filter(x => x.v), 0)}</div></section></div>
     <div class="toolbar" style="margin-top:14px">${planSeg()}<div class="search"><span>${icon('search', 14)}</span><input data-key="rk-q" data-chg="flt" data-v="risk" data-f="q" type="search" placeholder="Buscar riesgo…" value="${esc(f.q)}"></div>
-      <select data-chg="flt" data-v="risk" data-f="ini">${selOpts(uniq(all.map(r => r.ini).filter(Boolean)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todas las iniciativas')}</select><select data-chg="flt" data-v="risk" data-f="estado">${selOpts(RISK_ESTADOS, f.estado, 'Todos los estados')}</select><select data-chg="flt" data-v="risk" data-f="cat">${selOpts(RISK_CATS, f.cat, 'Todas las categorías')}</select>
+      <select data-chg="flt" data-v="risk" data-f="ini" aria-label="Iniciativa">${selOpts(uniq(all.map(r => r.ini).filter(Boolean)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todas las iniciativas')}</select><select data-chg="flt" data-v="risk" data-f="estado">${selOpts(RISK_ESTADOS, f.estado, 'Todos los estados')}</select><select data-chg="flt" data-v="risk" data-f="cat">${selOpts(RISK_CATS, f.cat, 'Todas las categorías')}</select>
       <select data-chg="flt" data-v="risk" data-f="nivel">${selOpts(['Crítico', 'Alto', 'Medio', 'Bajo'], f.nivel, 'Todos los niveles')}</select><select data-chg="flt" data-v="risk" data-f="dueno">${selOpts(uniq(St.riesgos.map(r => r.dueno).filter(Boolean)).sort(), f.dueno, 'Todos los dueños')}</select>
       <label class="chk tb-c"><input type="checkbox" ${f.hideClosed ? 'checked' : ''} data-chg="flt" data-v="risk" data-f="hideClosed" data-bool="1"> <span>Ocultar cerrados</span></label></div>
     <div class="tbl-w"><table class="tbl"><thead><tr><th>ID</th><th>Proyecto</th><th style="min-width:220px">Descripción</th><th class="n" title="Impacto">Imp.</th><th class="n" title="Probabilidad">Prob.</th><th class="n" title="Exposición">Exp.</th><th style="min-width:200px">Mitigación</th><th>Dueño</th><th>Estado</th></tr></thead><tbody>
@@ -3789,11 +3800,11 @@ Views.hitos = {
     <div class="chips-row">${chip('over', 'Vencidos', c('over'), 'bad')}${chip('soon', 'Vencen en ≤ 7 d', c('soon'), 'warn')}${chip('ok', 'En plazo', c('ok'), '')}${chip('done', 'Completados', c('done') + c('late'), 'good')}
       <div class="card wk"><header><h2>Hitos pendientes por semana</h2></header><div class="wkb">${wk.map(w => `<div title="${w.v} hitos · semana del ${w.l}"><b style="height:${w.v / mxw * 56}px"></b><small>${w.l.split(' ')[0]}</small></div>`).join('')}</div></div></div>
     <div class="toolbar">${planSeg()}<div class="search"><span>${icon('search', 14)}</span><input data-key="h-q" data-chg="flt" data-v="hitos" data-f="q" type="search" placeholder="Buscar hito…" value="${esc(f.q)}"></div>
-      <select data-chg="flt" data-v="hitos" data-f="ini">${selOpts(uniq(all.map(h => h.ini)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todas las iniciativas')}</select><select data-chg="flt" data-v="hitos" data-f="cat" aria-label="Categoría">${selOpts([...hitoCats(), '—'].map(c => ({ v: c, t: c === '—' ? 'Sin categoría' : c })), f.cat, 'Todas las categorías')}</select>
+      <select data-chg="flt" data-v="hitos" data-f="ini" aria-label="Iniciativa">${selOpts(uniq(all.map(h => h.ini)).map(id => ({ v: id, t: nameOf(id) })).sort(by('t')), f.ini, 'Todas las iniciativas')}</select><select data-chg="flt" data-v="hitos" data-f="cat" aria-label="Categoría">${selOpts([...hitoCats(), '—'].map(c => ({ v: c, t: c === '—' ? 'Sin categoría' : c })), f.cat, 'Todas las categorías')}</select>
       
       ${f.est || f.ini || f.resp || f.q ? btn('Limpiar', 'hclear', { ic: 'x' }) : ''}</div>
     <div class="tbl-w"><table class="tbl"><thead><tr><th style="width:40px"></th><th>Iniciativa</th><th style="min-width:240px">Hito</th><th>Fecha plan</th><th>Fecha real</th><th>Responsable</th><th>Estado</th></tr></thead><tbody>
-    ${rows.map(h => { const e = hitoEstado(h); return `<tr data-act="sel" data-t="hito" data-id="${h.id}" class="${UI.sel && UI.sel.id === h.id ? 'sel' : ''}"><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado" data-nostop="1"></td><td>${iniLink(h.ini)}</td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b><small>${esc(h.cat || 'Sin categoría')} · ${esc(h.fase || '')}</small></td><td>${fmtD(h.fecha)}<small>${rel(h.fecha)}</small></td><td>${fmtD(h.fechaReal)}</td><td>${esc(h.resp || '—')}</td><td><span class="pill" style="--c:${e.c}">${e.t}</span></td></tr>`; }).join('') || `<tr><td colspan="7">${empty('Sin hitos', 'flag')}</td></tr>`}</tbody></table></div>`;
+    ${rows.map(h => { const e = hitoEstado(h); return `<tr data-act="sel" data-t="hito" data-id="${h.id}" class="${UI.sel && UI.sel.id === h.id ? 'sel' : ''}"><td><input type="checkbox" ${h.completado ? 'checked' : ''} data-chg="hitotoggle" data-id="${h.id}" aria-label="Completado" data-nostop="1"></td><td>${iniLink(h.ini)}</td><td><b class="${h.completado ? 'strike' : ''}">${esc(h.nombre)}</b><small>${esc([h.cat, h.fase].filter(Boolean).join(' · ') || '—')}</small></td><td>${fmtD(h.fecha)}<small>${rel(h.fecha)}</small></td><td>${fmtD(h.fechaReal)}</td><td>${esc(h.resp || '—')}</td><td><span class="pill" style="--c:${e.c}">${e.t}</span></td></tr>`; }).join('') || `<tr><td colspan="7">${empty('Sin hitos', 'flag')}</td></tr>`}</tbody></table></div>`;
   }
 };
 Acts.hest = d => { const f = F('hitos', {}); f.est = f.est === d.k ? '' : d.k; render(); };
@@ -4355,11 +4366,12 @@ Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = '';
       if (x) { const c = ['desc', 'cat', 'prob', 'imp', 'estado', 'dueno', 'fRev', 'mit'].filter(k => v[k] !== (x[k] || (typeof v[k] === 'number' ? 0 : ''))).map(k => k + ' ' + ver(x[k]) + ' → ' + ver(v[k])); if (c.length) { ch.push('Riesgo ' + q.id + ': ' + c.join('; ')); ap.push(() => Object.assign(x, v)); } }
       else { ch.push('Riesgo NUEVO: ' + v.desc + ' · ' + v.prob + '×' + v.imp); ap.push(() => St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: i.id, ...v })); } });
     if (!ch.length) { Modal.close && Modal.close(); toast(err.length ? 'Sin cambios válidos. ' + err.slice(0, 3).join(' | ') : 'El archivo no trae cambios', 'err'); return; }
+    if (bloqueo) { Modal.close && Modal.close(); toast('Archivo rechazado: finPlan es anterior a inicioPlan. Corrígelo y súbelo de nuevo (no se aplicó nada)', 'err'); return; }   /* N-U-06 */
     const lst = ch.slice(0, 40).map(x => '• ' + esc(x)).join('<br>') + (ch.length > 40 ? '<br>… y ' + (ch.length - 40) + ' más' : '');
     confirmBox('<b>Revisar cambios de la IA</b><br>' + ch.length + ' cambio(s) propuesto(s) en ' + esc(i.titulo) + ' (formato: campo: antes → después):<br><br>' + lst + (err.length ? '<br><br><b style="color:var(--red)">Se omiten ' + err.length + ':</b><br>' + err.slice(0, 15).map(x => '✕ ' + esc(x)).join('<br>') : '') + '<br><br>¿Aplicar?', () => {
       if (bloqueo) { toast('finPlan anterior a inicioPlan: corrige el archivo', 'err'); return; }
       ap.forEach(f => f()); i.actualizada = hoy(); log('Cambio', i.id, 'Completado con IA: ' + ch.length + ' cambio(s) aplicados desde archivo'); toast(ch.length + ' cambio(s) aplicados'); refresh(); }, 'Aplicar');
-  } catch (e) { toast('No se pudo leer: ' + e.message, 'err'); } }; r.readAsText(fl); };
+  } catch (e) { toast(e instanceof SyntaxError ? 'El archivo no es un JSON válido' : 'No se pudo leer: ' + e.message, 'err'); } }; r.readAsText(fl); };
 Acts.reset = () => confirmBox(DataService.svc ? 'Se reemplazarán TODOS los datos de ' + BK() + ' por los datos del archivo original. ¿Continuar?' : 'Se perderán los cambios y se restaurarán los datos de demostración. ¿Continuar?', () => { St = seedState(); UI.sel = null; shell(); toast('Datos restaurados'); refresh(); }, 'Restaurar', true);
 
 
@@ -4419,7 +4431,7 @@ function metTab() {
   const m = MET(), t = metTipoSel(), allF = [...m.fasesProp, ...m.fasesPrj];
   const fasesCard = (w, titulo, lista) => `<section class="card c6"><header><h2>${titulo}</h2><small>${lista.length} fases · las marcadas con candado son base del gobierno</small></header>
     <div class="met-f">${lista.map((x, n) => { const fix = FASES_FIJAS.includes(x), ext = n === 0 || n === lista.length - 1, u = enUso(x); return `<div class="met-r"><i style="background:${FASE_COLOR[x] || '#8A8886'}"></i>
-      <input value="${esc(x)}" ${fix ? 'disabled' : ''} data-chg="fasren" data-live="no" data-w="${w}" data-n="${n}" data-key="mf-${w}-${n}" aria-label="Nombre de fase"><input class="met-d" value="${esc((m.faseDesc || {})[x] || '')}" data-chg="fasdesc" data-f="${esc(x)}" data-key="mfd-${w}-${n}" placeholder="Descripción (opcional, se ve en Mi cocina)" aria-label="Descripción de la fase">
+      <input value="${esc(x)}" ${fix ? 'disabled' : ''} data-chg="fasren" data-live="no" data-w="${w}" data-n="${n}" data-key="mf-${w}-${n}" aria-label="Nombre de fase"><input class="met-d" maxlength="500" value="${esc((m.faseDesc || {})[x] || '')}" data-chg="fasdesc" data-f="${esc(x)}" data-key="mfd-${w}-${n}" placeholder="Descripción (opcional, se ve en Mi cocina, la ficha y Fases; máx. 500)" aria-label="Descripción de la fase">
       <span class="mut">${fix ? icon('lock', 12) : ''} ${u ? u + ' en curso' : ''}</span>
       <button class="btn sm" ${ext ? 'disabled' : ''} data-act="fasmv" data-w="${w}" data-n="${n}" data-d="-1" title="Subir" aria-label="Subir">↑</button><button class="btn sm" ${ext ? 'disabled' : ''} data-act="fasmv" data-w="${w}" data-n="${n}" data-d="1" title="Bajar" aria-label="Bajar">↓</button>
       <button class="btn sm danger" ${fix ? 'disabled' : ''} data-act="fasdel" data-w="${w}" data-n="${n}" title="Eliminar fase" aria-label="Eliminar">×</button></div>`; }).join('')}</div>
@@ -5147,7 +5159,7 @@ function controlHTML(i) {
   const b = i.base, e = evm(i), ix = v => v == null ? '—' : `<span style="color:${v >= .95 ? 'var(--grn,#107C10)' : v >= .85 ? '#CA5010' : 'var(--red)'};font-weight:700">${v.toFixed(2)}</span>`;
   let h = '';
   if (b) h += kv('Línea base', `${fmtD(b.fecha)} · fin ${fmtD(b.fin)} · ${fmtN(b.pres)}`) + (e ? kv('Desv. vs base', `<span style="color:${e.dfin > 0 ? 'var(--red)' : 'inherit'}">${e.dfin > 0 ? '+' : ''}${e.dfin} d</span>`) + kv('SPI · CPI', ix(e.spi) + ' · ' + ix(e.cpi)) : '') + kv('Hitos movidos', e ? `${e.movidos}${e.nuevos ? ' (+' + e.nuevos + ' nuevos)' : ''}` : '—');
-  else if (isLive(i) && FASES_ACT.includes(i.fase)) h += kv('Línea base', '<span class="mut">sin congelar</span> ' + (puedeEditarIni(i) && i.inicioPlan && i.finPlan ? btn('Congelar', 'basego', { cls: 'sm', d: { id: i.id } }) : ''));
+  else if (isLive(i) && FASES_ACT.includes(i.fase)) h += kv('Línea base', '<span class="mut" title="La línea base fija las fechas plan para medir desvíos">sin congelar</span> ' + (puedeEditarIni(i) && i.inicioPlan && i.finPlan ? btn('Congelar', 'basego', { cls: 'sm', d: { id: i.id } }) : ''));
   if (b && esGasto()) h += kv('', btn('Re-baselinear', 'baserebase', { cls: 'sm', d: { id: i.id } }));
   const rl = i.beneficio > 0 ? Math.round((i.ahorroReal || 0) / i.beneficio * 100) : null;
   h += kv('Beneficio esperado · real', `${fmtMon(i.beneficio || 0, monOf(i))} · ${fmtMon(i.ahorroReal || 0, monOf(i))}${rl != null ? ' (' + rl + '%)' : ''}`);
