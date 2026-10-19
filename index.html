@@ -2512,7 +2512,7 @@ function ckCommands() {
   NAV.forEach(([k, t, ic]) => C.push({ g: 'Ir a', t, ic, run: () => go(k) }));
   [['prop', 'Nueva propuesta', 'bulb'], ['prj', 'Nuevo proyecto (alta directa)', 'list'], ['risk', 'Nuevo riesgo', 'shield'], ['hito', 'Nuevo hito', 'flag'], ['dec', 'Nueva decisión', 'gavel'], ['com', 'Nuevo comité', 'users']]
     .forEach(([t, l, ic]) => C.push({ g: 'Crear', t: l, ic, run: () => Acts.new({ t }) }));
-  if (APIH_CONFIG.ia !== false) C.push({ g: 'Acción', t: 'Ejecutar todos los agentes IA', ic: 'spark', run: () => { go('ia'); Acts.iarunall(); } });
+  if (APIH_CONFIG.ia !== false) C.push({ g: 'Acción', t: 'Ejecutar todas las revisiones automáticas', ic: 'spark', run: () => { go('ia'); Acts.iarunall(); } });
   C.push({ g: 'Acción', t: 'Cambiar tema claro / oscuro', ic: 'sun', run: () => Acts.theme() });
   C.push({ g: 'Acción', t: 'Mostrar / ocultar panel contextual', ic: 'panel', run: () => Acts.panel() });
   C.push({ g: 'Acción', t: 'Exportar Portfolio a Excel', ic: 'down', run: () => Acts.pxlsx() });
@@ -2881,17 +2881,20 @@ Acts.advance = d => {
 };
 Chg.advto = el => {
   const i = byId(el.dataset.id), to = el.value, g = gates(i, to), miss = g.filter(x => !x.ok);
-  $('#advg').innerHTML = (to === i.fase ? `<p class="mut">La ${tipoLbl(i).toLowerCase()} ya está en esta fase.</p>` : `<div class="gates">${g.map(x => `<div class="${x.ok ? 'ok' : 'no'}">${icon(x.ok ? 'check' : 'x', 14)}<span>${esc(x.t)}</span>${x.ok ? '' : ` <a class="lnk" data-act="gfix" data-id="${i.id}">Corregir</a>`}</div>`).join('') || '<p class="mut">Sin compuertas para esta fase.</p>'}</div>${miss.length && esGasto() ? `<label class="chk" style="margin-top:8px"><input type="checkbox" id="advforce"> <span>Forzar cambio pese a ${miss.length} compuerta(s) incumplida(s) (queda registrado en bitácora)</span></label>` : ''}`);
+  $('#advg').innerHTML = (to === i.fase ? `<p class="mut">La ${tipoLbl(i).toLowerCase()} ya está en esta fase.</p>` : `<div class="gates">${g.map(x => `<div class="${x.ok ? 'ok' : 'no'}">${icon(x.ok ? 'check' : 'x', 14)}<span>${esc(x.t)}</span>${x.ok ? '' : ` <a class="lnk" data-act="gfix" data-id="${i.id}">Corregir</a>`}</div>`).join('') || '<p class="mut">Sin compuertas para esta fase.</p>'}</div>${miss.length && esGasto() ? `<label class="chk" style="margin-top:8px"><input type="checkbox" id="advforce"> <span>Forzar cambio pese a ${miss.length} compuerta(s) incumplida(s) (queda registrado en bitácora)</span></label><div class="fld" id="advmotw" style="display:none;margin-top:8px"><label for="advmot">Motivo del cambio forzado (obligatorio)</label><input id="advmot" type="text" maxlength="200"></div>` : ''}`);
+  const fc = $('#advforce'); if (fc) fc.addEventListener('change', () => { const w = $('#advmotw'); if (w) w.style.display = fc.checked ? '' : 'none'; });   // U-12: motivo al forzar
 };
 Acts.advgo = d => {
   const i = byId(d.id), to = $('#adv_to').value; if (to === i.fase) return Modal.close();
   const miss = gates(i, to).filter(x => !x.ok), force = $('#advforce') && $('#advforce').checked;
   if (miss.length && !esGasto()) return toast('Hay compuertas incumplidas. Solo el perfil Gasto puede forzarlas: completa los datos.', 'err');
   if (miss.length && !force) return toast(`Hay ${miss.length} compuerta(s) sin cumplir. Pulsa «Corregir» en cada una o marca «Forzar cambio» (solo Gasto).`, 'err');   // U-12
+  const motivo = miss.length ? String(($('#advmot') && $('#advmot').value) || '').trim() : '';
+  if (miss.length && !motivo) return toast('Indica el motivo del cambio forzado', 'err');   // U-12
   const from = i.fase; i.fase = to; i.faseDesde = hoy(); i.actualizada = hoy();
   if (to === 'Ejecución' && !i.inicioReal) i.inicioReal = hoy();
   if (to === 'Ejecución' && !i.base && i.inicioPlan && i.finPlan) congelarBase(i, false);
-  log('Cambio', i.id, `Cambio de fase: ${from} → ${to}` + (miss.length ? ` (forzado; faltaba: ${miss.map(m => m.t).join(', ')})` : ''));
+  log('Cambio', i.id, `Cambio de fase: ${from} → ${to}` + (miss.length ? ` (forzado: ${motivo}; faltaba: ${miss.map(m => m.t).join(', ')})` : ''));
   Modal.close(); toast('Fase actualizada a ' + to); refresh();
 };
 
@@ -3158,7 +3161,7 @@ Views.dashboard = {
       ${kp('', 'trend', 'Presupuesto Consumido', fmtBig(K.M.gas), `${restTxt(K.M.gas)}${pctMon(K.M.gas, K.M.pres)}% del presupuesto${monKeys(K.M.pres).length > 1 ? ' en ' + monMain(K.M.pres) : ''}`, prog(pctMon(K.M.gas, K.M.pres), pctMon(K.M.gas, K.M.pres) > 100 ? 'Rojo' : 'Verde', 6), 'portfolio')}
       ${kp(monKeys(K.M.beneficio).length ? 'good' : '', 'target', 'Beneficio Esperado', monKeys(K.M.beneficio).length ? fmtBig(K.M.beneficio) : '<span class="nd">Sin dato</span>', monKeys(K.M.beneficio).length ? `${restTxt(K.M.beneficio)}ROI de proyectos ${roiG}%${monKeys(K.M.pres).length > 1 ? ' (solo CLP)' : ''} <sup class="est">est.</sup>` : 'Ningún proyecto declara beneficio', '', 'portfolio')}
     </section>
-    ${al.length ? `<div class="strip" role="status">${icon('spark', 16)}<span><b>${al.filter(a => a.sev === 3).length} alertas críticas</b> (${al.length} hallazgos de los agentes IA): ${al.slice(0, 2).map(a => esc(a.titulo)).join(' · ')}…</span><a class="lnk" data-act="go" data-v="ia">Revisar →</a></div>` : ''}
+    ${al.length ? `<div class="strip" role="status">${icon('spark', 16)}<span><b>${al.filter(a => a.sev === 3).length} alertas críticas</b> (${al.length} hallazgos de revisión automática): ${al.slice(0, 2).map(a => esc(a.titulo)).join(' · ')}…</span><a class="lnk" data-act="go" data-v="ia">Revisar →</a></div>` : ''}
     <div class="dgrid fit dfill">
       <section class="card dc s2"><header><h2>Estado del portfolio</h2><small>${live.length} proyectos vivos · ${K.pipe} propuestas en pipeline</small></header>
         <div class="sub" style="margin:0 0 4px"><span class="pill tp prj">Proyectos</span> por fase</div>
@@ -4072,7 +4075,7 @@ function bellPop() {
   const pb = $('#pop-bell'), bn = $('#bellN'); if (!pb) return;
   const al = typeof computeAlerts === 'function' ? computeAlerts() : [], alc = al.filter(a => a.sev === 3).length, av = notifMias(), L = nlLeidas(), nl = av.filter(n => !L.has(n.key)), tab = UI.bellTab || 'avisos';
   if (bn) { const t = nl.length + alc; bn.textContent = t > 99 ? '99+' : t || ''; bn.style.display = t ? '' : 'none'; }
-  const head = `<div class="pop-tabs" role="tablist"><button role="tab" aria-selected="${tab === 'avisos'}" class="${tab === 'avisos' ? 'on' : ''}" data-act="belltab" data-t="avisos">Avisos${nl.length ? ` <b>${nl.length}</b>` : ''}</button>${APIH_CONFIG.ia !== false ? `<button role="tab" aria-selected="${tab === 'ia'}" class="${tab === 'ia' ? 'on' : ''}" data-act="belltab" data-t="ia">Alertas IA${alc ? ` <b>${alc}</b>` : ''}</button>` : ''}</div>`;
+  const head = `<div class="pop-tabs" role="tablist"><button role="tab" aria-selected="${tab === 'avisos'}" class="${tab === 'avisos' ? 'on' : ''}" data-act="belltab" data-t="avisos">Avisos${nl.length ? ` <b>${nl.length}</b>` : ''}</button>${APIH_CONFIG.ia !== false ? `<button role="tab" aria-selected="${tab === 'ia'}" class="${tab === 'ia' ? 'on' : ''}" data-act="belltab" data-t="ia">Alertas automáticas${alc ? ` <b>${alc}</b>` : ''}</button>` : ''}</div>`;
   if (tab === 'ia' && APIH_CONFIG.ia !== false) pb.innerHTML = head + (al.slice(0, 7).map(a => `<button data-act="alertgo" data-id="${esc(a.ini || '')}"><span class="sev s-${a.sev}"></span><span><b>${esc(a.titulo)}</b><small>${esc(a.agente)} · ${esc(a.ini ? nameOf(a.ini) : '')}</small></span></button>`).join('') || '<div class="empty-s">Sin alertas</div>') + `<button class="pop-f" data-act="go" data-v="ia">Ver todas en IA →</button>`;
   else pb.innerHTML = head + (av.slice(0, 8).map(n => `<button data-act="avisogo" data-id="${esc(n.ini || '')}" data-k="${esc(n.key)}" class="${L.has(n.key) ? 'rd' : ''}"><span class="sev s-${n.sev}"></span><span><b>${esc(n.titulo)}</b><small>${esc(n.texto)}</small></span></button>`).join('') || '<div class="empty-s">Sin avisos pendientes</div>') + `<div class="pop-f2">${nl.length ? `<button data-act="avisoleer">Marcar todo como leído</button>` : '<span></span>'}<button data-act="go" data-v="miconfig">Configurar avisos</button></div>`;
 }
@@ -5430,7 +5433,7 @@ Views.ia = {
       <div class="a-f">${n != null ? `<span class="a-n">${n} hallazgos</span>` : '<span class="a-n">Resumen</span>'}<button class="btn sm ${doneNow ? '' : 'pri'}" data-act="iarun" data-id="${id}" ${(!on || run) ? 'disabled' : ''}>${icon('play', 12)} Ejecutar</button></div></article>`; };
     const ex = UI.exec || { tone: 'con', S: execSummary('con'), ts: '' };
     const chat = UI.chat || [{ r: 'a', t: 'Hola, soy el asistente del portafolio (simulado, sin conexión a IA real). Pregúntame sobre atrasos, riesgos, presupuesto, hitos, decisiones o el estado de un proyecto.' }];
-    return pageHead('Inteligencia del portafolio', 'Agentes IA simulados: reglas deterministas sobre tus datos locales. Los hallazgos se actualizan al cambiar los datos y sugieren acciones concretas.', `<button class="btn pri" data-act="iarunall" ${run ? 'disabled' : ''}>${icon('spark', 15)}<span>Ejecutar todos los agentes</span></button>`) + `
+    return pageHead('Inteligencia del portafolio', 'Revisiones automáticas: reglas fijas sobre tus datos locales. Los hallazgos se actualizan al cambiar los datos y sugieren acciones concretas.', `<button class="btn pri" data-act="iarunall" ${run ? 'disabled' : ''}>${icon('spark', 15)}<span>Ejecutar todos los agentes</span></button>`) + `
     <div class="agents">${['pmo', 'riesgos', 'roadmap', 'ejecutivo'].map(card).join('')}</div>
     <div class="grid12" style="margin-top:14px"><section class="card c7"><header><h2>Hallazgos de los agentes</h2><small>${rows.length} de ${all.length}</small></header>
       <div class="toolbar flat"><div class="chips">${[3, 2, 1].map(s => `<button class="chip ${f.sev === s ? 'on' : ''}" style="--c:${s === 3 ? '#D13438' : s === 2 ? '#F2A100' : '#0D446A'}" data-act="iaf" data-s="${s}"><i></i>${SEVT[s]} · ${all.filter(x => x.sev === s).length}</button>`).join('')}${['PMO', 'Riesgos', 'Roadmap'].map(a => `<button class="chip ${f.ag === a ? 'on' : ''}" style="--c:#605E5C" data-act="iaag" data-a="${a}"><i></i>${a} · ${cnt(a)}</button>`).join('')}</div></div>
