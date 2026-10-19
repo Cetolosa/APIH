@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <!-- CSP: limita a dónde puede conectarse la app (impide enviar datos o tokens a un servidor ajeno), bloquea plugins, <base> y formularios externos -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://hpsjzuqcijjwthrxgmeu.supabase.co https://graph.microsoft.com https://login.microsoftonline.com https://*.sharepoint.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'">
+<!-- S-06: connect-src limitado al tenant de SharePoint configurado; si cambia el tenant, actualizar esta directiva. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://hpsjzuqcijjwthrxgmeu.supabase.co https://graph.microsoft.com https://login.microsoftonline.com https://aramark365.sharepoint.com;  object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'">
 <script>/* S-16: no permitir que la app se muestre embebida en otro sitio (clickjacking). Complementar con frame-ancestors en el servidor. */
 if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.style.display = "none"; } }</script>
 <title>APIH · Aramark Portfolio Intelligence Hub</title>
