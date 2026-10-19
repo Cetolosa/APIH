@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C2.18', b: '17-10-2026', origen: 'V22.62' };
+  const VERSION = { v: 'C2.19', b: '19-10-2026', origen: 'V22.63' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -33,7 +33,7 @@
   const EST_REVISION = ['En espera', 'Pausado'];
   const RAGS = ['Verde', 'Ámbar', 'Rojo'], PRIOS = ['Alta', 'Media', 'Baja'], MONEDAS = ['CLP', 'USD', 'UF'];
   const ES_FECHA = /^\d{4}-\d{2}-\d{2}$/;
-  const fechaOk = s => ES_FECHA.test(s) && toISO(pD(s)) === s;   // rechaza 2026-02-30
+  const fechaOk = s => ES_FECHA.test(s) && +String(s).slice(0, 4) >= 1900 && +String(s).slice(0, 4) <= 2100 && toISO(pD(s)) === s;   // rechaza 2026-02-30 y años fuera de 1900–2100 (N-S-03)   // rechaza 2026-02-30
 
   // ¿Hay ciclo si `id` pasa a depender de `deps`? grafo: id -> deps[]
   function hayCiclo(id, deps, grafo) {
@@ -112,7 +112,7 @@
     if (to === 'Ejecución') { ok(i.inicioPlan && i.finPlan, 'Fechas plan definidas'); ok(i.presupuesto > 0 || i.categoria === 'Transversal', 'Presupuesto asignado'); ok(hs.length >= 2, 'Al menos 2 hitos planificados'); ok(!rs.some(sinMit), 'Riesgos críticos con plan de mitigación'); ok(i.lider, 'Líder asignado'); }
     if (to === 'Transición') { ok(i.avance >= 80, 'Avance ≥ 80%'); ok(!hs.some(h => !h.completado && h.fecha < ctx.hoy), 'Sin hitos vencidos'); ok(!rs.some(sinMit), 'Riesgos críticos con plan de mitigación'); }
     { const F_ = fasesDe(i), a = F_.indexOf(i.fase), b = F_.indexOf(to); if (b > a && a >= 0) { const pend = hs.filter(h => h.fase === i.fase && !h.completado); if (hs.some(h => h.fase === i.fase)) ok(!pend.length, 'Hitos de la fase ' + i.fase + ' completados' + (pend.length ? ' (faltan ' + pend.length + ')' : '')); } }
-    if (to === 'Cierre') { ok(i.avance >= 100, 'Avance al 100%'); ok(hs.every(h => h.completado), 'Todos los hitos completados'); ok(!rs.some(r => r.estado === 'Abierto' && expo(r) >= U), 'Sin riesgos críticos abiertos'); }
+    if (to === 'Cierre') { ok(i.avance >= 100, 'Avance al 100%'); ok(hs.filter(h => h.fase !== to).every(h => h.completado), 'Todos los hitos completados'); ok(!rs.some(r => riesgoAbierto(r) && expo(r) >= U), 'Sin riesgos críticos abiertos'); }   /* F-06/F-07: los hitos de la propia fase Cierre no bloquean el cierre; «En mitigación» cuenta como abierto */
     return g;
   }
 

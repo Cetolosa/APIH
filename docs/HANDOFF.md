@@ -16,7 +16,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Abierto** (V22.62: descripciones por objeto ADR-015, encabezado compacto en 2 líneas). Congelar cuando el usuario lo pida | **C2.18** · descripciones + encabezado compacto · `tests/e2e/correr-corporativo.sh` 10/10 · seguridad 25/25 · producción objetivo **27-11-2026** |
+| Estado | **Abierto** (V22.63: correcciones de la revisión V22.62). Congelar cuando el usuario lo pida | **C2.19** · traspaso de V22.63 (compuertas de Cierre, reabrir solo Admin, importación endurecida, ayuda «?» única, Administración con una barra) · `tests/e2e/correr-corporativo.sh` 10/10 · seguridad: defensas-api y pentest-api con fallas previas por revisar · producción objetivo **27-11-2026** |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo: `apps/corporativo`, `services/api`, `packages/core`, `db/`, `infra/`, `powerbi/`, `tests/`; luego repo de Aramark que indique TI |
@@ -78,6 +78,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.15 | Importar/exportar subfases y categorías (archivo de iniciativas, «Con IA»); la iniciativa con subfases se sincroniza antes que sus hitos |
 | C2.16 | Revisión de seguridad: `docs/revision-seguridad-2026-10-17.md` (5 hallazgos corregidos, e2e `xss1`) |
 | C2.17 | Descripción/instrucciones por objeto (V22.61, ADR-015): `faseDesc` global + `faseNota` por proyecto, `desc` en subfase e hito; se ven en Mi cocina, ficha y Fases; core valida ≤500 y escapa; e2e `corp3` verifica round-trip al servidor |
+| C2.19 | Traspaso de V22.63: núcleo (fechas con año 1900–2100, compuerta de Cierre exige avance 100 %, hitos completos y sin riesgos críticos abiertos), API (completar proyecto exige compuertas de Cierre; reabrir Completado/Cancelado solo Admin y limpia fecha de fin real), SPA (importación con lista blanca, ayuda «?» única, Administración con una barra, «Ver como»). `esAdminReal` tolerante se mantiene (S-17 solo Prototipo). |
 | C2.18 | Encabezado compacto en 2 líneas (V22.62): el subtítulo se recorta con «…» y las acciones quedan en la línea del título (antes «Ver todo» caía a una línea propia con aire); solo CSS, sin cambio de lógica |
 | Pentest | Pentest de caja gris de ambas versiones: `docs/pentest-2026-10-17.md` + `tests/seguridad/defensas-api.js` (25 ataques). Incorporado a la propuesta v2 y a la página de entregable a TI |
 | Docs 17-10 | Propuesta v2 (Claude Docs), docs de operación, seguridad y plan C2.15 actualizados |
@@ -89,6 +90,6 @@ Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con
 - **TI:** comentarios a la propuesta (esperados hacia el 21-10, sin presión); habilitar ambiente dev (04-11). La v2 de la propuesta se envía solo si TI la pide o al responder sus comentarios.
 - **Al habilitar dev:** desplegar, validar en Azure (`tests/contract/run-azure-sql.js`), ejecutar el guion UAT.
 - **Pendiente funcional:** editor de listas de categorías en Administración; selector Tipo en Calendario y Capacidad; funciones diferidas (Pronóstico, Ruta crítica, Escenarios): el usuario aún no decide; core: `pasosDe` y contratos propios de decisiones, compromisos, bitácora y comités (C1.5).
-- **Prototipo:** abierto (V22.62, ADR-015). Congelar cuando el usuario lo pida.
+- **Prototipo:** abierto (V22.63). Congelar cuando el usuario lo pida.
 - **Usuario:** que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); (opcional) usuario «Bot IA» con rol Editor.
 - **Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren canal de TI; tags pueden no subir desde la nube (crear en GitHub Releases).

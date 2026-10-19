@@ -3,7 +3,7 @@
 'use strict';
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const raiz = path.join(__dirname, '..', '..');
-const html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(raiz, process.env.APIH_HTML || 'index.html'), 'utf8');
 const core = require(path.join(raiz, 'packages', 'core', 'apih-core.js'));
 
 const linea = n => { const m = html.match(new RegExp('^const ' + n + ' = .*$', 'm')); if (!m) throw new Error('No está ' + n); return m[0]; };
@@ -28,10 +28,7 @@ for (let n = 0; n < 4000; n++) {
   const hitos = Array.from({ length: Math.floor(rnd() * 9) }, (_, k) => { const c = rnd() < 0.4, f = fecha(); return { id: 'H' + k, fase: pick([...FS, '', undefined]), fecha: f, completado: c, fechaReal: c ? pick([f, core.addD(f, 3), core.addD(f, -2)]) : null }; });
   const riesgos = Array.from({ length: Math.floor(rnd() * 6) }, (_, k) => ({ id: 'R' + k, prob: 1 + Math.floor(rnd() * 5), imp: 1 + Math.floor(rnd() * 5), estado: pick(['Abierto', 'En mitigación', 'Cerrado', 'Materializado']), mit: pick(['', '  ', 'plan']) }));
   const S = { hoy: fecha(), umbral: pick([12, 15, 20]), hitos, riesgos }, P = proto(S), ctx = { hitos, riesgos, hoy: S.hoy, umbral: S.umbral };
-  /* Divergencia deliberada (rama fix/a1, grupo B: F-05/F-06/F-07): el Prototipo exige además cerrar los hitos de la fase y, en Cierre,
-   * todos los hitos de otras fases y sin riesgos críticos abiertos. El core (API corporativa) aún no lo porta: se excluyen esas compuertas. */
-  const norm = (g, to) => g.filter(x => !/^Hitos de la fase/.test(x.t) && !(to === 'Cierre' && /^(Todos los hitos completados|Sin riesgos críticos abiertos)/.test(x.t)));
-  for (const to of FS) eq(norm(core.gates(i, to, ctx), to), norm(P.gates(i, to), to), 'gates ' + n + ' → ' + to);
+  for (const to of FS) eq(core.gates(i, to, ctx), P.gates(i, to), 'gates ' + n + ' → ' + to);
   eq(JSON.parse(JSON.stringify(core.fasesVentana(i, hitos))), JSON.parse(JSON.stringify(P.fasesVentana(i))), 'fasesVentana ' + n);
   hitos.forEach(h => { const a = core.hitoEstado(h, S.hoy), b = P.hitoEstado(h); eq([a.k, a.c], [b.k, b.c], 'hitoEstado ' + n); if (a.k !== 'soon') eq(a.t, b.t, 'texto hitoEstado ' + n); });
   riesgos.forEach(r => eq(core.riesgoSinMit(r, S.umbral), P.riesgoSinMit(i, r), 'riesgoSinMit ' + n));

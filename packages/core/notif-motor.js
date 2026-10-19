@@ -1,4 +1,4 @@
-/* ARCHIVO GENERADO por tools/generar-motor-notif.js desde apps/corporativo/index.html (C2.18). NO EDITAR A MANO.
+/* ARCHIVO GENERADO por tools/generar-motor-notif.js desde apps/corporativo/index.html (C2.19). NO EDITAR A MANO.
  * Motor de notificaciones: mismas reglas que la campana de la SPA, para que el servidor envíe correo / Teams.
  * crearMotor(datos, usuario, hoyISO) → { avisos(): [{ key, tipo, g, sev, ini, titulo, texto, ts, canales }] }
  * «datos» = colecciones de APIH con la forma de la SPA (ini, hitos, riesgos, decisiones, compromisos, cambios, bitacora, comites, usuarios, cfg, cfgU). */
@@ -37,6 +37,7 @@ const ADMIN_EMAILS = ['tolosa-christian@aramark.cl'];
 const _nrm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 function esAdminReal() {   // tolerante: «Christian Tolosa Delpino», mayúsculas, tildes o correo
   const u = _nrm(St.cfg.usuario), au = (typeof AuthService !== 'undefined' && AuthService.user && AuthService.user()) || null, em = _nrm(au && (au.email || au.username));
+  /* Corporativo: el nombre viene de la cuenta de Entra (no es editable) y la API decide los permisos; se mantiene la regla tolerante original (S-17 aplica solo al Prototipo). */
   return ADMIN_USERS.some(a => { const n = _nrm(a); return u === n || u.startsWith(n + ' ') || n.startsWith(u + ' '); }) || (!!em && ADMIN_EMAILS.some(e => _nrm(e) === em));
 }
 let _PP = null;
@@ -170,5 +171,5 @@ function puedeVerTodo() { const r = rolActual(), u = usuarioActual(); return r =
 const areaVisible = a => puedeVerTodo() || areasDe(a).includes('Transversal') || areasDe(a).some(x => areasPropias().includes(x));
   return { avisos: () => notifPara(usuario), NOTIF, NOTIF_CANALES, NOTIF_GRUPOS };
 }
-return { crearMotor, ORIGEN: "C2.18", FUNCIONES: ["MESES","MES3","pad","toISO","pD","diffD","fmtD","hoy","FASES_ACT","EST_FINAL","esProp","byId","audParse","isDone","isLive","isActive","ADMIN_USERS","miUsuario","respSel","ADMIN_EMAILS","_nrm","esAdminReal","_PP","personProjects","respOk","inArea","scopeP","_ixGen","_porIni","hitosDe","forecast","desv","atrasado","esperado","expo","riesgoAbierto","diasSinUpd","diasEnFase","NOTIF_CANALES","NOTIF_DEST","NOTIF_GRUPOS","NOTIF","NOTIF_VENT","rolDeUser","notifPref","notifPara","cut","usuarioSintetico","PRES_MIO","cfgUOf","cfgOf","cfgI","fijo","PERM_ROLES","usuarioActual","rolActual","areasDe","areasPropias","puedeVerTodo","areaVisible"] };
+return { crearMotor, ORIGEN: "C2.19", FUNCIONES: ["MESES","MES3","pad","toISO","pD","diffD","fmtD","hoy","FASES_ACT","EST_FINAL","esProp","byId","audParse","isDone","isLive","isActive","ADMIN_USERS","miUsuario","respSel","ADMIN_EMAILS","_nrm","esAdminReal","_PP","personProjects","respOk","inArea","scopeP","_ixGen","_porIni","hitosDe","forecast","desv","atrasado","esperado","expo","riesgoAbierto","diasSinUpd","diasEnFase","NOTIF_CANALES","NOTIF_DEST","NOTIF_GRUPOS","NOTIF","NOTIF_VENT","rolDeUser","notifPref","notifPara","cut","usuarioSintetico","PRES_MIO","cfgUOf","cfgOf","cfgI","fijo","PERM_ROLES","usuarioActual","rolActual","areasDe","areasPropias","puedeVerTodo","areaVisible"] };
 });
