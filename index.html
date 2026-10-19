@@ -1054,9 +1054,11 @@ function seedState() {
 }
 /* V4: sin localStorage. El estado inicial lo entrega DataService.init() (SharePoint o demo en memoria). */
 function save() { _ixGen++; ppInval(); try { audit(); } catch (e) { } DataService.commit(); }
-function nextId(prefix, list) {
-  const mx = Math.max(0, ...list.map(x => parseInt(String(x.id).split('-')[1], 10) || 0));
-  return prefix + '-' + String(mx + 1).padStart(3, '0');
+function nextId(prefix, list) {   // F-12: contador monótono; un id eliminado no se reutiliza en esta sesión
+  St.seq = St.seq || {};
+  const mx = Math.max(0, St.seq[prefix] || 0, ...list.map(x => parseInt(String(x.id).split('-')[1], 10) || 0)), n = mx + 1;
+  St.seq[prefix] = n;
+  return prefix + '-' + String(n).padStart(3, '0');
 }
 const byId = id => St.ini.find(i => i.id === id);
 const nameOf = id => { const i = byId(id); return i ? i.titulo : '—'; };
@@ -1188,7 +1190,7 @@ const esperado = i => {   // avance esperado lineal
   const s = i.inicioPlan, e = i.finPlan; if (!s || !e) return 0; const t = diffD(hoy(), s), T = Math.max(1, diffD(e, s));
   return Math.max(0, Math.min(100, t / T * 100));
 };
-const roi = i => i.presupuesto > 0 ? ((i.beneficio - i.presupuesto) / i.presupuesto) * 100 : null;
+const roi = i => i.presupuesto > 0 ? (((+i.beneficio || 0) - i.presupuesto) / i.presupuesto) * 100 : null;   // F-09: sin beneficio = 0, no NaN
 const expo = r => r.prob * r.imp;
 const nivelRiesgo = e => e >= cfgMi('umbralCritico') ? { n: 'Crítico', c: '#D13438' } : e >= 10 ? { n: 'Alto', c: '#CA5010' } : e >= 5 ? { n: 'Medio', c: '#F2A100' } : { n: 'Bajo', c: '#107C10' };
 const riesgoAbierto = r => r.estado !== 'Cerrado';
@@ -2160,7 +2162,8 @@ function syncPop() { $$('[data-act=pop][data-id]').forEach(b => { const t = docu
 
 /* ---------- descarga/exportación ---------- */
 function download(name, text, mime = 'text/plain') { const b = new Blob([text], { type: mime + ';charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
-function toCSV(rows, cols) { const q = v => { v = v == null ? '' : String(v).replace(/\r?\n/g, ' '); return /[",;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }; return '﻿' + [cols.map(c => q(c.h)).join(';'), ...rows.map(r => cols.map(c => q(c.f(r))).join(';'))].join('\r\n'); }
+function toCSV(rows, cols) { const q = v => { const txt0 = typeof v === 'string'; v = v == null ? '' : String(v).replace(/\r?\n/g, ' '); if (txt0 && /^[=+\-@\t\r]/.test(v)) v = "'" + v;   // F-26: evita fórmulas al abrir en Excel
+      return /[",;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }; return '﻿' + [cols.map(c => q(c.h)).join(';'), ...rows.map(r => cols.map(c => q(c.f(r))).join(';'))].join('\r\n'); }
 function copyText(t) { try { navigator.clipboard.writeText(t).then(() => toast('Copiado al portapapeles')); } catch (e) { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('Copiado al portapapeles'); } catch (e2) { toast('No se pudo copiar', 'err'); } ta.remove(); } }
 
 /* ---------- navegación ---------- */
@@ -2802,10 +2805,12 @@ function iniForm(i, isPropArg) {
   tabs.push({ k: 'dep', t: 'Dependencias', secs: ['Dependencias'] }, { k: 'bit', t: 'Bitácora' });
   openForm({ pres: true,
     title: nw ? (PR ? 'Nueva propuesta' : 'Nuevo proyecto (alta directa)') : 'Editar ' + T.toLowerCase() + ' · ' + i.titulo, fields, values: v, wide: true, tabs, tabExtra: iniTabExtra(i), saveLabel: nw ? 'Crear' : 'Guardar cambios', danger: nw ? null : 'Eliminar',
-    onDanger: () => confirmBox(`¿Eliminar ${T.toLowerCase()} <b>${esc(i.titulo)}</b> junto con sus hitos y riesgos? Esta acción no se puede deshacer.`, () => { St.ini = St.ini.filter(x => x.id !== i.id); St.hitos = St.hitos.filter(h => h.ini !== i.id); St.riesgos = St.riesgos.filter(r => r.ini !== i.id); St.ini.forEach(x => x.deps = (x.deps || []).filter(d => d !== i.id)); log('Cambio', null, T + ' eliminada: ' + i.titulo); UI.sel = null; toast(T + ' eliminada'); refresh(); }, 'Eliminar', true),
+    onDanger: () => confirmBox(`¿Eliminar ${T.toLowerCase()} <b>${esc(i.titulo)}</b> junto con sus hitos, riesgos, decisiones, compromisos y cambios? Esta acción no se puede deshacer.`, () => { St.ini = St.ini.filter(x => x.id !== i.id); St.hitos = St.hitos.filter(h => h.ini !== i.id); St.riesgos = St.riesgos.filter(r => r.ini !== i.id); ['decisiones', 'compromisos', 'cambios', 'notas'].forEach(k => { if (Array.isArray(St[k])) St[k] = St[k].filter(x => x.ini !== i.id); }); (St.comites || []).forEach(c => { if (Array.isArray(c.decisiones)) c.decisiones = c.decisiones.filter(d => !(St.decisiones || []).some(x => x.id === d && x.ini === i.id) && !(St.decisiones || []).some(x => x.id === d && !St.decisiones.includes(x))); }); /* F-12: sin huérfanos */ St.ini.forEach(x => x.deps = (x.deps || []).filter(d => d !== i.id)); log('Cambio', null, T + ' eliminada: ' + i.titulo); UI.sel = null; toast(T + ' eliminada'); refresh(); }, 'Eliminar', true),
     onSave(o) {
       if (!nw && hasCycle(i.id, o.deps || [])) { toast('Las dependencias generan un ciclo', 'err'); return false; }
       if (o.inicioPlan && o.finPlan && o.finPlan < o.inicioPlan) { toast('El fin plan no puede ser anterior al inicio', 'err'); return false; }
+      if (['presupuesto', 'gastado', 'beneficio', 'ahorroReal'].some(k => o[k] != null && o[k] !== '' && (!isFinite(+o[k]) || +o[k] < 0))) { toast('Los montos deben ser números no negativos', 'err'); return false; }   // F-11
+      if (o.avance != null && o.avance !== '' && (!isFinite(+o.avance) || +o.avance < 0 || +o.avance > 100)) { toast('El avance debe estar entre 0 y 100', 'err'); return false; }
       const areaStr = (o.areaArr && o.areaArr.length ? o.areaArr : ['BISE']).join(',');
       const patch = { ...o, area: areaStr }; if (PR) patch.score = { estrategia: o.sE, valor: o.sV, esfuerzo: o.sF, riesgo: o.sR }; patch.finEst = PR ? null : (o.finEst || o.finPlan);
       ['areaArr', 'sE', 'sV', 'sF', 'sR'].forEach(k => delete patch[k]);
@@ -3413,7 +3418,7 @@ const descTip = t => t ? ' title="' + esc(cut(t, 300)) + '"' : '';
 const descIco = t => t ? ` <span class="desc-ic"${descTip(t)}>${icon('info', 12)}</span>` : '';
 function faseNotaForm(i, fase) {
   if (!i) return; const FS = fasesDe(i);
-  openForm({ title: 'Nota de fase · ' + i.titulo, values: { fase: FS.includes(fase) ? fase : i.fase, nota: faseNotaP(i, fase) },
+  openForm({ iniId: i.id, title: 'Nota de fase · ' + i.titulo, values: { fase: FS.includes(fase) ? fase : i.fase, nota: faseNotaP(i, fase) },
     fields: [{ k: 'fase', l: 'Fase', t: 'select', req: true, w: 3, opts: FS },
       { k: 'nota', l: 'Nota de esta fase en este proyecto', t: 'textarea', w: 3, rows: 4, hint: 'Opcional. Complementa la descripción global de la fase (Administración → Metodología). Se ve en Mi cocina, la ficha y Fases.' }],
     extra: (f => f ? '<p class="mut" style="font-size:12px;margin:10px 0 0">Descripción global de «' + esc(FS.includes(fase) ? fase : i.fase) + '»: ' + esc(f) + '</p>' : '')(faseDescG(FS.includes(fase) ? fase : i.fase)),
@@ -3445,7 +3450,7 @@ function subfaseForm(s, iniId, fase) {
   const i = byId(iniId); if (!i) return toast('Iniciativa no encontrada', 'err');
   const nw = !s, FS = fasesDe(i), f0 = (s && s.fase) || (FS.includes(fase) ? fase : i.fase), w0 = ventanaDe(i, f0) || {};
   const v = s ? clone(s) : { fase: f0, nombre: '', inicio: w0.ini || '', fin: w0.fin || '', resp: i.lider || '' };
-  openForm({
+  openForm({ iniId: i.id,
     title: (nw ? 'Nueva subfase' : 'Editar subfase') + ' · ' + i.titulo, values: v, danger: nw ? null : 'Eliminar', saveLabel: nw ? 'Crear' : 'Guardar',
     fields: [{ k: 'fase', l: 'Fase obligatoria', t: 'select', req: true, w: 3, opts: FS.map(x => { const w = ventanaDe(i, x) || {}; return { v: x, t: x + (w.ini ? ' · ' + rangoTx(w.ini, w.fin) : ' · sin fechas') }; }), hint: 'La subfase vive completa dentro de una sola fase obligatoria' },
       { k: 'nombre', l: 'Nombre de la subfase', req: true, w: 3 }, { k: 'inicio', l: 'Inicio', t: 'date', hint: 'Vacío: hereda el inicio de la fase' }, { k: 'fin', l: 'Fin', t: 'date', hint: 'Vacío: hereda el fin de la fase' }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'desc', l: 'Descripción / instrucciones', t: 'textarea', w: 3, rows: 3, hint: 'Opcional. Se ve en Mi cocina, la ficha y Fases.' }],
@@ -3710,7 +3715,7 @@ Views.riesgos = {
 };
 Acts.hcell = d => { const f = F('risk', {}); f.cell = f.cell === d.c ? '' : d.c; render(); };
 Acts.rnivel = d => { const f = F('risk', {}); f.nivel = f.nivel === d.n ? '' : d.n; render(); };
-Acts.riskcsv = () => { download('APIH_riesgos_' + hoy() + '.csv', toCSV(St.riesgos, [{ h: 'ID', f: r => r.id }, { h: 'Proyecto', f: r => nameOf(r.ini) }, { h: 'Descripción', f: r => r.desc }, { h: 'Categoría', f: r => r.cat }, { h: 'Impacto', f: r => r.imp }, { h: 'Probabilidad', f: r => r.prob }, { h: 'Exposición', f: expo }, { h: 'Mitigación', f: r => r.mit }, { h: 'Dueño', f: r => r.dueno }, { h: 'Estado', f: r => r.estado }]), 'text/csv'); toast('Riesgos exportados'); };
+Acts.riskcsv = () => { download('APIH_riesgos_' + hoy() + '.csv', toCSV(St.riesgos.filter(r => { const i = byId(r.ini); return !i || areaVisible(i.area); }), [{ h: 'ID', f: r => r.id }, { h: 'Proyecto', f: r => nameOf(r.ini) }, { h: 'Descripción', f: r => r.desc }, { h: 'Categoría', f: r => r.cat }, { h: 'Impacto', f: r => r.imp }, { h: 'Probabilidad', f: r => r.prob }, { h: 'Exposición', f: expo }, { h: 'Mitigación', f: r => r.mit }, { h: 'Dueño', f: r => r.dueno }, { h: 'Estado', f: r => r.estado }]), 'text/csv'); toast('Riesgos exportados'); };
 
 /* ======================= HITOS ======================= */
 Views.hitos = {
@@ -3740,7 +3745,7 @@ Views.hitos = {
 };
 Acts.hest = d => { const f = F('hitos', {}); f.est = f.est === d.k ? '' : d.k; render(); };
 Acts.hclear = () => { Object.assign(F('hitos', {}), { q: '', est: '', ini: '', resp: '' }); render(); };
-Acts.hitocsv = () => { download('APIH_hitos_' + hoy() + '.csv', toCSV(HITOS(), [{ h: 'ID', f: h => h.id }, { h: 'Proyecto', f: h => nameOf(h.ini) }, { h: 'Hito', f: h => h.nombre }, { h: 'Fecha plan', f: h => h.fecha }, { h: 'Fecha real', f: h => h.fechaReal }, { h: 'Responsable', f: h => h.resp }, { h: 'Estado', f: h => hitoEstado(h).t }]), 'text/csv'); toast('Hitos exportados'); };
+Acts.hitocsv = () => { download('APIH_hitos_' + hoy() + '.csv', toCSV(HITOS().filter(h => { const i = byId(h.ini); return !i || areaVisible(i.area); }), [{ h: 'ID', f: h => h.id }, { h: 'Proyecto', f: h => nameOf(h.ini) }, { h: 'Hito', f: h => h.nombre }, { h: 'Fecha plan', f: h => h.fecha }, { h: 'Fecha real', f: h => h.fechaReal }, { h: 'Responsable', f: h => h.resp }, { h: 'Estado', f: h => hitoEstado(h).t }]), 'text/csv'); toast('Hitos exportados'); };
 
 /* ======================= CALENDARIO ======================= */
 const EV_C = { 'Hito': '#0D446A', 'Comité': '#8764B8', 'Entrega': '#107C10', 'Vencimiento': '#CA5010', 'Ciclo': '#038387', 'Otro': '#605E5C' };
@@ -4154,7 +4159,7 @@ function normIni(x) {
   const dte = v => iapFecha(v) ? v : undefined;
   const o = {}, set = (k, v) => { if (v !== undefined) o[k] = v; };
   const tipo = x.tipo === 'Propuesta' ? 'Propuesta' : 'Proyecto';
-  const fl = tipo === 'Propuesta' ? FASES_PROP : FASES_PRJ, fAll = [...FASES_PRJ, ...FASES_PROP];
+  const MM = MET(), fl = tipo === 'Propuesta' ? MM.fasesProp : MM.fasesPrj, fAll = [...MM.fasesPrj, ...MM.fasesProp];   // incluye fases personalizadas de Metodología
   set('tipo', tipo); set('titulo', txt(x.titulo, 200));
   ['desc', 'logros', 'proximos', 'bc', 'resumen', 'issue', 'riesgoTxt'].forEach(k => set(k, txt(x[k], DESC_MAX)));
   ['lider', 'sponsor', 'negocio', 'proveedor', 'area', 'categoria', 'prioridad', 'moneda', 'rag'].forEach(k => set(k, enm(x[k])));
@@ -4193,7 +4198,7 @@ Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
     let nh = 0, nr = 0; const th = nuevas.reduce((a, x) => a + (x.hitos || []).length, 0), avisos = [];
     confirmBox('Se agregarán <b>' + nuevas.length + '</b> iniciativa(s) con ' + th + ' hitos: ' + nuevas.map(x => esc(x.titulo)).join(', ') + '.' + (omit.length ? '<br>Omitidas por existir o sin título: ' + omit.map(esc).join(', ') + '.' : '') + '<br>Los datos actuales no se modifican. ¿Continuar?', () => {
       nuevas.forEach(x => { const PR = x.tipo === 'Propuesta', pre = PR ? 'PROP' : 'PRJ', T = PR ? 'Propuesta' : 'Proyecto';
-        const n = Object.assign({ id: nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))), tipo: T, legacy: '', creada: hoy(), faseDesde: hoy(), origen: 'importación', est: [], hist: [[hoy(), +x.avance || 0]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, estado: PR ? 'Vigente' : 'En curso', propuestaOrigen: null, estadoMotivo: '', estadoRev: null, rag: 'Verde', avance: 0, gastado: 0, proyecto: null, deps: [], area: 'BISE', fase: PR ? FASES_PROP[0] : 'Planificación', prioridad: 'Media', presupuesto: 0, logros: '', proximos: '', sponsor: '', lider: '', desc: '' }, x, { id: undefined, actualizada: hoy() });
+        const n = Object.assign({ id: null, tipo: T, legacy: '', creada: hoy(), faseDesde: hoy(), origen: 'importación', est: [], hist: [[hoy(), +x.avance || 0]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, estado: PR ? 'Vigente' : 'En curso', propuestaOrigen: null, estadoMotivo: '', estadoRev: null, rag: 'Verde', avance: 0, gastado: 0, proyecto: null, deps: [], area: 'BISE', fase: PR ? FASES_PROP[0] : 'Planificación', prioridad: 'Media', presupuesto: 0, logros: '', proximos: '', sponsor: '', lider: '', desc: '' }, x, { id: undefined, actualizada: hoy() });
         n.id = nextId(pre, St.ini.filter(y => y.id.startsWith(pre + '-'))); n.finEst = n.finEst || n.finPlan || null; delete n.hitos; delete n.riesgos; delete n.subfases; St.ini.push(n); const nh0 = St.hitos.length;
         (x.hitos || []).forEach(h => { const f = h.fecha || addD(n.inicioPlan || hoy(), +h.dias || 0), ok = !!h.completado; St.hitos.push({ id: nextId('HIT', St.hitos), ini: n.id, nombre: h.nombre, fase: h.fase || n.fase, fecha: f, completado: ok, fechaReal: ok ? (h.fechaReal || f) : null, resp: h.resp || n.lider || '', ...(h.cat && hitoCats().includes(h.cat) ? { cat: h.cat } : {}), ...(typeof h.desc === 'string' && h.desc.trim() ? { desc: cutDesc(h.desc.trim()) } : {}) }); nh++; });
         if (x.faseNota && typeof x.faseNota === 'object' && !Array.isArray(x.faseNota)) { n.faseNota = {}; fasesDe(n).forEach(fx => { const v = x.faseNota[fx]; if (typeof v === 'string' && v.trim()) n.faseNota[fx] = cutDesc(v.trim()); }); if (!Object.keys(n.faseNota).length) delete n.faseNota; }
@@ -4359,7 +4364,7 @@ function metTab() {
   const m = MET(), t = metTipoSel(), allF = [...m.fasesProp, ...m.fasesPrj];
   const fasesCard = (w, titulo, lista) => `<section class="card c6"><header><h2>${titulo}</h2><small>${lista.length} fases · las marcadas con candado son base del gobierno</small></header>
     <div class="met-f">${lista.map((x, n) => { const fix = FASES_FIJAS.includes(x), ext = n === 0 || n === lista.length - 1, u = enUso(x); return `<div class="met-r"><i style="background:${FASE_COLOR[x] || '#8A8886'}"></i>
-      <input value="${esc(x)}" ${fix ? 'disabled' : ''} data-chg="fasren" data-w="${w}" data-n="${n}" data-key="mf-${w}-${n}" aria-label="Nombre de fase"><input class="met-d" value="${esc((m.faseDesc || {})[x] || '')}" data-chg="fasdesc" data-f="${esc(x)}" data-key="mfd-${w}-${n}" placeholder="Descripción (opcional, se ve en Mi cocina)" aria-label="Descripción de la fase">
+      <input value="${esc(x)}" ${fix ? 'disabled' : ''} data-chg="fasren" data-live="no" data-w="${w}" data-n="${n}" data-key="mf-${w}-${n}" aria-label="Nombre de fase"><input class="met-d" value="${esc((m.faseDesc || {})[x] || '')}" data-chg="fasdesc" data-f="${esc(x)}" data-key="mfd-${w}-${n}" placeholder="Descripción (opcional, se ve en Mi cocina)" aria-label="Descripción de la fase">
       <span class="mut">${fix ? icon('lock', 12) : ''} ${u ? u + ' en curso' : ''}</span>
       <button class="btn sm" ${ext ? 'disabled' : ''} data-act="fasmv" data-w="${w}" data-n="${n}" data-d="-1" title="Subir" aria-label="Subir">↑</button><button class="btn sm" ${ext ? 'disabled' : ''} data-act="fasmv" data-w="${w}" data-n="${n}" data-d="1" title="Bajar" aria-label="Bajar">↓</button>
       <button class="btn sm danger" ${fix ? 'disabled' : ''} data-act="fasdel" data-w="${w}" data-n="${n}" title="Eliminar fase" aria-label="Eliminar">×</button></div>`; }).join('')}</div>
@@ -4415,7 +4420,11 @@ Chg.fasren = el => {
   const m = MET(), L = el.dataset.w === 'prop' ? m.fasesProp : m.fasesPrj, n = +el.dataset.n, old = L[n], v = el.value.trim();
   if (!v || v === old) return render(); if (FASES_FIJAS.includes(old)) return render();
   if ([...m.fasesProp, ...m.fasesPrj].some(x => x.toLowerCase() === v.toLowerCase())) { toast('Ya existe una fase con ese nombre', 'err'); return render(); }
-  L[n] = v; FASE_COLOR[v] = FASE_COLOR[old]; St.ini.forEach(i => { if (i.fase === old) i.fase = v; }); St.hitos.forEach(h => { if (h.fase === old) h.fase = v; }); m.tipos.forEach(t => t.hitos.forEach(h => { if (h.fase === old) h.fase = v; })); refresh();
+  L[n] = v; FASE_COLOR[v] = FASE_COLOR[old];
+  // N-U-02: al renombrar, migrar también subfases, notas de fase y descripción global (antes quedaban huérfanas)
+  St.ini.forEach(i => { if (i.fase === old) i.fase = v; subfasesDe(i).forEach(sf => { if (sf.fase === old) sf.fase = v; }); if (i.faseNota && i.faseNota[old] !== undefined) { i.faseNota[v] = i.faseNota[old]; delete i.faseNota[old]; } });
+  if (m.faseDesc && m.faseDesc[old] !== undefined) { m.faseDesc[v] = m.faseDesc[old]; delete m.faseDesc[old]; }
+  St.hitos.forEach(h => { if (h.fase === old) h.fase = v; }); m.tipos.forEach(t => t.hitos.forEach(h => { if (h.fase === old) h.fase = v; })); refresh();
 };
 Acts.metreset = () => confirmBox('Se restablecen fases y tipos a la metodología sugerida. Las iniciativas en fases personalizadas pasan a la fase anterior base. ¿Continuar?', () => {
   const def = METODO_DEF(), keep = new Set([...def.fasesProp, ...def.fasesPrj]);
@@ -5574,7 +5583,7 @@ function areaDeAccion(d, el) {
 }
 const ACT_ADMIN = ['catadd', 'catdel', 'expjson', 'impjson', 'reset', 'sptest', 'spconnect', 'spprov', 'spsync', 'splogout', 'sppnp', 'spcopy', 'spseed', 'spretry', 'xlsxall', 'atab', 'syncgo'];
 const CHG_ADMIN = ['cfg', 'spc', 'impfile', 'impinifile'];
-const ACT_EDIT = ['advance', 'advgo', 'applyrag', 'hitotoggle', 'resolvedec', 'aprobar', 'aprobargo', 'estado', 'reopen', 'edit'];
+const ACT_EDIT = ['advance', 'advgo', 'applyrag', 'hitotoggle', 'resolvedec', 'aprobar', 'aprobargo', 'estado', 'reopen', 'edit', 'sfnew', 'sfedit', 'fnota'];
 const CHG_EDIT = ['advto', 'hitotoggle'];
 const ACT_COM = ['csug', 'cdel', 'cpart', 'ctema', 'cacc', 'cdec', 'cclose'];
 const CHG_COM = ['catt', 'ctoggle'];
@@ -5601,10 +5610,16 @@ guardar(Acts, ['go'], (n, d) => d.v === 'ia' && !puedeUsarIA() ? 'La sección IA
 /* formularios: se valida el área al GUARDAR (cubre iniciativas, hitos, riesgos, decisiones, eventos…) */
 const _openForm0 = openForm;
 openForm = function (o) {
-  const os = o && o.onSave;
+  const os = o && o.onSave, od = o && o.onDanger;
+  if (od) o.onDanger = function () {   // N-U-01: eliminar (subfase, etc.) también exige permiso del área
+    if (soloLectura()) { NO_PERM(chequeo('form', {}, null)); return; }
+    const ini = byId(o.iniId || (o.values || {}).ini), a = ini && ini.area;
+    if (a && !puedeEditarArea(a)) { NO_PERM('Sin permiso para eliminar en el área ' + areasDe(a).join(', ')); return; }
+    return od.apply(this, arguments);
+  };
   if (os) o.onSave = function (out) {
     if (soloLectura()) { NO_PERM(chequeo('form', {}, null)); return false; }
-    const v = o.values || {}, ini = byId(out && out.ini || v.ini);
+    const v = o.values || {}, ini = byId(out && out.ini || v.ini || o.iniId);
     const a = (out && out.areaArr && out.areaArr.length ? out.areaArr : out && out.area) || (ini && ini.area) || v.area;
     if (a && !puedeEditarArea(a)) { NO_PERM('Sin permiso para guardar en el área ' + areasDe(a).join(', ') + ' (tu rol edita solo ' + (areasPropias().join(', ') || 'ninguna área') + ')'); return false; }
     return os.apply(this, arguments);
