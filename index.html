@@ -787,6 +787,7 @@ body{font:13px/1.45 var(--font)}
 @media(prefers-reduced-motion:reduce){.cs-in *{animation:none!important}}
 .gsearch .res button.kb,#gsres button.kb{background:var(--hover,#EEF3F8);outline:2px solid #0D446A;outline-offset:-2px}
 .sky-pop{inset:auto 20px 20px auto;display:block;background:none;width:min(300px,calc(100vw - 40px))}   /* U-26: la celebración ya no tapa la pantalla de trabajo */
+.flt-guia,.guia-min{display:none!important}   /* U-25: la ayuda vive en un solo botón «?» de la barra superior */
 </style>
 </head>
 <body>
@@ -2213,7 +2214,7 @@ function shell() {
     <button class="icon-btn hamb" data-act="side" aria-label="Menú">${icon('menu', 18)}</button>
     <div class="brand" data-act="go" data-v="dashboard"><img class="brand-img" src="${LOGO.arBR}" alt="Aramark"><span class="b-t app"><b>APIH</b><small>Portfolio Intelligence Hub</small></span></div>
     <button class="icon-btn gstog" data-act="gstog" aria-label="Buscar">${icon('search', 18)}</button>
-    <div class="gsearch"><span class="gs-i">${icon('search', 15)}</span><input id="gs" data-key="gs" type="search" placeholder="Buscar proyectos, riesgos, hitos, subfases…  ( / )  ·  Ctrl+K: ir a pantallas y acciones" autocomplete="off" data-chg="gsearch"><div class="gs-res" id="gsres"></div></div>
+    <div class="gsearch"><span class="gs-i">${icon('search', 15)}</span><input id="gs" data-key="gs" type="search" placeholder="Buscar…  ( / )  ·  Ctrl+K: pantallas y acciones" autocomplete="off" data-chg="gsearch"><div class="gs-res" id="gsres"></div></div>
     <div class="top-r">
       <button class="sync" id="syncChip" data-act="syncgo" title="Estado de la conexión"></button>
       <div class="popw"><button class="btn pri" data-act="pop" data-id="pop-new">${icon('plus', 15)}<span>Nuevo</span></button>
@@ -4158,9 +4159,10 @@ Chg.notifcanon = el => { if (!esGasto() || FL.verComo) return; const o = notifOr
 Acts.notifreset = () => { if (!esGasto()) return; confirmBox('Se restablecerán los destinatarios, parámetros y canales por defecto de toda la organización. ¿Continuar?', () => { delete St.cfg.notif; _notifC = null; toast('Valores restablecidos'); refresh(); }, 'Restablecer', true); };
 Acts.notifmyreset = () => { if (FL.verComo) return; const u = cfgUOf(miUsuario()); delete u.notif; _notifC = null; toast('Avisos restablecidos'); refresh(); };
 
+const ADM_TABS = [['param', 'Parámetros'], ['cat', 'Catálogos'], ['met', 'Metodología'], ['usr', 'Usuarios y roles'], ['not', 'Notificaciones'], ['cal', 'Calidad de datos'], ['dat', 'Datos y exportación'], ['sp', 'SharePoint']];
 Views.admin = {
   render() {
-    const f = F('adm', { tab: 'param' }); const tabs = [['param', 'Parámetros'], ['cat', 'Catálogos'], ['met', 'Metodología'], ['usr', 'Usuarios y roles'], ['not', 'Notificaciones'], ['cal', 'Calidad de datos'], ['dat', 'Datos y exportación'], ['sp', 'SharePoint']];
+    const f = F('adm', { tab: 'param' }); const tabs = ADM_TABS;
     let b = '';
     if (f.tab === 'param') {
       const c = St.cfg;
@@ -4194,10 +4196,10 @@ Views.admin = {
     } else if (f.tab === 'sp') {
       b = spTab();
     }
-    return pageHead('Administración', 'Parámetros, catálogos, usuarios, calidad de datos y respaldo') + `<div class="tabs">${tabs.map(([k, n]) => `<button class="${f.tab === k ? 'on' : ''}" data-act="atab" data-k="${k}">${n}</button>`).join('')}</div>${b}`;
+    return pageHead('Administración', 'Parámetros, catálogos, usuarios, calidad de datos y respaldo') + b;   /* U-16: las pestañas de Administración viven en la barra única de arriba */
   }
 };
-Acts.atab = d => { F('adm', {}).tab = d.k; render(); };
+Acts.atab = d => { F('adm', {}).tab = d.k; if (UI.view !== 'admin') go('admin'); else render(); };
 Chg.cfg = el => { const k = el.dataset.k; St.cfg[k] = el.dataset.bool ? el.checked : el.dataset.num ? Math.max(0, +el.value || 0) : el.value; if (PERS_KEYS.includes(k)) Object.values(St.cfgU || {}).forEach(u => { if (u.cfg) delete u.cfg[k]; }); if (k === 'readOnly' && St.cfg.readOnly) toast('Modo solo lectura activado'); if (k === 'usuario') { const fx = document.activeElement && document.activeElement.dataset.key; shell(); render(); const el = fx && $(`[data-key="${fx}"]`); if (el) { el.focus(); el.setSelectionRange && el.setSelectionRange(el.value.length, el.value.length); } save(); return; } refresh(); };
 Acts.catadd = d => { const el = $('#new_' + d.k), v = el.value.trim(); if (!v) return; if (!St.cfg[d.k].includes(v)) St.cfg[d.k].push(v); refresh(); };
 Acts.catdel = d => { St.cfg[d.k].splice(+d.n, 1); refresh(); };
@@ -10195,7 +10197,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       ${dy ? `<div class="hp-dyn"><span>${icon('warn', 14)} <b>${esc(dy[0])}</b></span><button class="btn sm" data-act="go" data-v="${dy[1]}">Revisar</button></div>` : ''}
       ${P ? `<div class="hp-main edit-only">${btn(P.label, P.act, { d: P.d, ic: P.ic, cls: 'pri' })}</div>` : ''}
       <ul>${h.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
-      <div class="hp-f">${GUIA[UI.view] ? `<button class="btn sm" data-act="guia" data-m="on">Cómo operar esta pantalla</button>` : ''}<button class="btn sm" data-act="tour">Ver recorrido</button></div></div>`;
+      <div class="hp-f">${GUIA[UI.view] ? `<button class="btn sm" data-act="guia" data-m="on">Cómo operar esta pantalla</button>` : ''}<button class="btn sm" data-act="tour">Ver recorrido</button><button class="btn sm" data-act="go" data-v="proposito">Para qué sirve</button></div></div>`;
   }
   function cmtPopHTML() {
     const n = notasAbiertas().length;
@@ -10243,10 +10245,10 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     { k: 'ayuda', t: 'Ayuda', ic: 'help', vs: [['proposito', 'Para qué sirve']] }
   ];
   const MENU_ROL = {
-    Gasto: ['inicio', 'iniciativas', 'planificacion', 'gobierno', 'presentaciones', 'personas', 'admin', 'ayuda'],
-    Administrador: ['inicio', 'iniciativas', 'planificacion', 'gobierno', 'presentaciones', 'admin', 'ayuda'],
-    Colaborador: ['inicio', 'iniciativas', 'planificacion', 'pendientes', 'presentaciones', 'ayuda'],
-    Invitado: ['inicio', 'iniciativas', 'planificacion', 'ayuda']
+    Gasto: ['inicio', 'iniciativas', 'planificacion', 'gobierno', 'presentaciones', 'personas', 'admin'],
+    Administrador: ['inicio', 'iniciativas', 'planificacion', 'gobierno', 'presentaciones', 'admin'],
+    Colaborador: ['inicio', 'iniciativas', 'planificacion', 'pendientes', 'presentaciones'],
+    Invitado: ['inicio', 'iniciativas', 'planificacion']
   };
   V.MENU = MENU; V.MENU_ROL = MENU_ROL;
   const menuKeys = () => { const r = rolActual(), c = St.cfg && St.cfg.menuRol && St.cfg.menuRol[r]; return (Array.isArray(c) && c.length ? c : MENU_ROL[r] || MENU_ROL.Invitado); };
@@ -10273,6 +10275,11 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const m = sr('#main'); if (!m) return; const old = sr('.menu-tabs', m); if (old) old.remove();
     const gs = menuGroups(), g = grupoDe(UI.view, gs); if (!g || g.vs.length < 2 || UI.view === 'ficha') return;
     try { lsSet('apih_tabs', JSON.stringify(lastTabs)); } catch (e) { }
+    if (g.k === 'admin') {   /* U-16: una sola barra para toda la Administración */
+      const fa = F('adm', { tab: 'param' }), ad = UI.view === 'admin';
+      const ht = `<div class="menu-tabs" role="tablist" aria-label="${esc(g.t)}">${ADM_TABS.map(([k, n]) => `<a role="tab" href="#/admin" class="${ad && fa.tab === k ? 'on' : ''}" data-act="atab" data-k="${k}" aria-selected="${ad && fa.tab === k}">${esc(n)}</a>`).join('')}${g.vs.filter(x => x[0] !== 'admin').map(x => `<a role="tab" class="${UI.view === x[0] ? 'on' : ''}" data-act="go" data-v="${x[0]}" href="#/${x[0]}" aria-selected="${UI.view === x[0]}">${esc(x[1])}</a>`).join('')}</div>`;
+      m.insertAdjacentHTML('afterbegin', ht); return;
+    }
     const h = `<div class="menu-tabs" role="tablist" aria-label="${esc(g.t)}">${g.vs.map(x => { const b = +navBadge(x[0]) || 0; return `<a role="tab" class="${UI.view === x[0] ? 'on' : ''}" data-act="go" data-v="${x[0]}" href="#/${x[0]}" aria-selected="${UI.view === x[0]}">${esc(x[1])}${b ? `<em>${b}</em>` : ''}</a>`; }).join('')}</div>`;
     m.insertAdjacentHTML('afterbegin', h);
   }
