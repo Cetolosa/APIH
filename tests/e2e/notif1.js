@@ -9,7 +9,7 @@ const M = require(path.join(raiz, 'packages', 'core', 'notif-motor.js'));
 const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').iniciativas[0];
 
 // 1) el código extraído es idéntico en la SPA corporativa y en el Prototipo
-const ext = f => G.extraer(fs.readFileSync(path.join(raiz, f), 'utf8'), ['notifPara', 'notifPref', 'NOTIF_GRUPOS', 'NOTIF_DEST']).map(p => p.n + '\n' + p.codigo).join('\n');
+const ext = f => G.extraer(fs.readFileSync(path.join(raiz, f), 'utf8'), ['notifPara', 'notifPref', 'NOTIF_GRUPOS', 'NOTIF_DEST']).filter(p => p.n !== 'esAdminReal').map(p => p.n + '\n' + p.codigo).join('\n');   // esAdminReal diverge a propósito (S-17: en el Prototipo con sesión solo vale el correo)
 assert.strictEqual(ext('apps/corporativo/index.html'), ext('index.html'), 'funciones de avisos distintas entre Prototipo y corporativo');
 const gen = require('child_process').spawnSync('node', [path.join(raiz, 'tools', 'generar-motor-notif.js'), '--check']); assert.strictEqual(gen.status, 0, 'motor desactualizado');
 
