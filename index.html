@@ -1140,7 +1140,7 @@ function audParse(texto) {
 const isDone = i => EST_FINAL[esProp(i) ? 'Propuesta' : 'Proyecto'].includes(i.estado);
 const isLive = i => !isDone(i);
 const isActive = i => !esProp(i) && FASES_ACT.includes(i.fase) && i.estado === 'En curso';
-/* ---- Filtros globales V6: Área + Responsable + «Sólo lo mío» (válidos en todas las pantallas) ---- */
+/* ---- Filtros globales V6: Área + Responsable + «Solo lo mío» (válidos en todas las pantallas) ---- */
 const ADMIN_USERS = ['Christian Tolosa'];                          // único administrador (ver también esAdmin())
 const FL = { resp: '', mine: false, verComo: '' };                  // estado en memoria (no se persiste)
 const miUsuario = () => FL.verComo || St.cfg.usuario;                // «yo»: usuario real o el que el admin está simulando
@@ -2658,13 +2658,13 @@ function cxTemplate(conDatos) {
   const hit = [CX_HITO, ...(ex ? [['PRJ-001', 'Ejemplo: Pruebas de aceptación', 'Ejecución', '2026-06-15', '', 'Nombre Apellido', 'No']] : H.map(h => [h.ini, h.nombre, h.fase || '', h.fecha || '', h.fechaReal || '', h.resp || '', h.completado ? 'Sí' : 'No']))];
   const ins = [['Instrucciones'],
     ['1. Complete las hojas «Planificación» y «Hitos». No cambie los títulos de las columnas ni el nombre de las hojas.'],
-    ['2. «ID Iniciativa» es obligatorio y debe existir en APIH (ej. PRJ-001). Solo se cargan iniciativas que usted puede editar.'],
+    ['2. «ID Iniciativa» es obligatorio y debe existir en APIH (ej. PRJ-001). Solo se cargan iniciativas que tú puedes editar.'],
     ['3. Fechas en formato AAAA-MM-DD (también se acepta DD-MM-AAAA o fecha de Excel). Avance de 0 a 100. Presupuesto y Gastado en la unidad configurada.'],
     ['4. Celda vacía = no se modifica ese dato. Las filas de una hoja no listadas no se tocan (no se borra nada).'],
     ['5. Hitos: se identifican por ID Iniciativa + nombre del hito. Si existe, se actualiza; si no, se crea (requiere Fecha plan).'],
     ['6. «Completado»: Sí/No. Si indica Fecha real sin marcar Completado, el hito queda completado.'],
     ['7. Fase (opcional): ' + FASES.join(' · ')],
-    ['8. Suba el archivo en «Cargar Excel»: verá una vista previa con errores antes de aplicar cambios.'],
+    ['8. Sube el archivo en «Cargar Excel»: verás una vista previa con errores antes de aplicar cambios.'],
     ['9. Esta carga actualiza planificación e hitos de proyectos que YA existen en APIH; no crea proyectos nuevos. Las filas que dicen «Ejemplo:» se ignoran.']];
   return xlsxBlob([{ name: 'Instrucciones', rows: ins }, { name: 'Planificación', rows: plan }, { name: 'Hitos', rows: hit }]);
 }
@@ -2742,7 +2742,7 @@ Acts.cargaxl = () => {
   if (soloLectura()) return toast('Modo solo lectura: no se puede cargar', 'err');
   CX.res = null;
   Modal.open({ title: 'Cargar planificación e hitos desde Excel', wide: true,
-    body: `<p class="desc" style="margin:0 0 8px"><b>Actualiza planificación e hitos de proyectos que ya existen (no crea proyectos nuevos).</b> 1) Descargue la plantilla, 2) complétela (o edite la que trae sus datos actuales) y 3) súbala: verá una vista previa antes de aplicar. Solo se cargan iniciativas que usted puede editar; las celdas vacías no modifican nada.</p>
+    body: `<p class="desc" style="margin:0 0 8px"><b>Actualiza planificación e hitos de proyectos que ya existen (no crea proyectos nuevos).</b> 1) Descarga la plantilla, 2) complétala (o edita la que trae tus datos actuales) y 3) súbela: verás una vista previa antes de aplicar. Solo se cargan iniciativas que usted puede editar; las celdas vacías no modifican nada.</p>
       <div class="chips" style="margin:0 0 10px">${btn('Plantilla en blanco (con ejemplo)', 'cxtpl', { d: { m: 'blank' }, ic: 'down' })}${btn('Plantilla con mis datos actuales', 'cxtpl', { d: { m: 'data' }, ic: 'down' })}<button class="btn pri" data-act="cxpick">${icon('up', 15)}<span>Elegir archivo Excel…</span></button><input type="file" id="cxfile" accept=".xlsx" data-chg="cxfile" hidden></div>
       <div id="cxprev"><p class="mut">Aún no se ha subido ningún archivo.</p></div>`,
     footer: `<button class="btn" data-act="mclose">Cancelar</button><button class="btn pri" id="cxok" data-act="cxapply" disabled>Aplicar cambios</button>` });
@@ -2840,7 +2840,7 @@ function iniForm(i, isPropArg) {
       if (nw) {
         const pre = PR ? 'PROP' : 'PRJ', ids = St.ini.filter(x => x.id.startsWith(pre + '-'));
         const n = Object.assign({ id: nextId(pre, ids), tipo: T, legacy: '', creada: hoy(), faseDesde: hoy(), origen: 'usuario', est: [], hist: [[hoy(), patch.avance || 0]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, estado: PR ? 'Vigente' : 'En curso', propuestaOrigen: null, estadoMotivo: '', estadoRev: null, rag: 'Verde', avance: 0, gastado: 0, proyecto: null }, patch, { actualizada: hoy() });
-        St.ini.push(n); const nh = n.tipoIni ? aplicarPlantilla(n, n.tipoIni, PR ? FASES_PROP : FASES_PRJ, PR ? hoy() : (n.inicioPlan || hoy())) : 0; log('Cambio', n.id, (nh ? '[' + nh + ' hitos precargados del tipo «' + n.tipoIni + '»] ' : '') + (PR ? 'Propuesta creada: ' : 'Proyecto creado directamente: ') + n.titulo + (n.motivoAlta ? ' — ' + n.motivoAlta : '')); toast(T + ' ' + n.id + ' creado' + (PR ? 'a' : '')); UI.sel = { t: 'ini', id: n.id };
+        St.ini.push(n); const nh = n.tipoIni ? aplicarPlantilla(n, n.tipoIni, PR ? FASES_PROP : FASES_PRJ, PR ? hoy() : (n.inicioPlan || hoy())) : 0; log('Cambio', n.id, (nh ? '[' + nh + ' hitos precargados del tipo «' + n.tipoIni + '»] ' : '') + (PR ? 'Propuesta creada: ' : 'Proyecto creado directamente: ') + n.titulo + (n.motivoAlta ? ' — ' + n.motivoAlta : '')); toast(T + ' ' + n.id + (PR ? ' creada' : ' creado')); UI.sel = { t: 'ini', id: n.id };
       } else {
         const diffs = []; [['fase', 'Fase'], ['rag', 'RAG'], ['avance', 'Avance'], ['prioridad', 'Prioridad'], ['lider', 'Líder'], ['finPlan', PR ? 'Fecha objetivo' : 'Fin plan'], ['finEst', 'Fin estimado'], ['presupuesto', PR ? 'Costo estimado' : 'Presupuesto']].forEach(([k, l]) => { if (k in patch && String(i[k]) !== String(patch[k])) diffs.push(`${l}: ${i[k] ?? '—'} → ${patch[k] ?? '—'}`); });
         if (!PR && patch.avance !== i.avance) i.hist.push([hoy(), patch.avance]);
@@ -2887,7 +2887,7 @@ Chg.advto = el => {
 Acts.advgo = d => {
   const i = byId(d.id), to = $('#adv_to').value; if (to === i.fase) return Modal.close();
   const miss = gates(i, to).filter(x => !x.ok), force = $('#advforce') && $('#advforce').checked;
-  if (miss.length && !esGasto()) return toast('Hay compuertas incumplidas. Solo el perfil Gasto puede forzarlas: completa los datos.', 'err');
+  if (miss.length && !esGasto()) return toast('Hay compuertas incumplidas. Solo el rol Gasto puede forzarlas: completa los datos.', 'err');
   if (miss.length && !force) return toast(`Hay ${miss.length} compuerta(s) sin cumplir. Pulsa «Corregir» en cada una o marca «Forzar cambio» (solo Gasto).`, 'err');   // U-12
   const motivo = miss.length ? String(($('#advmot') && $('#advmot').value) || '').trim() : '';
   if (miss.length && !motivo) return toast('Indica el motivo del cambio forzado', 'err');   // U-12
@@ -3055,7 +3055,7 @@ Acts.aprobar = d => {
 };
 Acts.aprobargo = d => {
   const p = byId(d.id), miss = gatesAprobar(p).filter(x => !x.ok), force = $('#advforce') && $('#advforce').checked;
-  if (miss.length && !esGasto()) return toast('Hay compuertas incumplidas. Solo el perfil Gasto puede forzarlas: completa los datos.', 'err');
+  if (miss.length && !esGasto()) return toast('Hay compuertas incumplidas. Solo el rol Gasto puede forzarlas: completa los datos.', 'err');
   if (miss.length && !force) return toast(`Hay ${miss.length} compuerta(s) sin cumplir. Pulsa «Corregir» en cada una o marca «Forzar cambio» (solo Gasto).`, 'err');   // U-12
   const nota = ($('#apr_nota') || {}).value || '';
   const n = aprobarPropuesta(p, (miss.length ? '[forzado: ' + miss.map(m => m.t).join(', ') + '] ' : '') + nota.trim());
@@ -3070,7 +3070,7 @@ Acts.estado = d => {
   openForm({
     title: 'Cambiar estado · ' + i.titulo, saveLabel: 'Aplicar', values: { estado: i.estado, motivo: i.estadoMotivo || '', rev: i.estadoRev || '' },
     fields: [{ k: 'estado', l: 'Nuevo estado', t: 'select', opts, w: 3 }, { k: 'motivo', l: 'Motivo (obligatorio para ' + EST_MOTIVO.join(', ') + ')', t: 'textarea', w: 3 }, { k: 'rev', l: 'Fecha de revisión (obligatoria para ' + EST_REVISION.join(' y ') + ')', t: 'date' }],
-    extra: `<p class="mut" style="margin-top:8px">${esProp(i) ? 'Para aprobar una propuesta use “Aprobar y crear proyecto”.' : 'Completado solo está disponible en la fase Cierre.'}</p>`,
+    extra: `<p class="mut" style="margin-top:8px">${esProp(i) ? 'Para aprobar una propuesta usa “Aprobar y crear proyecto”.' : 'Completado solo está disponible en la fase Cierre.'}</p>`,
     onSave(o) {
       if (EST_MOTIVO.includes(o.estado) && !o.motivo) { toast('Indica el motivo del estado ' + o.estado, 'err'); return false; }
       if (EST_REVISION.includes(o.estado) && !o.rev) { toast('Indica la fecha de revisión', 'err'); return false; }
@@ -3161,7 +3161,7 @@ Views.dashboard = {
       ${kp('', 'trend', 'Presupuesto Consumido', fmtBig(K.M.gas), `${restTxt(K.M.gas)}${pctMon(K.M.gas, K.M.pres)}% del presupuesto${monKeys(K.M.pres).length > 1 ? ' en ' + monMain(K.M.pres) : ''}`, prog(pctMon(K.M.gas, K.M.pres), pctMon(K.M.gas, K.M.pres) > 100 ? 'Rojo' : 'Verde', 6), 'portfolio')}
       ${kp(monKeys(K.M.beneficio).length ? 'good' : '', 'target', 'Beneficio Esperado', monKeys(K.M.beneficio).length ? fmtBig(K.M.beneficio) : '<span class="nd">Sin dato</span>', monKeys(K.M.beneficio).length ? `${restTxt(K.M.beneficio)}ROI de proyectos ${roiG}%${monKeys(K.M.pres).length > 1 ? ' (solo CLP)' : ''} <sup class="est">est.</sup>` : 'Ningún proyecto declara beneficio', '', 'portfolio')}
     </section>
-    ${al.length ? `<div class="strip" role="status">${icon('spark', 16)}<span><b>${al.filter(a => a.sev === 3).length} alertas críticas</b> (${al.length} hallazgos de revisión automática): ${al.slice(0, 2).map(a => esc(a.titulo)).join(' · ')}…</span><a class="lnk" data-act="go" data-v="ia">Revisar →</a></div>` : ''}
+    ${al.length ? `<div class="strip" role="status">${icon('spark', 16)}<span><b>${al.filter(a => a.sev === 3).length} ${al.filter(a => a.sev === 3).length === 1 ? 'alerta crítica' : 'alertas críticas'}</b> (${al.length} ${al.length === 1 ? 'hallazgo' : 'hallazgos'} de revisión automática): ${al.slice(0, 2).map(a => esc(a.titulo)).join(' · ')}…</span><a class="lnk" data-act="go" data-v="ia">Revisar →</a></div>` : ''}
     <div class="dgrid fit dfill">
       <section class="card dc s2"><header><h2>Estado del portfolio</h2><small>${live.length} proyectos vivos · ${K.pipe} propuestas en pipeline</small></header>
         <div class="sub" style="margin:0 0 4px"><span class="pill tp prj">Proyectos</span> por fase</div>
@@ -3176,7 +3176,7 @@ Views.dashboard = {
       <section class="card dc s2"><header><h2>Top proyectos críticos</h2><button class="lnk" data-act="go" data-v="portfolio">Portfolio →</button></header>
         <table class="mini"><thead><tr><th>Proyecto</th><th>RAG</th><th>Avance</th><th>Desv.</th><th>Riesgos</th><th>Líder</th></tr></thead><tbody>${crit.map(i => `<tr data-act="sel" data-t="ini" data-id="${i.id}"><td><b>${esc(i.titulo)}</b><small>${i.fase}</small></td><td>${ragPill(i.rag)}</td><td class="n">${pct(i.avance)}${prog(i.avance, i.rag, 4)}</td><td class="n ${desv(i) > St.cfg.tolDesv ? 'neg' : ''}">${desv(i) ? '+' + desv(i) + ' d' : '—'}</td><td class="n">${riesgosDe(i.id).filter(riesgoAbierto).length}</td><td>${avatar(i.lider, 22)}</td></tr>`).join('')}</tbody></table></section>
       <section class="card dc tabsc t-${UI.dtab || 'hitos'}"><header><div class="tabs-h" role="tablist"><button role="tab" aria-selected="${(UI.dtab || 'hitos') === 'hitos'}" data-act="dtab" data-k="hitos">Hitos${hv ? ` <i class="bd">${hv}</i>` : ''}</button><button role="tab" aria-selected="${UI.dtab === 'dec'}" data-act="dtab" data-k="dec">Decisiones <i class="bd">${dp.length}</i></button><button role="tab" aria-selected="${UI.dtab === 'work'}" data-act="dtab" data-k="work">Mi trabajo <i class="bd">${work.length}</i></button></div></header>
-        <div class="tb tb-hitos">${hv ? `<div class="note bad" style="margin-bottom:8px">${icon('warn', 14)} <span><b>${hv}</b> hitos vencidos sin completar</span></div>` : ''}
+        <div class="tb tb-hitos">${hv ? `<div class="note bad" style="margin-bottom:8px">${icon('warn', 14)} <span><b>${hv}</b> ${hv === 1 ? 'hito vencido sin completar' : 'hitos vencidos sin completar'}</span></div>` : ''}
         ${hp.map(h => { const e = hitoEstado(h); return `<button class="row" data-act="sel" data-t="hito" data-id="${h.id}"><span class="dt"><b>${pD(h.fecha).getDate()}</b>${MES3[pD(h.fecha).getMonth()]}</span><span class="r-m"><b>${esc(h.nombre)}</b><small>${esc(nameOf(h.ini))}</small></span><span class="pill" style="--c:${e.c}">${rel(h.fecha)}</span></button>`; }).join('') || empty('Sin hitos próximos', 'flag')}</div>
         <div class="tb tb-dec">${dp.map(d => `<button class="row" data-act="sel" data-t="dec" data-id="${d.id}"><span class="dtype" style="background:${DEC_C[d.tipo]}">${icon(DEC_ICON[d.tipo], 14)}</span><span class="r-m"><b>${esc(d.titulo)}</b><small>${d.ini ? esc(nameOf(d.ini)) : '—'}</small></span><span class="pill ${d.limite < hoy() ? 'bad' : 'soft'}">${d.limite < hoy() ? 'vencida' : rel(d.limite)}</span></button>`).join('') || empty('Sin decisiones pendientes', 'gavel')}</div>
         <div class="tb tb-work"><div class="chips" style="margin:0 0 8px">${btn('Ronda de actualización' + (rondaIds().length ? ' (' + rondaIds().length + ')' : ''), 'ronda', { ic: 'refresh', cls: 'sm pri' })}${btn('Resumen de mi semana', 'resumen', { ic: 'send', cls: 'sm' })}${btn('Nuevo compromiso', 'acunew', { ic: 'plus', cls: 'sm' })}</div>${work.slice(0, 7).map(w => `<div class="row w"><span class="w-i ${w.over ? 'over' : ''}">${icon(w.ic, 14)}</span><button class="r-m lnk0" data-act="${w.k === 'hito' ? 'sel' : w.k === 'risk' ? 'sel' : w.k === 'dec' ? 'sel' : w.k === 'upd' ? 'wk' : 'go'}" data-t="${w.k === 'hito' ? 'hito' : w.k === 'risk' ? 'risk' : w.k === 'dec' ? 'dec' : 'ini'}" data-id="${w.id}" data-v="${w.k === 'acu' ? 'compromisos' : 'comite'}"><b>${esc(w.t)}</b><small>${esc(w.s)} · <span class="${w.over ? 'neg' : ''}">${fmtD(w.when)}</span></small></button>${w.k === 'hito' ? `<input type="checkbox" data-chg="hitotoggle" data-id="${w.id}" aria-label="Completar hito">` : ''}</div>`).join('') || empty('Todo al día', 'check')}</div></section>
@@ -3311,7 +3311,7 @@ Views.proyectos = {
   render() {
     const f = F('prj', { q: '', mode: 'board', resp: '', hideDone: true });
     let rows = scopeAll().filter(porTipo); if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.lider + i.id).toLowerCase().includes(q)); } if (f.resp) rows = rows.filter(i => i.lider === f.resp); if (f.hideDone) rows = rows.filter(isLive);
-    const KF = planTipo() === 'prj' ? FASES_PRJ : planTipo() === 'prop' ? FASES_PROP : [...FASES_PROP, ...FASES_PRJ];
+    const KF = planTipo() === 'prj' ? FASES_PRJ : planTipo() === 'prop' ? FASES_PROP : [...FASES_PROP.filter(fs => rows.some(i => i.fase === fs)), ...FASES_PRJ];   // N-U-09: sin columnas de propuestas vacías
     const card = i => { const hs = hitosDe(i.id), hd = hs.filter(h => h.completado).length, nh = nextHito(i); return `<article tabindex="0" role="button" class="icard ${UI.sel && UI.sel.id === i.id ? 'sel' : ''}" draggable="true" data-id="${i.id}" data-act="sel" data-t="ini">
       <div class="ic-t"><span class="mono">${i.id}</span>${esProp(i) ? tipoPill(i) : ''}${!['En curso', 'Vigente'].includes(i.estado) ? estPill(i.estado) : ''}${esProp(i) ? '' : ragPill(i.rag)}</div><h3>${esc(i.titulo)}</h3>
       <div class="ic-ph" style="font-size:12px;margin:-2px 0 4px">${faseTag(i)}</div>
@@ -3489,7 +3489,7 @@ function subfaseForm(s, iniId, fase) {
   const v = s ? clone(s) : { fase: f0, nombre: '', inicio: w0.ini || '', fin: w0.fin || '', resp: i.lider || '' };
   openForm({ iniId: i.id,
     title: (nw ? 'Nueva subfase' : 'Editar subfase') + ' · ' + i.titulo, values: v, danger: nw ? null : 'Eliminar', saveLabel: nw ? 'Crear' : 'Guardar',
-    fields: [{ k: 'fase', l: 'Fase obligatoria', t: 'select', req: true, w: 3, opts: FS.map(x => { const w = ventanaDe(i, x) || {}; return { v: x, t: x + (w.ini ? ' · ' + rangoTx(w.ini, w.fin) : ' · sin fechas') }; }), hint: 'La subfase vive completa dentro de una sola fase obligatoria' },
+    fields: [{ k: 'fase', l: 'Fase', t: 'select', req: true, w: 3, opts: FS.map(x => { const w = ventanaDe(i, x) || {}; return { v: x, t: x + (w.ini ? ' · ' + rangoTx(w.ini, w.fin) : ' · sin fechas') }; }), hint: 'La subfase vive completa dentro de una sola fase obligatoria' },
       { k: 'nombre', l: 'Nombre de la subfase', req: true, w: 3 }, { k: 'inicio', l: 'Inicio', t: 'date', hint: 'Vacío: hereda el inicio de la fase' }, { k: 'fin', l: 'Fin', t: 'date', hint: 'Vacío: hereda el fin de la fase' }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'desc', l: 'Descripción / instrucciones', t: 'textarea', w: 3, rows: 3, hint: 'Opcional. Se ve en Mi cocina, la ficha y Fases.' }],
     extra: '<p class="mut" style="font-size:12px;margin:10px 0 0">Regla: una subfase no puede extenderse fuera del inicio y fin de su fase. Los hitos de la subfase deben ser de esa misma fase.</p>',
     onDanger: () => confirmBox('¿Eliminar esta subfase? Sus hitos quedarán sin subfase.', () => { const hs = hitosSub(i, s); i.subfases = subfasesDe(i).filter(x => x.id !== s.id); hs.forEach(h => { delete h.subfase; }); i.actualizada = hoy(); log('Cambio', i.id, 'Subfase eliminada: ' + s.nombre + ' (' + s.fase + ')' + (hs.length ? ' · ' + hs.length + ' hitos quedan sin subfase' : '')); toast('Subfase eliminada'); refresh(); }, 'Eliminar', true),
@@ -3612,14 +3612,14 @@ function pasosDe(i) {
   if (!i || isDone(i)) return [];
   const H = hoy(), out = [], add = (k, u, tipo, t, por, prot, btn, act, d, f, nota) => out.push({ k: i.id + ':' + k, u, tipo, t, por, prot, btn, act, d, f: f || H, ini: i, nota: nota || '' });
   const hs = hitosDe(i.id).filter(h => !h.completado).sort(by('fecha'));
-  hs.filter(h => h.fecha < H).forEach(h => add('hv' + h.id, 0, 'Hito vencido', 'Cierra o reprograma «' + h.nombre + '»', 'Venció hace ' + diffD(H, h.fecha) + ' d. Sin explicar, apaga el tenedor Hitos.', 'Hitos', 'Editar hito', 'edit', { t: 'hito', id: h.id }, h.fecha, hitoDescDe(i, h)));
+  hs.filter(h => h.fecha < H).forEach(h => add('hv' + h.id, 0, 'Hito vencido', 'Cierra o reprograma «' + h.nombre + '»', 'Venció hace ' + diffD(H, h.fecha) + ' d. Mientras siga abierto, el indicador de Hitos queda en rojo.', 'Hitos', 'Editar hito', 'edit', { t: 'hito', id: h.id }, h.fecha, hitoDescDe(i, h)));
   hs.filter(h => h.fecha === H).forEach(h => add('hh' + h.id, 0, 'Hito', 'Marca «' + h.nombre + '» como cumplido', 'Vence hoy.', 'Hitos', 'Marcar cumplido', 'hitotoggle', { id: h.id }, h.fecha, hitoDescDe(i, h)));
   hs.filter(h => h.fecha > H && diffD(h.fecha, H) <= 7).slice(0, 3).forEach(h => add('hs' + h.id, 1, 'Hito', 'Prepara «' + h.nombre + '» (' + fzd(h.fecha) + ')', 'Vence en ' + diffD(h.fecha, H) + ' d' + (h.resp ? ' · ' + h.resp : '') + '.', 'Hitos', 'Ver hito', 'sel', { t: 'hito', id: h.id }, h.fecha, hitoDescDe(i, h)));
   if (FASES_ACT.includes(i.fase) && isLive(i)) { const st = starsOf(i, hoyW()), dia = st.find(x => x.k === 'dia'); if (dia && dia.s === 'off') add('dia', pD(H).getDay() >= 5 || pD(H).getDay() === 0 ? 0 : 1, 'Tenedor «Al día»', 'Registra la actualización semanal', dia.tip || 'Sin actualización esta semana: el tenedor «Al día» está apagado.', 'Al día', 'Actualizar', 'wk', { id: i.id }); }
   riesgosDe(i.id).filter(riesgoAbierto).forEach(r => {
     const n = nivelRiesgo(expo(r)), crit = expo(r) >= cfgI(i, 'umbralCritico');
-    if (crit && !String(r.mit || '').trim()) add('rm' + r.id, 0, 'Riesgo crítico', 'Define la mitigación de «' + r.desc + '»', 'Crítico (' + expo(r) + ') sin plan de mitigación: apaga el tenedor Riesgos y bloquea compuertas.', 'Riesgos', 'Editar riesgo', 'edit', { t: 'risk', id: r.id });
-    else if (r.fRev && r.fRev < H) add('rv' + r.id, 0, 'Riesgo', 'Revisa el riesgo «' + r.desc + '»', 'La revisión venció el ' + fzd(r.fRev) + ': apaga el tenedor Riesgos.', 'Riesgos', 'Editar riesgo', 'edit', { t: 'risk', id: r.id }, r.fRev);
+    if (crit && !String(r.mit || '').trim()) add('rm' + r.id, 0, 'Riesgo crítico', 'Define la mitigación de «' + r.desc + '»', 'Crítico (' + expo(r) + ') sin plan de mitigación: el indicador de Riesgos queda en rojo y se bloquean compuertas.', 'Riesgos', 'Editar riesgo', 'edit', { t: 'risk', id: r.id });
+    else if (r.fRev && r.fRev < H) add('rv' + r.id, 0, 'Riesgo', 'Revisa el riesgo «' + r.desc + '»', 'La revisión venció el ' + fzd(r.fRev) + '. Mientras no se revise, el indicador de Riesgos queda en rojo.', 'Riesgos', 'Editar riesgo', 'edit', { t: 'risk', id: r.id }, r.fRev);
     else if (r.fRev && diffD(r.fRev, H) <= 7) add('rs' + r.id, r.fRev === H ? 0 : 1, 'Riesgo ' + n.n.toLowerCase(), 'Prepara la revisión de «' + r.desc + '» (' + fzd(r.fRev) + ')', n.n + ' (' + expo(r) + ')' + (r.mit ? '. Mitigación: ' + cut(r.mit, 90) : '.'), 'Riesgos', 'Abrir riesgo', 'sel', { t: 'risk', id: r.id }, r.fRev);
   });
   St.compromisos.filter(c => c.ini === i.id && !['Cumplido', 'Cancelado'].includes(c.estado) && c.limite && diffD(c.limite, H) <= 7).forEach(c => add('c' + c.id, c.limite <= H ? 0 : 1, 'Compromiso', (c.limite < H ? 'Cumple el compromiso vencido «' : 'Cumple «') + cut(c.texto || c.titulo || 'compromiso', 70) + '»', (c.limite < H ? 'Venció el ' : 'Vence el ') + fzd(c.limite) + (c.resp ? ' · ' + c.resp : '') + '.', 'Compromisos', 'Ver compromisos', 'go', { v: 'compromisos' }, c.limite));
@@ -3635,9 +3635,9 @@ function pasoHTML(p, conIni) {
   const U = PASO_U[p.u];
   return `<div class="ps-it"><div class="ps-h"><span class="ps-u" style="background:${U[1]};color:${U[2]}">${U[0]}</span><span class="mut">${esc(p.tipo)}</span>${conIni ? `<a class="lnk ps-ini" data-act="sel" data-t="ini" data-id="${p.ini.id}">${esc(cut(p.ini.titulo, 34))}</a>` : ''}</div>
     <div class="ps-t">${esc(p.t)}</div><div class="ps-p">${esc(p.por)}</div>${p.nota ? `<div class="ps-nota">${icon('info', 12)}<span>${esc(p.nota)}</span></div>` : ''}
-    <div class="ps-a"><span class="ps-pr">protege: ${esc(p.prot)}</span><span class="edit-only ps-b">${btn(p.btn, p.act, { d: p.d, cls: 'sm pri' })}${btn('Posponer', 'pasopos', { d: { k: p.k }, cls: 'sm', title: 'Ocultar hasta mañana' })}</span></div></div>`;
+    <div class="ps-a"><span class="ps-pr">protege: ${esc(p.prot)}</span><span class="edit-only ps-b">${btn(p.btn, p.act, { d: p.d, cls: 'sm pri' })}${btn('Ocultar hasta mañana', 'pasopos', { d: { k: p.k }, cls: 'sm', title: 'Ocultar hasta mañana' })}</span></div></div>`;
 }
-Acts.pasopos = d => { const p = pospGet(); p[d.k] = addD(hoy(), 1); Object.keys(p).forEach(k => { if (p[k] <= hoy()) delete p[k]; }); pospSet(p); toast('Paso pospuesto hasta mañana'); render(); };
+Acts.pasopos = d => { const p = pospGet(); p[d.k] = addD(hoy(), 1); Object.keys(p).forEach(k => { if (p[k] <= hoy()) delete p[k]; }); pospSet(p); toast('Paso oculto hasta mañana'); render(); };
 /* Pestaña «Planificación» de la ficha: fases, cronograma, próximos 14 días y siguientes pasos */
 function planFichaHTML(i) {
   const V = fasesVentana(i), H = hoy(), P = pasosDe(i);
@@ -3885,7 +3885,7 @@ Views.comite = {
     return pageHead('Comité de portafolio', 'Agenda, participantes, decisiones, acciones y compromisos de cada sesión.', `<span class="edit-only">${btn('Nuevo comité', 'new', { d: { t: 'com' }, ic: 'plus', cls: 'pri' })}</span>`) + `
     <div class="com-w"><aside class="com-l card"><header><h2>Sesiones</h2><small>${list.length}</small></header>${side}</aside>
     <section class="com-d"><div class="card com-h"><div><span class="pill soft e-${c.estado}">${c.estado}</span><h2>${esc(c.nombre)}</h2><p>${fmtDL(c.fecha)} · ${esc(c.hora)} · ${esc(c.lugar)}</p></div>
-      <div class="com-a"><span class="edit-only">${btn('Editar', 'edit', { d: { t: 'com', id: c.id }, ic: 'edit' })}${c.estado === 'Programado' ? btn('Cerrar sesión', 'cclose', { d: { id: c.id }, ic: 'check', cls: 'pri' }) : ''}</span>${btn('Acta', 'cacta', { d: { id: c.id }, ic: 'copy' })}</div></div>
+      <div class="com-a"><span class="edit-only">${btn('Editar', 'edit', { d: { t: 'com', id: c.id }, ic: 'edit' })}${c.estado === 'Programado' ? btn('Cerrar comité', 'cclose', { d: { id: c.id }, ic: 'check', cls: 'pri' }) : ''}</span>${btn('Acta', 'cacta', { d: { id: c.id }, ic: 'copy' })}</div></div>
       <div class="kpis k4"><div class="kpi sm"><div class="k-v">${c.temas.length}</div><div class="k-l">Temas</div></div><div class="kpi sm"><div class="k-v">${dec.length}</div><div class="k-l">Decisiones</div></div><div class="kpi sm"><div class="k-v">${open}</div><div class="k-l">Acciones/compromisos abiertos</div></div><div class="kpi sm"><div class="k-v">${c.estado === 'Realizado' ? att + '/' + c.participantes.length : c.participantes.length}</div><div class="k-l">${c.estado === 'Realizado' ? 'Asistencia' : 'Convocados'}</div></div></div>
       ${c.resumen ? `<div class="card"><header><h2>Mensaje principal del ciclo</h2></header><p class="desc">${esc(c.resumen)}</p>${c.narrativa ? `<p class="desc mut" style="margin-top:6px">${esc(c.narrativa)}</p>` : ''}</div>` : ''}
       <div class="grid12">
@@ -4151,7 +4151,7 @@ Views.admin = {
       b = `<div class="card"><header><h2>Auditoría de calidad de datos</h2><small>Promedio ${pct(avg(rows, r => r.c.pct))} · críticos = Sponsor, Líder, Área, Prioridad, Fechas plan</small></header><div class="tbl-w"><table class="tbl"><thead><tr><th>Iniciativa</th><th>Completitud</th><th>Faltan (crítico)</th><th>Faltan (recomendado)</th><th>Faltan (opcional)</th></tr></thead><tbody>${rows.map(({ i, c }) => `<tr data-act="sel" data-t="ini" data-id="${i.id}"><td><b>${esc(i.titulo)}</b><small>${i.id}</small></td><td style="min-width:130px">${prog(c.pct, c.pct > 80 ? 'Verde' : c.pct > 60 ? 'Ámbar' : 'Rojo', 6)}<small>${c.pct}%</small></td><td class="${c.crit.length ? 'neg' : ''}">${esc(c.crit.join(', ') || '—')}</td><td>${esc(c.rec.join(', ') || '—')}</td><td>${esc(c.opt.join(', ') || '—')}</td></tr>`).join('')}</tbody></table></div></div>`;
     } else if (f.tab === 'dat') {
       const sz = Math.round(JSON.stringify(St).length / 1024), cnt = St.ini.length + St.hitos.length + St.riesgos.length + St.decisiones.length + St.bitacora.length + St.comites.length;
-      b = `<div class="grid12"><section class="card c6"><header><h2>Exportación y respaldo</h2><small>${cnt} registros · ${sz} KB</small></header><p class="desc">${DataService.svc ? 'Los datos se guardan automáticamente en las listas de SharePoint.' : '<b>Modo demo:</b> los datos viven solo en memoria. Exporte un respaldo antes de cerrar o conecte SharePoint.'} El Excel completo replica el diseño de columnas de cada lista SharePoint (útil para carga masiva).</p><div class="chips">${btn('Excel completo (6 hojas)', 'xlsxall', { ic: 'down', cls: 'pri' })}${btn('Respaldo JSON', 'expjson', { ic: 'down' })}${btn('Importar respaldo', 'impjson', { ic: 'refresh' })}${btn('Importar iniciativas', 'impini', { ic: 'down' })}${btn('Plantilla iniciativas', 'inipl', { ic: 'down' })}${btn('Portfolio CSV', 'pcsv', { ic: 'down' })}${btn('Riesgos CSV', 'riskcsv', { ic: 'down' })}${btn('Hitos CSV', 'hitocsv', { ic: 'down' })}${btn('Bitácora CSV', 'bitcsv', { ic: 'down' })}</div><input type="file" id="impfile" accept="application/json" style="display:none" data-chg="impfile"><input type="file" id="impinifile" accept="application/json" style="display:none" data-chg="impinifile"></section>
+      b = `<div class="grid12"><section class="card c6"><header><h2>Exportación y respaldo</h2><small>${cnt} registros · ${sz} KB</small></header><p class="desc">${DataService.svc ? 'Los datos se guardan automáticamente en las listas de SharePoint.' : '<b>Modo demo:</b> los datos viven solo en memoria. Exporta un respaldo antes de cerrar o conecta SharePoint.'} El Excel completo replica el diseño de columnas de cada lista SharePoint (útil para carga masiva).</p><div class="chips">${btn('Excel completo (6 hojas)', 'xlsxall', { ic: 'down', cls: 'pri' })}${btn('Respaldo JSON', 'expjson', { ic: 'down' })}${btn('Importar respaldo', 'impjson', { ic: 'refresh' })}${btn('Importar iniciativas', 'impini', { ic: 'down' })}${btn('Plantilla iniciativas', 'inipl', { ic: 'down' })}${btn('Portfolio CSV', 'pcsv', { ic: 'down' })}${btn('Riesgos CSV', 'riskcsv', { ic: 'down' })}${btn('Hitos CSV', 'hitocsv', { ic: 'down' })}${btn('Bitácora CSV', 'bitcsv', { ic: 'down' })}</div><input type="file" id="impfile" accept="application/json" style="display:none" data-chg="impfile"><input type="file" id="impinifile" accept="application/json" style="display:none" data-chg="impinifile"></section>
       <section class="card c6"><header><h2>Origen de los datos</h2></header><p class="desc">Datos cargados <b>solo desde el archivo Iniciativas IT ARAMARK</b> (iniciativas, propuestas, hitos, riesgos, decisiones pendientes, bitácora, ciclos del calendario, presentaciones y usuarios con su rol y área). No hay estimaciones ni iniciativas de ejemplo: lo que el archivo no trae (presupuesto, beneficio, sponsor de proyectos, fechas, responsable de hitos, mitigaciones) queda vacío y se completa desde la plataforma.</p>
       <div class="chips">${btn(DataService.svc ? 'Restablecer a los datos del archivo (reescribe SharePoint)' : 'Restaurar datos del archivo', 'reset', { ic: 'undo', cls: 'danger' })}</div></section></div>`;
     } else if (f.tab === 'sp') {
@@ -4167,7 +4167,7 @@ Acts.catdel = d => { St.cfg[d.k].splice(+d.n, 1); refresh(); };
 Acts.expjson = () => { download('APIH_respaldo_' + hoy() + '.json', JSON.stringify(St, null, 1), 'application/json'); toast('Respaldo exportado'); };
 Acts.impjson = () => $('#impfile').click();
 Chg.impfile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
-  if (!esGasto() || FL.verComo) { toast('Solo el perfil Gasto puede importar un respaldo', 'err'); return; }
+  if (!esGasto() || FL.verComo) { toast('Solo el rol Gasto puede importar un respaldo', 'err'); return; }
   const r = new FileReader(); r.onload = () => { try {
     const o = JSON.parse(r.result); if (!o || o.v !== 3 || !Array.isArray(o.ini)) throw new Error('Formato inválido');
     const ks = [['ini', 'Iniciativas'], ['hitos', 'Hitos'], ['riesgos', 'Riesgos'], ['decisiones', 'Decisiones']], len = (x, k) => Array.isArray(x[k]) ? x[k].length : 0;
@@ -4227,7 +4227,7 @@ function normIni(x) {
 }
 const set2 = (o, k, v) => { if (v !== undefined) o[k] = v; };
 Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
-  if (!esGasto() || FL.verComo) { toast('Solo el perfil Gasto puede importar iniciativas', 'err'); return; }
+  if (!esGasto() || FL.verComo) { toast('Solo el rol Gasto puede importar iniciativas', 'err'); return; }
   const r = new FileReader(); r.onload = () => { try {
     const o = JSON.parse(r.result), L = Array.isArray(o) ? o : (o && Array.isArray(o.iniciativas) ? o.iniciativas : null);
     if (!L || !L.length) throw new Error('Formato inválido: se espera { "iniciativas": [...] }');
@@ -4245,7 +4245,7 @@ Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
         (x.riesgos || []).forEach(r => { St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: n.id, cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: n.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '', ...r }); nr++; });
         log('Cambio', n.id, T + (PR ? ' importada: ' : ' importado: ') + n.titulo + (x.hitos ? ' (' + x.hitos.length + ' hitos' + (x.riesgos ? ', ' + x.riesgos.length + ' riesgos' : '') + ')' : '')); });
       const ns = St.ini.slice(-nuevas.length).reduce((a, x) => a + subfasesDe(x).length, 0);
-      toast(nuevas.length + ' iniciativa(s) importada(s), ' + nh + ' hitos, ' + nr + ' riesgos' + (ns ? ', ' + ns + ' subfases' : '') + (avisos.length ? ' · ' + avisos.length + ' aviso(s): ' + avisos.slice(0, 2).join(' | ') : ''), avisos.length ? 'err' : 'ok'); avisos.forEach(a => log('Cambio', '', 'Importación: ' + a)); refresh(); }, 'Importar');
+      toast(nuevas.length + ' iniciativa(s) importada(s), ' + nh + ' hitos, ' + nr + ' riesgos' + (ns ? ', ' + ns + ' subfases' : '') + (avisos.length ? ' · ' + avisos.length + ' aviso(s): ' + avisos.slice(0, 2).join(' | ') : ''), avisos.length ? 'err' : 'ok'); avisos.forEach(a => log('Cambio', '', 'Importación: ' + a)); refresh(); if (avisos.length) Modal.open({ title: 'Avisos de la importación (' + avisos.length + ')', body: '<ul style="margin:0;padding-left:18px;line-height:1.5">' + avisos.map(a => '<li>' + esc(a) + '</li>').join('') + '</ul><p class="mut" style="margin-top:10px">Quedaron registrados en la Bitácora.</p>', footer: '<button class="btn pri" data-act="mclose">Cerrar</button>' }); }, 'Importar');   // N-U-08
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 /* V22.52: proyecto <-> IA (exportar con instrucciones, importar con vista previa) */
 const IAP_TXT = ['titulo', 'desc', 'bc', 'sponsor', 'lider', 'negocio', 'categoria', 'resumen', 'logros', 'proximos', 'issue', 'riesgoTxt'], IAP_NUM = ['avance', 'presupuesto', 'gastado', 'beneficio'], IAP_DATE = ['inicioPlan', 'finPlan', 'finEst'];
@@ -4286,7 +4286,7 @@ function iapExport(i) {
   };
 }
 Acts.proyia = d => { const i = byId(d.id); if (!i) return;
-  Modal.open({ title: 'Completar con IA · ' + i.id, body: `<p class="desc" style="margin:0 0 8px"><b>${esc(i.titulo)}</b>. 1) Descargue el archivo (incluye instrucciones para la IA y la lista de datos pendientes). 2) Súbalo a la IA y responda sus preguntas. 3) Suba aquí el JSON que devuelva: verá una vista previa antes de aplicar.</p><div class="chips" style="margin:0 0 8px">${btn('Descargar para IA', 'proyiaget', { d: { id: i.id }, ic: 'down', cls: 'pri' })}${btn('Subir respuesta de la IA', 'proyiaup', { d: { id: i.id }, ic: 'up' })}</div><p class="mut">Pendientes hoy: ${iapPendientes(i).length}. La fase y el estado no se modifican por esta vía.</p><input type="file" id="iapfile" accept="application/json,.json,.txt" style="display:none" data-chg="proyiaf" data-id="${i.id}">` }); };
+  Modal.open({ title: 'Completar con IA · ' + i.id, body: `<p class="desc" style="margin:0 0 8px"><b>${esc(i.titulo)}</b>. 1) Descarga el archivo (incluye instrucciones para la IA y la lista de datos pendientes). 2) Súbelo a la IA y responde sus preguntas. 3) Sube aquí el JSON que devuelva: verás una vista previa antes de aplicar.</p><div class="chips" style="margin:0 0 8px">${btn('Descargar para IA', 'proyiaget', { d: { id: i.id }, ic: 'down', cls: 'pri' })}${btn('Subir respuesta de la IA', 'proyiaup', { d: { id: i.id }, ic: 'up' })}</div><p class="mut">Pendientes hoy: ${iapPendientes(i).length}. La fase y el estado no se modifican por esta vía.</p><input type="file" id="iapfile" accept="application/json,.json,.txt" style="display:none" data-chg="proyiaf" data-id="${i.id}">` }); };
 Acts.proyiaget = d => { const i = byId(d.id); if (!i) return; download('APIH_' + i.id + '_para_IA_' + hoy() + '.json', JSON.stringify(iapExport(i), null, 1), 'application/json'); toast('Archivo para IA descargado'); };
 Acts.proyiaup = d => { const f = $('#iapfile'); if (f) { f.dataset.id = d.id; f.value = ''; f.click(); } };
 Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = ''; if (!fl) return;
@@ -4343,7 +4343,7 @@ Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = '';
     if (!ch.length) { Modal.close && Modal.close(); toast(err.length ? 'Sin cambios válidos. ' + err.slice(0, 3).join(' | ') : 'El archivo no trae cambios', 'err'); return; }
     const lst = ch.slice(0, 40).map(x => '• ' + esc(x)).join('<br>') + (ch.length > 40 ? '<br>… y ' + (ch.length - 40) + ' más' : '');
     confirmBox('<b>' + ch.length + ' cambio(s)</b> en ' + esc(i.titulo) + ':<br><br>' + lst + (err.length ? '<br><br><b style="color:var(--red)">Se omiten ' + err.length + ':</b><br>' + err.slice(0, 15).map(x => '✕ ' + esc(x)).join('<br>') : '') + '<br><br>¿Aplicar?', () => {
-      if (bloqueo) { toast('finPlan anterior a inicioPlan: corrija el archivo', 'err'); return; }
+      if (bloqueo) { toast('finPlan anterior a inicioPlan: corrige el archivo', 'err'); return; }
       ap.forEach(f => f()); i.actualizada = hoy(); log('Cambio', i.id, 'Completado con IA: ' + ch.length + ' cambio(s) aplicados desde archivo'); toast(ch.length + ' cambio(s) aplicados'); refresh(); }, 'Aplicar');
   } catch (e) { toast('No se pudo leer: ' + e.message, 'err'); } }; r.readAsText(fl); };
 Acts.reset = () => confirmBox(DataService.svc ? 'Se reemplazarán TODOS los datos de ' + BK() + ' por los datos del archivo original. ¿Continuar?' : 'Se perderán los cambios y se restaurarán los datos de demostración. ¿Continuar?', () => { St = seedState(); UI.sel = null; shell(); toast('Datos restaurados'); refresh(); }, 'Restaurar', true);
@@ -4435,7 +4435,7 @@ function metTab() {
     </div>
 `;
 }
-Chg.fasdesc = el => { const m = MET(); m.faseDesc = m.faseDesc || {}; const v = cutDesc(el.value.trim()); if (v) m.faseDesc[el.dataset.f] = v; else delete m.faseDesc[el.dataset.f]; save(); };
+Chg.fasdesc = el => { const m = MET(); m.faseDesc = m.faseDesc || {}; const raw = el.value.trim(), v = cutDesc(raw); if (raw.length > DESC_MAX) toast('La descripción se recortó a ' + DESC_MAX + ' caracteres', 'err'); if (v) m.faseDesc[el.dataset.f] = v; else delete m.faseDesc[el.dataset.f]; save(); };
 Acts.mtsub = d => { F('adm', {}).mt = d.k; render(); };
 Acts.tiposel = d => { F('adm', {}).tipo = d.id; render(); };
 Acts.tipoadd = () => { const el = $('#newtipo'), v = el.value.trim(); if (!v) return toast('Escribe el nombre del tipo', 'err'); const m = MET(); if (m.tipos.some(x => x.nombre.toLowerCase() === v.toLowerCase())) return toast('Ya existe un tipo con ese nombre', 'err'); const id = nextId('T', m.tipos); m.tipos.push({ id, nombre: v, desc: '', hitos: [] }); F('adm', {}).tipo = id; refresh(); };
@@ -5060,7 +5060,7 @@ function cfgMi(k) { const v = fijo(k) ? null : cfgOf(miUsuario())[k]; return v !
 function cfgSet(n, o) { St.cfgU = St.cfgU || {}; const k = _nrm(n); St.cfgU[k] = St.cfgU[k] || {}; Object.assign(St.cfgU[k], o); }
 function soloMio(fn) { const sv = PRES_MIO; PRES_MIO = !esGasto(); try { return fn(); } finally { PRES_MIO = sv; } }   // presentaciones: no-Gasto solo con sus iniciativas
 function ptemaEf() { if (!esGasto() && !fijo('tema')) { const o = cfgUOf(miUsuario()).ptema; if (o) return o; } return St.ptema || {}; }
-function ptemaSet(t) { if (esGasto()) St.ptema = t; else if (fijo('tema')) { toast('El tema lo fijó el perfil Gasto', 'err'); return; } else cfgSet(miUsuario(), { ptema: t }); TEMA.set(t); }
+function ptemaSet(t) { if (esGasto()) St.ptema = t; else if (fijo('tema')) { toast('El tema lo fijó el rol Gasto', 'err'); return; } else cfgSet(miUsuario(), { ptema: t }); TEMA.set(t); }
 const PERS_DEF = [
   ['tolDesv', 'Tolerancia de desviación (días)', 'Sobre este valor una iniciativa se considera «atrasada»', 0, 365],
   ['diasSinUpdate', 'Días sin actualización (alerta)', 'Regla «Sin actualización» del Agente PMO y recordatorios', 1, 365],
@@ -5078,7 +5078,7 @@ Views.miconfig = {
       const act = g ? btn(fx ? 'Liberar' : 'Fijar', 'myfix', { cls: 'sm', d: { k } }) : pers ? btn('Restablecer', 'myreset', { cls: 'sm', d: { k } }) : '';
       return `<div class="mc-row"><div><b>${l}</b><br><small>${h}</small></div><input type="number" min="${mn}" max="${mx}" value="${v}" data-chg="mycfg" data-k="${k}" data-min="${mn}" data-max="${mx}" ${dis ? 'disabled' : ''}><div>${tag}</div><div>${act}</div></div>`; }).join('');
     const tp = !g && cfgUOf(me).ptema;
-    return pageHead('Mi configuración', g ? 'Perfil Gasto: tus cambios valen para todo el portafolio · «Fijar» impide que los líderes cambien un parámetro' : 'Tus cambios valen solo para las ' + n + ' iniciativas que lideras', '') + `
+    return pageHead('Mi configuración', g ? 'Rol Gasto (la PMO, con permisos sobre todo el portafolio): tus cambios valen para todo el portafolio · «Fijar» impide que los líderes cambien un parámetro' : 'Tus cambios valen solo para las ' + n + ' iniciativas que lideras', '') + `
     <div class="grid12"><section class="card c12 mc-card"><header><h2>Umbrales de alerta</h2><small>${g ? 'Reemplazan los valores personales de cada usuario' : 'El resto del portafolio sigue con los valores generales'}</small></header><div class="mc-grid">${rows}</div></section>
     <section class="card c12"><header><h2>Presentaciones</h2></header><p class="desc">Tema: <b>${fijo('tema') ? 'fijado por Gasto' : g ? 'global' : tp ? 'personal' : 'general'}</b>. Las plantillas que guardes ${g ? 'son para todos' : 'son solo tuyas'}. ${g ? 'Los decks incluyen todo el portafolio.' : 'Tus decks incluyen solo las iniciativas que lideras.'}</p><div class="chips">${btn('Ir a Presentaciones', 'go', { d: { v: 'presentaciones' } })}${g ? btn(fijo('tema') ? 'Liberar tema' : 'Fijar tema', 'myfix', { d: { k: 'tema' } }) : ''}${tp && !fijo('tema') ? btn('Volver al tema general', 'myreset', { d: { k: '_tema' } }) : ''}</div></section></div>`;
   }
@@ -5096,7 +5096,7 @@ Acts.menurolreset = () => { if (!esGasto()) return; delete St.cfg.menuRol; save(
 Chg.mycfg = el => {
   if (FL.verComo) { toast('Sal de «Ver como» para editar', 'err'); refresh(); return; }
   const k = el.dataset.k, v = Math.min(+el.dataset.max || 9999, Math.max(+el.dataset.min || 0, +el.value || 0));
-  if (!esGasto() && fijo(k)) { toast('Parámetro fijado por el perfil Gasto', 'err'); refresh(); return; }
+  if (!esGasto() && fijo(k)) { toast('Parámetro fijado por el rol Gasto', 'err'); refresh(); return; }
   if (esGasto()) { St.cfg[k] = v; Object.values(St.cfgU || {}).forEach(u => { if (u.cfg) delete u.cfg[k]; }); }
   else { const c = Object.assign({}, cfgOf(miUsuario())); c[k] = v; cfgSet(miUsuario(), { cfg: c }); }
   refresh();
@@ -5141,7 +5141,7 @@ function controlHTML(i) {
 }
 Acts.basego = d => { const i = byId(d.id); if (!i || !puedeEditarIni(i)) return NO_PERM('Tu rol no permite editar'); if (!(i.inicioPlan && i.finPlan)) return toast('Define inicio y fin plan primero', 'err'); congelarBase(i, false); toast('Línea base congelada'); refresh(); };
 Acts.baserebase = d => { const i = byId(d.id); if (!i || !esGasto()) return; confirmBox(`¿Reemplazar la línea base de <b>${esc(i.titulo)}</b>? La anterior queda en el historial.`, () => { congelarBase(i, true); toast('Línea base reemplazada'); refresh(); }, 'Reemplazar', true); };
-function escalarSync() {   // las decisiones que superan el plazo de escalamiento quedan marcadas y en bitácora (solo lo escribe el perfil Gasto, una vez)
+function escalarSync() {   // las decisiones que superan el plazo de escalamiento quedan marcadas y en bitácora (solo lo escribe el rol Gasto, una vez)
   if (!St || !St.decisiones || !esGasto() || FL.verComo) return; let n = 0;
   St.decisiones.forEach(d => { if (decEscalada(d) && !d.escalada) { d.escalada = hoy(); n++; log('Decisión', d.ini, `Decisión escalada a Gasto: ${diffD(hoy(), d.limite)} d de atraso · ${d.titulo}`); St.bitacora[0].inPres = false; } });
   if (n) save();
@@ -5277,7 +5277,7 @@ function findingsPMO() {
   scope().filter(i => i.estado === 'Pausado' && i.estadoRev && i.estadoRev < hoy()).forEach(i => out.push({ agente: 'PMO', regla: 'Proyecto atrasado', sev: 1, ini: i.id, titulo: `${i.titulo}: revisión de “Pausado” vencida (${fmtD(i.estadoRev)})`, detalle: `Motivo: ${i.estadoMotivo || '—'}. Decidir si se reanuda o se cancela.`, fx: [{ t: 'Abrir proyecto', a: 'fxsel', id: i.id }] }));
   L.filter(i => i.estado === 'En curso').forEach(i => { const hv = hitosDe(i.id).filter(h => !h.completado && h.fecha < hoy()).sort(by('fecha')); if (hv.length) { const mx = diffD(hoy(), hv[0].fecha); out.push({ agente: 'PMO', regla: 'Hito vencido', sev: mx > 30 || hv.length > 2 ? 3 : 2, ini: i.id, titulo: `${hv.length} hito(s) vencido(s) en ${i.titulo}`, detalle: hv.slice(0, 3).map(h => `“${h.nombre}” (${fmtD(h.fecha)}, hace ${diffD(hoy(), h.fecha)} d)`).join('; ') + (hv.length > 3 ? '…' : ''), fx: [{ t: 'Replanificar primer hito', a: 'fxhito', id: hv[0].id }, { t: 'Marcar completado', a: 'fxdone', id: hv[0].id }] }); } });
   St.decisiones.filter(d => d.estado === 'Pendiente' && d.limite && d.limite < hoy() && (!d.ini || (byId(d.ini) && inArea(byId(d.ini))))).forEach(d => out.push({ agente: 'PMO', regla: 'Decisión vencida', sev: 2, ini: d.ini, titulo: `Decisión vencida hace ${diffD(hoy(), d.limite)} d: ${d.titulo}`, detalle: `${d.tipo} · solicitada por ${d.solicita}. Debe resolverse en comité.`, fx: [{ t: 'Resolver ahora', a: 'resolvedec', id: d.id }] }));
-  St.decisiones.filter(d => decEscalada(d) && (!d.ini || (byId(d.ini) && inArea(byId(d.ini))))).forEach(d => out.push({ agente: 'PMO', regla: 'Decisión escalada', sev: 3, ini: d.ini, titulo: `Decisión escalada (${diffD(hoy(), d.limite)} d de atraso): ${d.titulo}`, detalle: `Superó el plazo de escalamiento (${decEscDias()} d). Requiere resolución del perfil Gasto.`, fx: [{ t: 'Resolver ahora', a: 'resolvedec', id: d.id }] }));
+  St.decisiones.filter(d => decEscalada(d) && (!d.ini || (byId(d.ini) && inArea(byId(d.ini))))).forEach(d => out.push({ agente: 'PMO', regla: 'Decisión escalada', sev: 3, ini: d.ini, titulo: `Decisión escalada (${diffD(hoy(), d.limite)} d de atraso): ${d.titulo}`, detalle: `Superó el plazo de escalamiento (${decEscDias()} d). Requiere resolución del rol Gasto.`, fx: [{ t: 'Resolver ahora', a: 'resolvedec', id: d.id }] }));
   return out;
 }
 function findingsRiesgos() {
@@ -5449,7 +5449,7 @@ Views.ia = {
 };
 
 /* ==========================================================================
-   APIH V6 · Filtros globales (Área · Responsable · «Sólo lo mío»), directorio de
+   APIH V6 · Filtros globales (Área · Responsable · «Solo lo mío»), directorio de
    Personas y control de acceso a Administración (solo el administrador).
    ========================================================================== */
 /* ---------- barra de filtros (se dibuja en TODAS las pantallas salvo Administración) ---------- */
@@ -5463,7 +5463,7 @@ function filtrosHTML() {
     <span class="tb-l">${icon('filter', 14)} Filtros</span>
     <label class="flt"><small>Área</small><select data-chg="areaG" aria-label="Área">${selOpts(['Todas', ...areasPermitidas()], A)}</select></label>
     <label class="flt"><small>Responsable</small><select data-chg="respG" aria-label="Responsable" ${FL.mine ? 'disabled' : ''}>${FL.mine ? `<option>${esc(me)} (yo)</option>` : selOpts(resps, R, 'Todos')}</select></label>
-    <button class="btn mine ${FL.mine ? 'on' : ''}" data-act="mine" aria-pressed="${FL.mine}" title="Mostrar solo lo que depende de ${esc(me)}">${icon('check', 14)}<span>Sólo lo mío</span></button>
+    <button class="btn mine ${FL.mine ? 'on' : ''}" data-act="mine" aria-pressed="${FL.mine}" title="Mostrar solo lo que depende de ${esc(me)}">${icon('check', 14)}<span>Solo lo mío</span></button>
     ${on ? btn('Limpiar', 'flclear', { ic: 'x', cls: 'sm' }) : ''}
     ${FL.verComo ? `<span class="flt-note">Viendo como <b>${esc(FL.verComo)}</b> · <button class="lnk" data-act="vercomo" data-n="">Volver a mi usuario</button></span>` : ''}
     ${GUIA[UI.view] ? `<button class="lnk flt-guia" data-act="guia" data-m="${UI.guiaOpen[UI.view] ? 'off' : 'on'}" aria-expanded="${!!UI.guiaOpen[UI.view]}" aria-label="Cómo operar esta pantalla" title="Cómo operar esta pantalla">${icon('help', 15)}<span class="gtx">Guía</span></button>` : ''}</div>`;
@@ -5471,18 +5471,18 @@ function filtrosHTML() {
 Chg.respG = el => { FL.resp = el.value; ppInval(); refresh(); };
 Acts.mine = () => { FL.mine = !FL.mine; ppInval(); refresh(); };
 Acts.flclear = () => { FL.resp = ''; FL.mine = false; St.cfg.areaGlobal = 'Todas'; ppInval(); refresh(); };
-Acts.vercomo = d => { UI.uiOv = null; FL.verComo = d.n || ''; FL.mine = false; FL.resp = ''; ppInval(); if (UI.view === 'admin' && !esAdmin()) UI.view = 'dashboard'; refresh(); };
+Acts.vercomo = d => { FL.verComo = d.n || ''; FL.mine = false; FL.resp = ''; ppInval(); if (UI.view === 'admin' && !esAdmin()) UI.view = 'dashboard'; refresh(); };
 
 /* ---------- acceso a Administración ---------- */
 const _go0 = go;
 go = function (v) {
   if (v === 'admin' && !esAdmin()) { toast('Administración es de acceso exclusivo del administrador', 'err'); return; }
-  if (v === 'personas' && !esGasto()) { toast('Personas es exclusivo del perfil Gasto', 'err'); return; }
+  if (v === 'personas' && !esGasto()) { toast('Personas es exclusivo del rol Gasto', 'err'); return; }
   return _go0(v);
 };
 function guardAdmin() { if (UI.view === 'personas' && !esGasto()) UI.view = 'dashboard'; if (UI.view === 'admin' && !esAdmin()) { UI.view = 'dashboard'; if (location.hash === '#/admin') { try { history.replaceState(null, '', '#/dashboard'); } catch (e) { } } } }
 
-/* ---------- «Ver como» (solo el administrador; sirve para probar «Sólo lo mío» de otro usuario) ---------- */
+/* ---------- «Ver como» (solo el administrador; sirve para probar «Solo lo mío» de otro usuario) ---------- */
 function verComoHTML() {
   if (!(esAdminReal() || FL.verComo)) return '';
   return `<select class="vercomo" data-chg="vercomo" aria-label="Ver como" title="Ver el sistema como otro usuario (solo administrador)"><option value="">Ver como…</option>${verComoLista().map(n => `<option value="${esc(n)}" ${FL.verComo === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
@@ -9180,7 +9180,7 @@ function incMarks() {
   const chk = (k, id) => { const o = objOf(k, id); if (!o) return ''; return `<label data-act="noop" title="Incluir en presentación"><input type="checkbox" data-chg="incl" data-e="${k}" data-id="${esc(id)}" ${inc(o) ? 'checked' : ''}> <span>En pres.</span></label>`; };
   m.querySelectorAll('table:not(.mini)').forEach(t => {
     const rows = [...t.querySelectorAll('tbody tr[data-t][data-id]')].filter(r => ['ini', 'hito', 'risk', 'dec'].includes(r.dataset.t)); if (!rows.length) return;
-    t.querySelectorAll('thead tr').forEach((tr, i) => { const th = document.createElement('th'); th.className = 'inc-c'; if (i === 0) th.textContent = 'En pres.'; tr.appendChild(th); });
+    t.querySelectorAll('thead tr').forEach((tr, i) => { const th = document.createElement('th'); th.className = 'inc-c'; if (i === 0) th.textContent = 'En presentación'; tr.appendChild(th); });
     t.querySelectorAll('tbody tr').forEach(tr => { if (rows.includes(tr)) { const td = document.createElement('td'); td.className = 'inc-c'; td.innerHTML = chk(kindOf(tr.dataset.t, tr.dataset.id), tr.dataset.id); tr.appendChild(td); } else { const c = tr.cells[0]; if (c && c.colSpan > 1) c.colSpan += 1; else tr.appendChild(document.createElement('td')); } });
     t.querySelectorAll('tfoot tr').forEach(tr => { const c = document.createElement('td'); tr.appendChild(c); });
   });
@@ -9565,7 +9565,7 @@ const GUIA = {
   calendario: { t: 'Calendario', p: [
     ['Navega el mes', 'Flechas y «Hoy»; clic en un día para ver sus eventos a la derecha.'],
     ['Elige qué ver', 'Casillas de tipo (Hito, Comité, Entrega, Vencimiento, Ciclo, Otro).'],
-    ['Filtra', 'Barra de filtros (Área, Responsable, «Sólo lo mío») más el selector de Proyecto.'],
+    ['Filtra', 'Barra de filtros (Área, Responsable, «Solo lo mío») más el selector de Proyecto.'],
     ['Abre o crea', 'Clic en un evento para abrir su origen; «Nuevo evento» agrega uno propio.']] },
   presentaciones: { t: 'Presentaciones', p: [
     ['Define el alcance', 'Portafolio completo o un proyecto/propuesta (columna Configuración).'],
@@ -9588,7 +9588,7 @@ const GUIA = {
     ['Abre el caso', 'Clic en un hallazgo para ir al proyecto afectado.'],
     ['Usa el resumen', '«Copiar» o «A presentación» llevan el mensaje ejecutivo a donde lo necesites.']] }
 };
-Object.keys(GUIA).forEach(k => { if (!['admin', 'calendario'].includes(k)) GUIA[k].p.push(['Acota lo que ves', 'Barra de filtros: Área, Responsable o «Sólo lo mío» (valen para todas las pantallas).']); });
+Object.keys(GUIA).forEach(k => { if (!['admin', 'calendario'].includes(k)) GUIA[k].p.push(['Acota lo que ves', 'Barra de filtros: Área, Responsable o «Solo lo mío» (valen para todas las pantallas).']); });
 UI.guiaOpen = UI.guiaOpen || {};          // por pantalla; arranca cerrada
 function guiaHTML() {
   const g = GUIA[UI.view]; if (!g) return '';
