@@ -104,7 +104,7 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
       escribe(u);
       return store.tx(async s => {
         const p = await leerIni(s, id); verificarVersion(p, version);
-        if (p.tipo !== 'Propuesta' || p.fase !== 'Aprobación' || EST.EST_FINAL.includes(p.estado)) throw errorApi('COMPUERTA', 'No aprobable', [{ campo: 'fase', regla: 'Propuesta vigente en fase Aprobación' }]);
+        if (p.tipo !== 'Propuesta' || p.fase !== 'Aprobación' || EST.EST_FINAL.includes(p.estado) || p.estado === 'Stand By') throw errorApi('COMPUERTA', 'No aprobable', [{ campo: 'fase', regla: 'Propuesta vigente en fase Aprobación' }]);
         const prj = quitar(p, RO_INI);
         Object.assign(prj, { tipo: 'Proyecto', fase: 'Planificación', estado: 'En curso', rag: 'Verde', avance: 0, propuestaOrigen: p.id, estadoMotivo: '', estadoRev: null, finEst: p.finPlan || null });
         await validarIni(s, prj, { nueva: true });

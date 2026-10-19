@@ -1,4 +1,4 @@
-/* ARCHIVO GENERADO por tools/generar-motor-notif.js desde apps/corporativo/index.html (C2.22). NO EDITAR A MANO.
+/* ARCHIVO GENERADO por tools/generar-motor-notif.js desde apps/corporativo/index.html (C2.23). NO EDITAR A MANO.
  * Motor de notificaciones: mismas reglas que la campana de la SPA, para que el servidor envíe correo / Teams.
  * crearMotor(datos, usuario, hoyISO) → { avisos(): [{ key, tipo, g, sev, ini, titulo, texto, ts, canales }] }
  * «datos» = colecciones de APIH con la forma de la SPA (ini, hitos, riesgos, decisiones, compromisos, cambios, bitacora, comites, usuarios, cfg, cfgU). */
@@ -28,7 +28,8 @@ function audParse(texto) {
   return { ent, kind: m ? m[1] : 'Iniciativa', rows: rows.every(Boolean) ? rows : null, raw: body };
 }
 const isDone = i => EST_FINAL[esProp(i) ? 'Propuesta' : 'Proyecto'].includes(i.estado);
-const isLive = i => !isDone(i);
+const esSB = i => !!i && i.estado === 'Stand By';
+const isLive = i => !isDone(i) && !esSB(i);
 const isActive = i => !esProp(i) && FASES_ACT.includes(i.fase) && i.estado === 'En curso';
 const ADMIN_USERS = ['Christian Tolosa'];
 const miUsuario = () => FL.verComo || St.cfg.usuario;
@@ -47,14 +48,17 @@ function personProjects(n) {
   if (!_PP) {
     _PP = {}; const add = (nm, id) => { if (nm && id) (_PP[nm] = _PP[nm] || new Set()).add(id); };
     St.ini.forEach(i => [i.lider, i.sponsor, i.negocio, i.propuestoPor, i.solicita].forEach(nm => String(nm || '').split(/\s+-\s+|,/).forEach(x => add(x.trim(), i.id))));
-    St.hitos.forEach(h => add(h.resp, h.ini)); St.riesgos.forEach(r => add(r.dueno, r.ini)); St.decisiones.forEach(d => add(d.solicita, d.ini));
+    St.hitos.forEach(h => add(h.resp, h.ini)); St.riesgos.forEach(r => add(r.dueno, r.ini)); DECS().forEach(d => add(d.solicita, d.ini));
     St.comites.forEach(c => [...(c.acciones || []), ...(c.compromisos || [])].forEach(a => add(a.resp, a.ini)));
   }
   return _PP[n] || new Set();
 }
 const respOk = i => { const r = respSel(); return !r || personProjects(r).has(i.id); };
 const inArea = i => (St.cfg.areaGlobal === 'Todas' || (i.area || '').split(',').map(x => x.trim()).includes(St.cfg.areaGlobal)) && respOk(i) && (!PRES_MIO || _nrm(i.lider) === _nrm(miUsuario())) && (typeof areaVisible !== 'function' || areaVisible(i.area));
-const scopeP = () => St.ini.filter(i => esProp(i) && inArea(i));
+const scopeP = () => St.ini.filter(i => esProp(i) && !esSB(i) && inArea(i));
+const DECS = () => St.decisiones.filter(x => !esSB(byId(x.ini)));
+const CAMBIOS = () => St.cambios.filter(x => !esSB(byId(x.ini)));
+const ACUERDOS = () => St.compromisos.filter(x => !esSB(byId(x.ini)));
 let _ixGen = 0;
 const _porIni = (k, id) => { const arr = St[k]; let c = _ix[k]; if (!c || c.arr !== arr || c.n !== arr.length || c.g !== _ixGen) { const m = new Map(); arr.forEach(x => { let l = m.get(x.ini); if (!l) m.set(x.ini, l = []); l.push(x); }); _ix[k] = c = { arr, n: arr.length, g: _ixGen, m }; } return (c.m.get(id) || []).slice(); };
 const hitosDe = id => _porIni('hitos', id);
@@ -120,21 +124,21 @@ function notifPara(user) {
     if (d < 0 && aplica('hito_venc', i, h.resp)) add('hito_venc', h.id, i, `«${h.nombre}» venció hace ${-d} d (${fmtD(h.fecha)}) · ${i.titulo}`, { ts: h.fecha, sev: -d > 30 ? 3 : 2 });
     else if (d >= 0 && d <= pH && aplica('hito_prox', i, h.resp)) add('hito_prox', h.id, i, `«${h.nombre}» vence ${d === 0 ? 'hoy' : 'en ' + d + ' d'} (${fmtD(h.fecha)}) · ${i.titulo}`, { ts: h.fecha });
   });
-  St.compromisos.filter(a => a.estado === 'Abierto' && a.limite).forEach(a => {
+  ACUERDOS().filter(a => a.estado === 'Abierto' && a.limite).forEach(a => {
     const i = byId(a.ini); if (a.ini && !visible(i)) return; const d = diffD(a.limite, hy);
     if (d < 0 && aplica('comp_venc', i, a.resp)) add('comp_venc', a.id, i, `«${cut(a.texto, 70)}» venció hace ${-d} d · ${a.resp || 'sin responsable'}`, { ts: a.limite });
     else if (d >= 0 && d <= pC && aplica('comp_prox', i, a.resp)) add('comp_prox', a.id, i, `«${cut(a.texto, 70)}» vence ${d === 0 ? 'hoy' : 'en ' + d + ' d'} · ${a.resp || 'sin responsable'}`, { ts: a.limite });
   });
   St.riesgos.filter(r => riesgoAbierto(r)).forEach(r => { const i = byId(r.ini); if (!i || !isLive(i) || !visible(i)) return; const e = expo(r); if (e >= cfgI(i, 'umbralCritico') && aplica('riesgo_crit', i, r.dueno)) add('riesgo_crit', r.id, i, `Exposición ${e}: ${cut(r.desc, 80)} · ${i.titulo}`, { ts: r.fIdent || hy }); });
-  St.decisiones.filter(d => d.estado === 'Pendiente' && d.limite && d.limite < hy).forEach(d => { const i = byId(d.ini); if (d.ini && !visible(i)) return; if (aplica('dec_venc', i, d.solicita)) add('dec_venc', d.id, i, `«${cut(d.titulo, 70)}» venció hace ${diffD(hy, d.limite)} d`, { ts: d.limite }); });
+  DECS().filter(d => d.estado === 'Pendiente' && d.limite && d.limite < hy).forEach(d => { const i = byId(d.ini); if (d.ini && !visible(i)) return; if (aplica('dec_venc', i, d.solicita)) add('dec_venc', d.id, i, `«${cut(d.titulo, 70)}» venció hace ${diffD(hy, d.limite)} d`, { ts: d.limite }); });
   vivas.filter(isActive).forEach(i => {
     if (atrasado(i) && aplica('atraso', i)) add('atraso', i.id, i, `${i.titulo}: +${desv(i)} d sobre el plan`);
     const du = diasSinUpd(i); if (du > cfgI(i, 'diasSinUpdate') && aplica('sin_update', i)) add('sin_update', i.id, i, `${i.titulo}: ${du >= 999 ? 'sin registro de actualización' : du + ' d sin actualizar'}`);
   });
   scopeP().filter(i => isLive(i) && visible(i) && i.estado === 'Vigente').forEach(i => { const d = diasEnFase(i), amb = cfgI(i, 'propDiasAmb') || 30; if (d > amb && aplica('prop_estancada', i)) add('prop_estancada', i.id, i, `${i.titulo}: ${d} d en la fase ${i.fase}`); });
-  St.cambios.filter(c => c.estado === 'Solicitado').forEach(c => { const i = byId(c.ini); if (!visible(i)) return; if (aplica('cambio_pend', i, c.aprobador)) add('cambio_pend', c.id, i, `${c.tipo}: ${cut(c.desc || c.id, 70)} · pide ${c.solicita || '—'}`, { ts: c.creada || hy }); });
+  CAMBIOS().filter(c => c.estado === 'Solicitado').forEach(c => { const i = byId(c.ini); if (!visible(i)) return; if (aplica('cambio_pend', i, c.aprobador)) add('cambio_pend', c.id, i, `${c.tipo}: ${cut(c.desc || c.id, 70)} · pide ${c.solicita || '—'}`, { ts: c.creada || hy }); });
   /* --- eventos (últimos NOTIF_VENT días; no avisan al autor del cambio) --- */
-  St.cambios.filter(c => c.estado !== 'Solicitado' && c.fDec && diffD(hy, c.fDec) <= NOTIF_VENT).forEach(c => { const i = byId(c.ini); if (!visible(i)) return; if (aplica('cambio_res', i, c.solicita)) add('cambio_res', c.id, i, `Tu solicitud de ${String(c.tipo).toLowerCase()} fue ${String(c.estado).toLowerCase()} · ${cut(c.desc || c.id, 60)}`, { ts: c.fDec }); });
+  CAMBIOS().filter(c => c.estado !== 'Solicitado' && c.fDec && diffD(hy, c.fDec) <= NOTIF_VENT).forEach(c => { const i = byId(c.ini); if (!visible(i)) return; if (aplica('cambio_res', i, c.solicita)) add('cambio_res', c.id, i, `Tu solicitud de ${String(c.tipo).toLowerCase()} fue ${String(c.estado).toLowerCase()} · ${cut(c.desc || c.id, 60)}`, { ts: c.fDec }); });
   St.bitacora.forEach(b => {
     if (!b.ini || diffD(hy, String(b.ts).slice(0, 10)) > NOTIF_VENT || _nrm(b.autor) === u) return;
     const i = byId(b.ini); if (!visible(i)) return; const ts = String(b.ts).slice(0, 10), T = b.texto || '';
@@ -173,5 +177,5 @@ function puedeVerTodo() { const r = rolActual(), u = usuarioActual(); return r =
 const areaVisible = a => puedeVerTodo() || areasDe(a).includes('Transversal') || areasDe(a).some(x => areasPropias().includes(x));
   return { avisos: () => notifPara(usuario), NOTIF, NOTIF_CANALES, NOTIF_GRUPOS };
 }
-return { crearMotor, ORIGEN: "C2.22", FUNCIONES: ["MESES","MES3","pad","toISO","pD","diffD","fmtD","hoy","FASES_ACT","EST_FINAL","esProp","byId","audParse","isDone","isLive","isActive","ADMIN_USERS","miUsuario","respSel","ADMIN_EMAILS","_nrm","esAdminReal","_PP","personProjects","respOk","inArea","scopeP","_ixGen","_porIni","hitosDe","forecast","desv","atrasado","esperado","expo","riesgoAbierto","diasSinUpd","diasEnFase","NOTIF_CANALES","NOTIF_DEST","NOTIF_GRUPOS","NOTIF","NOTIF_VENT","rolDeUser","notifPref","notifPara","cut","usuarioSintetico","PRES_MIO","cfgUOf","cfgOf","cfgI","fijo","PERM_ROLES","usuarioActual","rolActual","areasDe","areasPropias","puedeVerTodo","areaVisible"] };
+return { crearMotor, ORIGEN: "C2.23", FUNCIONES: ["MESES","MES3","pad","toISO","pD","diffD","fmtD","hoy","FASES_ACT","EST_FINAL","esProp","byId","audParse","isDone","esSB","isLive","isActive","ADMIN_USERS","miUsuario","respSel","ADMIN_EMAILS","_nrm","esAdminReal","_PP","personProjects","respOk","inArea","scopeP","DECS","CAMBIOS","ACUERDOS","_ixGen","_porIni","hitosDe","forecast","desv","atrasado","esperado","expo","riesgoAbierto","diasSinUpd","diasEnFase","NOTIF_CANALES","NOTIF_DEST","NOTIF_GRUPOS","NOTIF","NOTIF_VENT","rolDeUser","notifPref","notifPara","cut","usuarioSintetico","PRES_MIO","cfgUOf","cfgOf","cfgI","fijo","PERM_ROLES","usuarioActual","rolActual","areasDe","areasPropias","puedeVerTodo","areaVisible"] };
 });

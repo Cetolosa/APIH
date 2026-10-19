@@ -10,7 +10,7 @@ let plan0;
   // 1) El esquema y el core no se desalinean (mismas listas de valores)
   const I = core.INICIATIVA, P = schema.properties;
   assert.deepStrictEqual(P.fase.enum, [...I.FASES.Propuesta, ...I.FASES.Proyecto]);
-  assert.deepStrictEqual(P.estado.enum, [...I.ESTADOS.Propuesta, ...I.ESTADOS.Proyecto]);
+  assert.deepStrictEqual(P.estado.enum, [...new Set([...I.ESTADOS.Propuesta, ...I.ESTADOS.Proyecto])]);
   assert.deepStrictEqual(P.rag.enum, I.RAGS); assert.deepStrictEqual(P.prioridad.enum, I.PRIOS); assert.deepStrictEqual(P.moneda.enum, I.MONEDAS);
   for (const T of ['Propuesta', 'Proyecto']) { const r = schema.allOf.find(x => x.if.properties.tipo.const === T).then.properties; assert.deepStrictEqual(r.fase.enum, I.FASES[T]); assert.deepStrictEqual(r.estado.enum, I.ESTADOS[T]); }
   assert.match(schema.$id, /\/C\d+\.\d+$/, 'el esquema declara su versión C');
