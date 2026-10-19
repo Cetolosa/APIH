@@ -1251,7 +1251,7 @@ function gates(i, to) {
   if (to === 'Transición') { ok(i.avance >= 80, 'Avance ≥ 80%'); ok(!hs.some(h => !h.completado && h.fecha < hoy()), 'Sin hitos vencidos'); ok(!riesgosDe(i.id).some(r => riesgoSinMit(i, r)), 'Riesgos críticos con plan de mitigación'); }
   if (!['Evaluación', 'Caso de Negocio', 'Aprobación', 'Ejecución', 'Transición', 'Cierre'].includes(to) && FASES_PRJ.includes(to) && to !== FASES_PRJ[0]) { ok(i.inicioPlan && i.finPlan, 'Fechas plan definidas'); ok(i.lider, 'Líder asignado'); }
   { const F_ = fasesDe(i), a = F_.indexOf(i.fase), b = F_.indexOf(to); if (b > a && a >= 0) { const pend = hs.filter(h => h.fase === i.fase && !h.completado); if (hs.some(h => h.fase === i.fase)) ok(!pend.length, 'Hitos de la fase ' + i.fase + ' completados' + (pend.length ? ' (faltan ' + pend.length + ')' : '')); } }
-  if (to === 'Cierre') { ok(i.avance >= 100, 'Avance al 100%'); ok(hs.filter(h => h.fase !== to).every(h => h.completado), 'Todos los hitos completados'); ok(!riesgosDe(i.id).some(r => riesgoAbierto(r) && expo(r) >= cfgI(i,'umbralCritico')), 'Sin riesgos críticos abiertos'); }   // F-06, F-07 }
+  if (to === 'Cierre') { ok(i.avance >= 100, 'Avance al 100%'); ok(hs.filter(h => h.fase !== to).every(h => h.completado), 'Todos los hitos completados'); ok(!riesgosDe(i.id).some(r => riesgoAbierto(r) && expo(r) >= cfgI(i,'umbralCritico')), 'Sin riesgos críticos abiertos'); }   /* F-06, F-07 */
   return g;
 }
 /* compuertas para APROBAR una propuesta y convertirla en proyecto */
