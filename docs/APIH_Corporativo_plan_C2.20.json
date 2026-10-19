@@ -1,0 +1,378 @@
+{
+ "formato": "apih-iniciativas",
+ "v": 1,
+ "iniciativas": [
+  {
+   "tipo": "Proyecto",
+   "titulo": "APIH Corporativo",
+   "desc": "APIH conforme a requisitos de TI: SPA con Entra ID, API y Azure SQL (3 capas). Plan acelerado: demostrar que la metodología con IA (contratos + pruebas + versiones C) reduce significativamente los plazos. Incluye las funciones diferidas del prototipo: Pronóstico financiero, Ruta crítica y Escenarios.",
+   "area": "BISE",
+   "lider": "Christian Tolosa",
+   "sponsor": "",
+   "fase": "Ejecución",
+   "estado": "En curso",
+   "rag": "Verde",
+   "prioridad": "Alta",
+   "avance": 40,
+   "inicioPlan": "2026-10-15",
+   "finPlan": "2026-12-04",
+   "presupuesto": 0,
+   "logros": "15–19-10: C1.0–C1.4 y C2.0–C2.20 construidos y probados en local. Versión funcional completa (propuestas como proyectos, categorías, subfases, importar/exportar, avisos, vistas Power BI). 19-10: traspaso del Prototipo V22.63 (correcciones de la revisión V22.62: compuertas de Cierre, reabrir solo Admin, importación endurecida) y garantías de despliegue: verificador de paquete (16 comprobaciones), verificador de ambiente por URL y rol (25), reintentos de conexión a Azure SQL, corrección del tenant de Entra en el pipeline, lista de comprobación por etapas. Propuesta enviada a TI y su v2 lista; PR #2 listo para revisión.",
+   "proximos": "Esperar comentarios de TI (≈21-10; seguimiento si no hay respuesta). Al habilitar dev (04-11): desplegar, correr el contrato contra Azure SQL real, verificar roles por grupos con el verificador de ambiente y ejecutar el guion UAT. Decidir si se implementan las funciones diferidas.",
+   "resumen": "Construido y probado solo en local; nada desplegado ni validado en Azure. Lo que falta (Azure SQL real, Entra ID, roles por grupos, UAT, seguridad de TI, producción) depende de la habilitación de TI (dev 04-11, producción 27-11).",
+   "hitos": [
+    {
+     "nombre": "Plan y análisis de brechas",
+     "fase": "Planificación",
+     "fecha": "2026-10-15",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Gobierno"
+    },
+    {
+     "nombre": "C1.0 · Núcleo de fechas y riesgo con prueba de equivalencia",
+     "fase": "Planificación",
+     "fecha": "2026-10-15",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "C1.1 · Contrato de Iniciativa y pruebas de contrato",
+     "fase": "Planificación",
+     "fecha": "2026-10-15",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "C1.2 · CHANGELOG, decisiones (ADR) y traspaso",
+     "fase": "Planificación",
+     "fecha": "2026-10-15",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "C1.3 · Plan acelerado aprobado",
+     "fase": "Planificación",
+     "fecha": "2026-10-16",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "Correo a TI con propuestas y fecha de no-objeción",
+     "fase": "Planificación",
+     "fecha": "2026-10-16",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Gobierno"
+    },
+    {
+     "nombre": "C1.4 · Contratos de Hitos y Riesgos + compuertas de fase en core",
+     "fase": "Ejecución",
+     "fecha": "2026-10-20",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "Vence plazo de no-objeción de TI (stack, Azure SQL, hosting, roles)",
+     "fase": "Ejecución",
+     "fecha": "2026-10-21",
+     "completado": false,
+     "resp": "TI",
+     "cat": "Proveedor",
+     "subfase": "Revisión de TI"
+    },
+    {
+     "nombre": "C1.5 · Contratos de decisiones, compromisos, bitácora y comités",
+     "fase": "Ejecución",
+     "fecha": "2026-10-23",
+     "completado": false,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable",
+     "subfase": "Revisión de TI"
+    },
+    {
+     "nombre": "C2.0 · API (backend) sobre el core, pruebas de contrato en verde",
+     "fase": "Ejecución",
+     "fecha": "2026-10-28",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "C2.6–C2.10 · Migración limpia, notificaciones, documentos de operación y Power BI",
+     "fase": "Ejecución",
+     "fecha": "2026-10-17",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "C2.11–C2.15 · Versión final funcional (propuestas como proyectos, categorías, subfases, importar/exportar)",
+     "fase": "Ejecución",
+     "fecha": "2026-10-17",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "C2.16–C2.20 · Seguridad, traspaso de V22.63 y garantías de despliegue",
+     "fase": "Ejecución",
+     "fecha": "2026-10-19",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Técnico"
+    },
+    {
+     "nombre": "C2.1 · Esquema Azure SQL y migración de datos desde Supabase",
+     "fase": "Ejecución",
+     "fecha": "2026-10-30",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "Infraestructura dev habilitada por TI (Entra ID, Azure SQL, Static Web App, pipeline)",
+     "fase": "Ejecución",
+     "fecha": "2026-11-04",
+     "completado": false,
+     "resp": "TI",
+     "cat": "Proveedor",
+     "subfase": "Revisión de TI"
+    },
+    {
+     "nombre": "C2.2 · SPA con Entra ID consumiendo la API",
+     "fase": "Ejecución",
+     "fecha": "2026-11-05",
+     "completado": true,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable"
+    },
+    {
+     "nombre": "Despliegue en ambiente dev y demo a TI",
+     "fase": "Ejecución",
+     "fecha": "2026-11-10",
+     "completado": false,
+     "resp": "Christian Tolosa",
+     "cat": "Técnico",
+     "subfase": "Validación en dev"
+    },
+    {
+     "nombre": "C3.0 · Funciones diferidas: Pronóstico financiero, Ruta crítica, Escenarios",
+     "fase": "Ejecución",
+     "fecha": "2026-11-17",
+     "completado": false,
+     "resp": "Christian Tolosa",
+     "cat": "Entregable",
+     "subfase": "Funciones diferidas"
+    },
+    {
+     "nombre": "Pruebas de usuario (UAT) y migración final de datos",
+     "fase": "Transición",
+     "fecha": "2026-11-20",
+     "completado": false,
+     "resp": "Christian Tolosa",
+     "cat": "Técnico"
+    },
+    {
+     "nombre": "Revisión de seguridad de TI aprobada",
+     "fase": "Transición",
+     "fecha": "2026-11-24",
+     "completado": false,
+     "resp": "TI",
+     "cat": "Proveedor"
+    },
+    {
+     "nombre": "Paso a producción (web con Entra ID)",
+     "fase": "Transición",
+     "fecha": "2026-11-27",
+     "completado": false,
+     "resp": "Christian Tolosa",
+     "cat": "Técnico"
+    },
+    {
+     "nombre": "Publicación en Teams",
+     "fase": "Cierre",
+     "fecha": "2026-12-01",
+     "completado": false,
+     "resp": "Christian Tolosa",
+     "cat": "Técnico"
+    },
+    {
+     "nombre": "Retiro del Prototipo y de Supabase",
+     "fase": "Cierre",
+     "fecha": "2026-12-03",
+     "completado": false,
+     "resp": "Christian Tolosa",
+     "cat": "Técnico"
+    },
+    {
+     "nombre": "Informe de aceleración: horas reales vs. estimación tradicional",
+     "fase": "Cierre",
+     "fecha": "2026-12-04",
+     "completado": false,
+     "resp": "Christian Tolosa",
+     "cat": "Gobierno"
+    }
+   ],
+   "riesgos": [
+    {
+     "desc": "TI no responde ni objeta dentro del plazo (21-10) y el diseño queda abierto",
+     "cat": "Cronograma",
+     "prob": 3,
+     "imp": 5,
+     "mit": "Correo con propuestas concretas y fecha de no-objeción; seguir construyendo en paralelo; ajustar el plan en conjunto con TI si no hay respuesta.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-10-21"
+    },
+    {
+     "desc": "Provisión de infraestructura (Azure SQL, Entra ID, hosting, pipeline) tarda más de 1 semana",
+     "cat": "Cronograma",
+     "prob": 4,
+     "imp": 4,
+     "mit": "Entregar lista exacta de recursos (y plantilla de infraestructura como código) junto al correo; ambiente local equivalente para no detener el desarrollo.",
+     "estado": "Abierto",
+     "dueno": "TI",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-11-04"
+    },
+    {
+     "desc": "TI exige un stack de backend distinto (p. ej. .NET) que impide reutilizar el core en servidor",
+     "cat": "Técnico",
+     "prob": 3,
+     "imp": 3,
+     "mit": "Contrato y pruebas independientes del stack; solo se reescribe la capa API; decisión antes de iniciar C2.0.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-10-23"
+    },
+    {
+     "desc": "Revisión de seguridad formal (pentest/arquitectura) retrasa el paso a producción",
+     "cat": "Regulatorio",
+     "prob": 3,
+     "imp": 4,
+     "mit": "Entregar con la demo (10-11) la documentación de seguridad: Entra ID, roles por grupos, reglas en servidor, OWASP; pedir la revisión con fecha desde el 21-10.",
+     "estado": "Abierto",
+     "dueno": "TI",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-11-10"
+    },
+    {
+     "desc": "Migración Supabase → Azure SQL con datos inconsistentes (área como texto, campos legacy)",
+     "cat": "Técnico",
+     "prob": 2,
+     "imp": 3,
+     "mit": "Script de migración que aplica validarIniciativa; ensayo completo en dev antes de UAT.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-10-30"
+    },
+    {
+     "desc": "Aprobación para publicar en Teams demora",
+     "cat": "Cronograma",
+     "prob": 3,
+     "imp": 2,
+     "mit": "Producción primero como web con Entra ID; Teams es posterior y no bloquea el paso a producción.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-11-24"
+    },
+    {
+     "desc": "Código en repositorio GitHub personal, fuera de Aramark",
+     "cat": "Regulatorio",
+     "prob": 3,
+     "imp": 3,
+     "mit": "Solicitar repositorio corporativo en el correo a TI; migrar con historial antes del despliegue en dev.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-11-04"
+    },
+    {
+     "desc": "Capacidad: un responsable + IA; ausencia o sobrecarga detiene el avance",
+     "cat": "Recursos",
+     "prob": 3,
+     "imp": 3,
+     "mit": "Traspaso, ADR y CHANGELOG al día en cada versión; cualquier sesión puede retomar en minutos.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-10-30"
+    },
+    {
+     "desc": "La aceleración no se puede demostrar por falta de medición",
+     "cat": "Alcance",
+     "prob": 2,
+     "imp": 3,
+     "mit": "Registrar horas reales por versión en el CHANGELOG y compararlas con una estimación tradicional en el informe de cierre.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-10-23"
+    },
+    {
+     "desc": "Cambios en el Prototipo abierto que no se traspasen al Corporativo",
+     "cat": "Alcance",
+     "prob": 2,
+     "imp": 3,
+     "mit": "Traspaso de V22.63 al Corporativo hecho (C2.19); repetir en cada versión del Prototipo (ADR-005).",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-17",
+     "fRev": "2026-11-05"
+    },
+    {
+     "desc": "TI objeta después del 21-10 o pide alinearse al Catálogo CMDB, generando retrabajo",
+     "cat": "Técnico",
+     "prob": 2,
+     "imp": 4,
+     "mit": "Core y contratos independientes del stack; pedir documentación del CMDB; registrar la no-objeción como decisión.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-16",
+     "fRev": "2026-10-23"
+    },
+    {
+     "desc": "Azure SQL real, Entra ID y roles por grupos no se han probado: pueden aparecer fallas en el primer despliegue",
+     "cat": "Técnico",
+     "prob": 3,
+     "imp": 3,
+     "mit": "Etapa 1: contrato de 19 casos contra Azure SQL real; etapa 2: verificador de ambiente con cuentas de los 3 roles (docs/operacion/lista-despliegue.md); conexión con reintentos ante autopausa.",
+     "estado": "Abierto",
+     "dueno": "Christian Tolosa",
+     "fIdent": "2026-10-19",
+     "fRev": "2026-11-05"
+    }
+   ],
+   "subfases": [
+    {
+     "nombre": "Revisión de TI",
+     "fase": "Ejecución",
+     "inicio": "2026-10-17",
+     "fin": "2026-11-04"
+    },
+    {
+     "nombre": "Validación en dev",
+     "fase": "Ejecución",
+     "inicio": "2026-11-05",
+     "fin": "2026-11-10"
+    },
+    {
+     "nombre": "Funciones diferidas",
+     "fase": "Ejecución",
+     "inicio": "2026-11-11",
+     "fin": "2026-11-17"
+    }
+   ]
+  }
+ ]
+}

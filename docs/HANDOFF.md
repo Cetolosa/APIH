@@ -16,7 +16,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Abierto** (V22.62: descripciones por objeto ADR-015, encabezado compacto en 2 líneas). Congelar cuando el usuario lo pida | **C2.18** · descripciones + encabezado compacto · `tests/e2e/correr-corporativo.sh` 10/10 · seguridad 25/25 · producción objetivo **27-11-2026** |
+| Estado | **Abierto** (V22.63: correcciones de la revisión V22.62). Congelar cuando el usuario lo pida | **C2.20** · traspaso de V22.63 + verificación de despliegue (compuertas de Cierre, reabrir solo Admin, importación endurecida, ayuda «?» única, Administración con una barra) · `tests/e2e/correr-corporativo.sh` 10/10 · seguridad 25/25 (`defensas-api.js`) · producción objetivo **27-11-2026** |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo: `apps/corporativo`, `services/api`, `packages/core`, `db/`, `infra/`, `powerbi/`, `tests/`; luego repo de Aramark que indique TI |
@@ -34,7 +34,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 ## 4. Documentos y datos creados
 - Propuesta técnica para TI: **fuente vigente = Claude Docs** «APIH Corporativo · Propuesta técnica para revisión con TI» (https://claude.ai/code/artifact/ae0913ea-ba10-4bfd-a8b2-609b4d7e9754), **versión 2 (17-10)** con lo construido hasta C2.16, incluido el pentest interno (sección Seguridad); el PDF se descarga desde el doc. Enviada a TI: `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf` (v1). `APIH_Corporativo_Propuesta_TI.pdf` es la v1 previa al envío.
 - Documentos de operación (C2.15): `docs/operacion/` (guion UAT con casos V4, V5, F1–F3, I2; manual de usuario; runbook; clasificación de datos) y `docs/seguridad.md`.
-- Plan vigente importable a APIH: `docs/APIH_Corporativo_plan_C2.15.json` (estado al 17-10). El de C1.3 queda como histórico.
+- Plan vigente importable a APIH: `docs/APIH_Corporativo_plan_C2.20.json` (estado al 19-10; importarlo crea un proyecto nuevo, para el existente actualizar los campos a mano). Los de C2.15 y C1.3 quedan como histórico.
 - Plan y brechas (Claude Docs, privado): https://claude.ai/artifact/2GquKhzaERtSspc3J9n8ay
 - `docs/APIH_iniciativas_con_plan.json`: las 2 iniciativas con hitos y riesgos, listo para **Administración → Importar iniciativas** (el importador omite títulos que ya existen; si ya se cargó una versión previa, borrar y reimportar).
 - Memoria del proyecto (claude.ai): `areas/apih.md`.
@@ -78,6 +78,8 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.15 | Importar/exportar subfases y categorías (archivo de iniciativas, «Con IA»); la iniciativa con subfases se sincroniza antes que sus hitos |
 | C2.16 | Revisión de seguridad: `docs/revision-seguridad-2026-10-17.md` (5 hallazgos corregidos, e2e `xss1`) |
 | C2.17 | Descripción/instrucciones por objeto (V22.61, ADR-015): `faseDesc` global + `faseNota` por proyecto, `desc` en subfase e hito; se ven en Mi cocina, ficha y Fases; core valida ≤500 y escapa; e2e `corp3` verifica round-trip al servidor |
+| C2.20 | Verificación de despliegue: verificador de paquete y de ambiente, reintentos de conexión SQL, reemplazo de `<TENANT-ID>` en el pipeline, lista de comprobación por etapas (`docs/operacion/lista-despliegue.md`). |
+| C2.19 | Traspaso de V22.63: núcleo (fechas con año 1900–2100, compuerta de Cierre exige avance 100 %, hitos completos y sin riesgos críticos abiertos), API (completar proyecto exige compuertas de Cierre; reabrir Completado/Cancelado solo Admin y limpia fecha de fin real), SPA (importación con lista blanca, ayuda «?» única, Administración con una barra, «Ver como»). `esAdminReal` tolerante se mantiene (S-17 solo Prototipo). |
 | C2.18 | Encabezado compacto en 2 líneas (V22.62): el subtítulo se recorta con «…» y las acciones quedan en la línea del título (antes «Ver todo» caía a una línea propia con aire); solo CSS, sin cambio de lógica |
 | Pentest | Pentest de caja gris de ambas versiones: `docs/pentest-2026-10-17.md` + `tests/seguridad/defensas-api.js` (25 ataques). Incorporado a la propuesta v2 y a la página de entregable a TI |
 | Docs 17-10 | Propuesta v2 (Claude Docs), docs de operación, seguridad y plan C2.15 actualizados |
@@ -89,6 +91,6 @@ Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con
 - **TI:** comentarios a la propuesta (esperados hacia el 21-10, sin presión); habilitar ambiente dev (04-11). La v2 de la propuesta se envía solo si TI la pide o al responder sus comentarios.
 - **Al habilitar dev:** desplegar, validar en Azure (`tests/contract/run-azure-sql.js`), ejecutar el guion UAT.
 - **Pendiente funcional:** editor de listas de categorías en Administración; selector Tipo en Calendario y Capacidad; funciones diferidas (Pronóstico, Ruta crítica, Escenarios): el usuario aún no decide; core: `pasosDe` y contratos propios de decisiones, compromisos, bitácora y comités (C1.5).
-- **Prototipo:** abierto (V22.62, ADR-015). Congelar cuando el usuario lo pida.
+- **Prototipo:** abierto (V22.63). Congelar cuando el usuario lo pida.
 - **Usuario:** que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); (opcional) usuario «Bot IA» con rol Editor.
 - **Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren canal de TI; tags pueden no subir desde la nube (crear en GitHub Releases).

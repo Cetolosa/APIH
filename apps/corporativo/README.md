@@ -1,6 +1,6 @@
-# apps/corporativo — SPA de APIH Corporativo (C2.2)
+# apps/corporativo — SPA de APIH Corporativo (C2.20)
 
-Copia de la interfaz del Prototipo **V22.54** que continúa con versión C (ADR-002). Diferencias:
+Copia de la interfaz del Prototipo **V22.63** que continúa con versión C (ADR-002). Diferencias:
 
 | Tema | Prototipo | Corporativo |
 | --- | --- | --- |

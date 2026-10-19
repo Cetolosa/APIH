@@ -75,8 +75,13 @@ module.exports = function crearServicio({ store, hoy = () => core.toISO(new Date
         const a = await leerIni(s, id); verificarVersion(a, version);
         /* Compatibilidad con la SPA (C2.2): «Aprobada» se acepta si ya existe el proyecto creado desde esta propuesta */
         const viaProyecto = c && c.estado === 'Aprobada' && a.tipo === 'Propuesta' && !EST.EST_FINAL.includes(a.estado) && (await s.listar('iniciativas', y => y.propuestaOrigen === a.id)).length > 0;
-        const e = viaProyecto ? [] : core.validarCambioEstado(a, c || {}); if (e.length) throw errorApi('INVALIDA', 'Cambio de estado inválido', e);
+        /* N-F-07: solo un Admin reabre un proyecto Completado o Cancelado (vuelve a «En curso») */
+        const reabre = a.tipo === 'Proyecto' && ['Completado', 'Cancelado'].includes(a.estado) && c && c.estado === 'En curso' && u.rol === 'Admin'; /* no Admin: cae en validarCambioEstado → INVALIDA (estado final) */
+        const e = viaProyecto || reabre ? [] : core.validarCambioEstado(a, c || {}); if (e.length) throw errorApi('INVALIDA', 'Cambio de estado inválido', e);
+        /* F-05: completar un proyecto exige cumplir las compuertas de Cierre */
+        if (c && c.estado === 'Completado' && a.tipo === 'Proyecto') { const no = core.gates(a, 'Cierre', await ctxGates(s, id)).filter(x => !x.ok); if (no.length) throw errorApi('COMPUERTA', 'No se puede completar: compuertas de Cierre no cumplidas', no.map(x => ({ campo: 'estado', regla: x.t }))); }
         const n = Object.assign(copia(a), { estado: c.estado, estadoMotivo: EST.EST_MOTIVO.includes(c.estado) ? c.motivo : '', estadoRev: EST.EST_REVISION.includes(c.estado) ? c.rev : null });
+        if (reabre) n.finReal = null;
         if (c.estado === 'Completado') { n.finReal = hoy(); if (n.avance < 100) { n.avance = 100; n.hist = [...(n.hist || []), [hoy(), 100]]; } }
         return s.actualizar('iniciativas', sello(n, u), version);
       });

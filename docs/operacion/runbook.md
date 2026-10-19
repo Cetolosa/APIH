@@ -72,6 +72,7 @@ Borrador para acordar con TI (**punto 14** de la propuesta: operación y soporte
 ## 7. Despliegues y vuelta atrás
 - Cada versión C se publica con su rama, sus pruebas y su entrada en `CHANGELOG.md`. El pipeline ejecuta todas las pruebas antes de desplegar.
 - Pruebas de navegador de la versión corporativa contra la API local, cada una con base nueva: `bash tests/e2e/correr-corporativo.sh` (8 pruebas; requiere el Prototipo servido en :8765 para corp2, ver `tests/e2e/README.md`).
+- Lista de comprobación por etapas y puertas de salida: `docs/operacion/lista-despliegue.md`; verificador de ambiente: `tests/e2e/verificar-despliegue.js`.
 - **Vuelta atrás:** volver a desplegar la versión anterior (re-ejecutar el pipeline sobre su commit).
 - Los cambios de esquema SQL son aditivos (columnas calculadas y vistas), así que la versión anterior sigue funcionando con la base nueva.
 - **Cambios en las reglas de avisos:** regenerar el motor con `node tools/generar-motor-notif.js`. Si se olvida, el pipeline falla.
