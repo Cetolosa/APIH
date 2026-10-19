@@ -17,8 +17,8 @@
    "inicioPlan": "2026-10-15",
    "finPlan": "2026-12-04",
    "presupuesto": 0,
-   "logros": "15–19-10: C1.0–C1.4 y C2.0–C2.20 construidos y probados en local. Versión funcional completa (propuestas como proyectos, categorías, subfases, importar/exportar, avisos, vistas Power BI). 19-10: traspaso del Prototipo V22.63 (correcciones de la revisión V22.62: compuertas de Cierre, reabrir solo Admin, importación endurecida) y garantías de despliegue: verificador de paquete (16 comprobaciones), verificador de ambiente por URL y rol (25), reintentos de conexión a Azure SQL, corrección del tenant de Entra en el pipeline, lista de comprobación por etapas. Propuesta enviada a TI y su v2 lista; PR #2 listo para revisión.",
-   "proximos": "Esperar comentarios de TI (≈21-10; seguimiento si no hay respuesta). Al habilitar dev (04-11): desplegar, correr el contrato contra Azure SQL real, verificar roles por grupos con el verificador de ambiente y ejecutar el guion UAT. Decidir si se implementan las funciones diferidas.",
+   "logros": "15–19-10: C1.0–C1.4 y C2.0–C2.22 construidos y probados en local; en main el Prototipo V22.64 y Corporativo C2.22, funcionalmente iguales (prueba de paridad en el pipeline). Versión funcional completa (propuestas como proyectos, categorías, subfases, importar/exportar, avisos, vistas Power BI, guía «Cómo operar» en todas las pantallas). Garantías de despliegue: verificador de paquete (16 comprobaciones), verificador de ambiente por URL y rol (25), reintentos de conexión a Azure SQL, corrección del tenant de Entra en el pipeline, lista de comprobación por etapas. Propuesta enviada a TI y su v2 lista. Nada desplegado ni validado en Azure aún.",
+   "proximos": "Esperar comentarios de TI (21-10; seguimiento si no hay respuesta, escalar el 22-10). Al habilitar dev (04-11): desplegar, correr el contrato contra Azure SQL real, verificar roles por grupos con el verificador de ambiente y ejecutar el guion UAT. Decidir si se implementan las funciones diferidas.",
    "resumen": "Construido y probado solo en local; nada desplegado ni validado en Azure. Lo que falta (Azure SQL real, Entra ID, roles por grupos, UAT, seguridad de TI, producción) depende de la habilitación de TI (dev 04-11, producción 27-11).",
    "hitos": [
     {
@@ -120,7 +120,7 @@
      "cat": "Entregable"
     },
     {
-     "nombre": "C2.16–C2.20 · Seguridad, traspaso de V22.63 y garantías de despliegue",
+     "nombre": "C2.16–C2.22 · Seguridad, traspaso de V22.63/V22.64, garantías de despliegue y paridad con el Prototipo",
      "fase": "Ejecución",
      "fecha": "2026-10-19",
      "completado": true,
