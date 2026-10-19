@@ -1120,7 +1120,8 @@ function audit() {
       Object.keys(A.f).forEach(k => {
         if (JSON.stringify(prev[k]) === JSON.stringify(cur[k])) return;
         if (AUD_SEM.includes(k) && conCambio.has(ini)) return;
-        diffs.push(A.f[k] + ': ' + audVal(k, prev[k], r) + ' → ' + audVal(k, cur[k], r));
+        const va = audVal(k, prev[k], r), vb = audVal(k, cur[k], r); if (va === vb) return;   /* N-U-17: sin cambio visible (— → —) */
+        diffs.push(A.f[k] + ': ' + va + ' → ' + vb);
       });
       if (diffs.length && ini) out.push({ ini, texto: (t === 'ini' ? '' : A.lbl + ' «' + String(A.nom(r) || r.id).replace(/[«»]/g, '').slice(0, 60) + '» — ') + diffs.join(' | ') });
     });
@@ -2917,6 +2918,19 @@ function hitoForm(h, ini) {
       if ((o.desc || '').length > DESC_MAX) { toast('La descripción no puede superar ' + DESC_MAX + ' caracteres', 'err'); return false; } if (String(o.desc || '').trim()) o.desc = cutDesc(o.desc.trim()); else delete o.desc;
       if (nw) { const n = { id: nextId('HIT', St.hitos), ...o }; St.hitos.push(n); log('Cambio', o.ini, 'Hito creado: ' + o.nombre + ' (' + fmtD(o.fecha) + ')'); toast('Hito creado'); } else { Object.assign(h, o); log('Cambio', h.ini, 'Hito actualizado: ' + h.nombre); toast('Hito guardado'); } const i = byId(o.ini); if (i) i.actualizada = hoy(); refresh(); }
   });
+  /* N-U-04/05: al cambiar Iniciativa o Fase se recalculan las opciones de Fase y Subfase */
+  const fi = $('#f_ini'), ff = $('#f_fase'), fs = $('#f_subfase');
+  if (fi && ff && fs) {
+    const op = (v, t, sel) => '<option value="' + esc(v) + '"' + (sel ? ' selected' : '') + '>' + esc(t) + '</option>';
+    const rebuild = (cambioIni) => {
+      const x = byId(fi.value), f0 = ff.value, s0 = fs.value;
+      if (cambioIni) ff.innerHTML = op('', '', !f0) + FASES.map(k => { const w = x && ventanaDe(x, k); return op(k, k + (w && w.ini ? ' · ' + rangoTx(w.ini, w.fin) : ''), k === f0); }).join('');
+      const sf = subfasesDe(x).filter(y => !ff.value || y.fase === ff.value);
+      fs.innerHTML = op('', '— sin subfase —', true) + sf.map(y => op(y.id, y.fase + ' › ' + y.nombre + ' · ' + rangoTx(y.inicio, y.fin), y.id === s0)).join('');
+    };
+    fi.addEventListener('change', () => rebuild(true));
+    ff.addEventListener('change', () => rebuild(false));
+  }
 }
 
 /* ---------- Riesgo ---------- */
@@ -3472,7 +3486,7 @@ function faseTag(i, f) {
 }
 const sfChip = (i, v, s) => { const hs = hitosSub(i, s), d = hs.filter(h => h.completado).length, H = hoy(), cur = v.actual && s.inicio <= H && s.fin >= H, bad = subFuera(s, v);
   return `<button class="sf-chip ${cur ? 'cur' : ''} ${bad ? 'bad' : ''}" style="--c:${v.color}" data-act="sfedit" data-id="${i.id}" data-s="${esc(s.id)}" title="Editar subfase"><b>${esc(s.nombre)}</b><small>${rangoTx(s.inicio, s.fin)} · ${d}/${hs.length} hitos${cur ? ' · en curso' : ''}</small>${subDescDe(s) ? `<small class="desc-l">${esc(cut(subDescDe(s), 80))}</small>` : ''}${bad ? `<small style="color:var(--red)">Fuera de la fase (${rangoTx(v.ini, v.fin)})</small>` : ''}</button>`; };
-const sfAddBtn = (i, f) => `<button class="sf-add edit-only" data-act="sfnew" data-id="${i.id}" data-f="${esc(f)}">+ Subfase</button>`;
+const sfAddBtn = (i, f) => `<button class="sf-add edit-only" data-act="sfnew" data-id="${i.id}" data-f="${esc(f)}" aria-label="Agregar subfase a ${esc(f)}">+ Subfase</button>`;
 /* Fila de subfases alineada bajo las fases (ficha › Planificación) */
 const sfGrid = (i, V) => `<div class="sf-grid" style="--n:${V.length}">${V.map(v => `<div class="sf-colw">${v.subs.map(s => sfChip(i, v, s)).join('')}${sfAddBtn(i, v.fase)}</div>`).join('')}</div>`;
 /* Agrupa la lista de hitos de una fase por subfase (con sus fechas); los hitos sin subfase quedan al final */
@@ -3641,7 +3655,7 @@ Acts.pasopos = d => { const p = pospGet(); p[d.k] = addD(hoy(), 1); Object.keys(
 /* Pestaña «Planificación» de la ficha: fases, cronograma, próximos 14 días y siguientes pasos */
 function planFichaHTML(i) {
   const V = fasesVentana(i), H = hoy(), P = pasosDe(i);
-  const steps = `<div class="fz-steps" style="--n:${V.length}">${V.map(x => `<div class="fz-step ${x.actual ? 'on act' : ''}" style="--c:${x.color};cursor:default"><span class="fz-st"><span class="fz-num">${x.k + 1}</span>${esc(x.fase)}</span><small class="fz-sm">${fzd(x.ini)} → ${fzd(x.fin)} · ${x.done}/${x.hitos.length} hitos</small>${faseDescDe(i, x.fase) ? `<small class="desc-l">${esc(cut(faseDescDe(i, x.fase), 90))}</small>` : ''}<span class="fz-pb"><i style="width:${x.hitos.length ? Math.round(x.done / x.hitos.length * 100) : 0}%"></i></span><button class="sf-add edit-only" style="margin-top:6px" data-act="fnota" data-id="${i.id}" data-f="${esc(x.fase)}">${faseNotaP(i, x.fase) ? 'Editar nota' : '+ Nota'}</button></div>`).join('')}</div>`;
+  const steps = `<div class="fz-steps" style="--n:${V.length}">${V.map(x => `<div class="fz-step ${x.actual ? 'on act' : ''}" style="--c:${x.color};cursor:default"><span class="fz-st"><span class="fz-num">${x.k + 1}</span>${esc(x.fase)}</span><small class="fz-sm">${fzd(x.ini)} → ${fzd(x.fin)} · ${x.done}/${x.hitos.length} hitos</small>${faseDescDe(i, x.fase) ? `<small class="desc-l">${esc(cut(faseDescDe(i, x.fase), 90))}</small>` : ''}<span class="fz-pb"><i style="width:${x.hitos.length ? Math.round(x.done / x.hitos.length * 100) : 0}%"></i></span><button class="sf-add edit-only" style="margin-top:6px" data-act="fnota" data-id="${i.id}" data-f="${esc(x.fase)}" aria-label="Nota de la fase ${esc(x.fase)}">${faseNotaP(i, x.fase) ? 'Editar nota' : '+ Nota'}</button></div>`).join('')}</div>`;
   const prox = [...hitosDe(i.id).filter(h => !h.completado && h.fecha >= H && diffD(h.fecha, H) <= 14).map(h => ({ f: h.fecha, k: 'Hito', c: '#0D446A', t: h.nombre })),
     ...riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev && r.fRev >= H && diffD(r.fRev, H) <= 14).map(r => ({ f: r.fRev, k: 'Riesgo', c: '#A4262C', t: 'Revisión: ' + r.desc }))].sort(by('f'));
   const g = V.some(v => v.ini) ? Views.fases.gantt([i], { q: '', open: { [i.id]: true }, riesgos: true }) : `<div class="note">${icon('cal', 14)}<span>Define ${esProp(i) ? 'las fechas tentativas' : 'las fechas plan'} (inicio y fin) para ver el cronograma de fases con sus hitos y riesgos.</span></div>`;
@@ -4342,7 +4356,7 @@ Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = '';
       else { ch.push('Riesgo NUEVO: ' + v.desc + ' · ' + v.prob + '×' + v.imp); ap.push(() => St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: i.id, ...v })); } });
     if (!ch.length) { Modal.close && Modal.close(); toast(err.length ? 'Sin cambios válidos. ' + err.slice(0, 3).join(' | ') : 'El archivo no trae cambios', 'err'); return; }
     const lst = ch.slice(0, 40).map(x => '• ' + esc(x)).join('<br>') + (ch.length > 40 ? '<br>… y ' + (ch.length - 40) + ' más' : '');
-    confirmBox('<b>' + ch.length + ' cambio(s)</b> en ' + esc(i.titulo) + ':<br><br>' + lst + (err.length ? '<br><br><b style="color:var(--red)">Se omiten ' + err.length + ':</b><br>' + err.slice(0, 15).map(x => '✕ ' + esc(x)).join('<br>') : '') + '<br><br>¿Aplicar?', () => {
+    confirmBox('<b>Revisar cambios de la IA</b><br>' + ch.length + ' cambio(s) propuesto(s) en ' + esc(i.titulo) + ' (formato: campo: antes → después):<br><br>' + lst + (err.length ? '<br><br><b style="color:var(--red)">Se omiten ' + err.length + ':</b><br>' + err.slice(0, 15).map(x => '✕ ' + esc(x)).join('<br>') : '') + '<br><br>¿Aplicar?', () => {
       if (bloqueo) { toast('finPlan anterior a inicioPlan: corrige el archivo', 'err'); return; }
       ap.forEach(f => f()); i.actualizada = hoy(); log('Cambio', i.id, 'Completado con IA: ' + ch.length + ' cambio(s) aplicados desde archivo'); toast(ch.length + ' cambio(s) aplicados'); refresh(); }, 'Aplicar');
   } catch (e) { toast('No se pudo leer: ' + e.message, 'err'); } }; r.readAsText(fl); };
