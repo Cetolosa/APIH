@@ -1194,7 +1194,7 @@ const roi = i => i.presupuesto > 0 ? (((+i.beneficio || 0) - i.presupuesto) / i.
 const expo = r => r.prob * r.imp;
 const nivelRiesgo = e => e >= cfgMi('umbralCritico') ? { n: 'Crítico', c: '#D13438' } : e >= 10 ? { n: 'Alto', c: '#CA5010' } : e >= 5 ? { n: 'Medio', c: '#F2A100' } : { n: 'Bajo', c: '#107C10' };
 const riesgoAbierto = r => r.estado !== 'Cerrado';
-const riesgosCriticos = () => St.riesgos.filter(r => riesgoAbierto(r) && expo(r) >= cfgI(byId(r.ini),'umbralCritico') && (!byId(r.ini) || inArea(byId(r.ini))));
+const riesgosCriticos = () => St.riesgos.filter(r => riesgoAbierto(r) && expo(r) >= cfgI(byId(r.ini),'umbralCritico') && (!byId(r.ini) || (isLive(byId(r.ini)) && inArea(byId(r.ini)))));   // F-16
 const diasSinUpd = i => i.actualizada ? diffD(hoy(), i.actualizada) : 999;
 function ragSugerido(i) {   // RAG automático sugerido
   let p = 0; const why = [];
@@ -1211,7 +1211,7 @@ function critScore(i) {   // ranking de proyectos críticos
 }
 function kpis() {
   const L = scope(), live = L.filter(isLive), act = L.filter(isActive), P = scopeP(), pl = P.filter(isLive);
-  const M = { pres: sumM(L.filter(i => i.estado !== 'Cancelado'), i => i.presupuesto), gas: sumM(L, i => i.gastado), presPipe: sumM(pl, i => i.presupuesto), valorPipe: sumM(pl, i => i.beneficio), beneficio: sumM(live, i => i.beneficio) };
+  const M = { pres: sumM(L.filter(i => i.estado !== 'Cancelado'), i => i.presupuesto), gas: sumM(L.filter(i => i.estado !== 'Cancelado'), i => i.gastado), presPipe: sumM(pl, i => i.presupuesto), valorPipe: sumM(pl, i => i.beneficio), beneficio: sumM(live, i => i.beneficio) };
   const pres = M.pres.CLP || 0, gas = M.gas.CLP || 0;   // escalares = solo CLP (no se mezclan monedas)
   const ontrack = act.filter(i => i.rag === 'Verde' && !atrasado(i)).length;
   return {
@@ -1234,7 +1234,7 @@ function gates(i, to) {
   if (to === 'Transición') { ok(i.avance >= 80, 'Avance ≥ 80%'); ok(!hs.some(h => !h.completado && h.fecha < hoy()), 'Sin hitos vencidos'); ok(!riesgosDe(i.id).some(r => riesgoSinMit(i, r)), 'Riesgos críticos con plan de mitigación'); }
   if (!['Evaluación', 'Caso de Negocio', 'Aprobación', 'Ejecución', 'Transición', 'Cierre'].includes(to) && FASES_PRJ.includes(to) && to !== FASES_PRJ[0]) { ok(i.inicioPlan && i.finPlan, 'Fechas plan definidas'); ok(i.lider, 'Líder asignado'); }
   { const F_ = fasesDe(i), a = F_.indexOf(i.fase), b = F_.indexOf(to); if (b > a && a >= 0) { const pend = hs.filter(h => h.fase === i.fase && !h.completado); if (hs.some(h => h.fase === i.fase)) ok(!pend.length, 'Hitos de la fase ' + i.fase + ' completados' + (pend.length ? ' (faltan ' + pend.length + ')' : '')); } }
-  if (to === 'Cierre') { ok(i.avance >= 100, 'Avance al 100%'); ok(hs.every(h => h.completado), 'Todos los hitos completados'); ok(!riesgosDe(i.id).some(r => r.estado === 'Abierto' && expo(r) >= cfgI(i,'umbralCritico')), 'Sin riesgos críticos abiertos'); }
+  if (to === 'Cierre') { ok(i.avance >= 100, 'Avance al 100%'); ok(hs.filter(h => h.fase !== to).every(h => h.completado), 'Todos los hitos completados'); ok(!riesgosDe(i.id).some(r => riesgoAbierto(r) && expo(r) >= cfgI(i,'umbralCritico')), 'Sin riesgos críticos abiertos'); }   // F-06, F-07 }
   return g;
 }
 /* compuertas para APROBAR una propuesta y convertirla en proyecto */
@@ -2339,7 +2339,7 @@ function panelIni(i) {
   }
   const fin = isDone(i), canAprobar = PR && !fin && i.fase === 'Aprobación' && i.estado === 'Vigente';
   return pnHead(`${tipoLbl(i)} ${i.id} · ${esc(i.area)}`, esc(i.titulo), `${tipoPill(i)} ${PR ? '' : ragPill(i.rag)} ${faseTag(i)} ${estPill(i.estado)} ${prioPill(i.prioridad)} ${PR ? '' : starsMini(i)}`,
-    `${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' }) + btn('Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm' })}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
+    `${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' }) + btn('Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm' })}${fin && !PR ? btn('Reabrir', 'reabrirPrj', { d: { id: i.id }, ic: 'refresh', cls: 'sm', title: 'Solo Gasto: vuelve el proyecto a En curso' }) : ''}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
     `<div class="tabs sm">${tabs.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="ptab" data-tab="${k}">${n}</button>`).join('')}</div><div class="pn-b">${b}</div>`;
 }
 function panelRisk(r) {
@@ -2816,6 +2816,7 @@ function iniForm(i, isPropArg) {
       if (o.inicioPlan && o.finPlan && o.finPlan < o.inicioPlan) { toast('El fin plan no puede ser anterior al inicio', 'err'); return false; }
       if (['presupuesto', 'gastado', 'beneficio', 'ahorroReal'].some(k => o[k] != null && o[k] !== '' && (!isFinite(+o[k]) || +o[k] < 0))) { toast('Los montos deben ser números no negativos', 'err'); return false; }   // F-11
       if (o.avance != null && o.avance !== '' && (!isFinite(+o.avance) || +o.avance < 0 || +o.avance > 100)) { toast('El avance debe estar entre 0 y 100', 'err'); return false; }
+      if (!nw && !PR && o.fase && o.fase !== i.fase) { const F_ = fasesDe(i); if (F_.indexOf(o.fase) > F_.indexOf(i.fase)) { const falta = gates(i, o.fase).filter(x => !x.ok).map(x => x.t); if (falta.length) { toast('No se puede avanzar a ' + o.fase + '. Falta: ' + falta.join('; '), 'err'); return false; } } }   // F-05: avance por ficha exige compuertas
       const areaStr = (o.areaArr && o.areaArr.length ? o.areaArr : ['BISE']).join(',');
       const patch = { ...o, area: areaStr }; if (PR) patch.score = { estrategia: o.sE, valor: o.sV, esfuerzo: o.sF, riesgo: o.sR }; patch.finEst = PR ? null : (o.finEst || o.finPlan);
       ['areaArr', 'sE', 'sV', 'sF', 'sR'].forEach(k => delete patch[k]);
@@ -3053,11 +3054,21 @@ Acts.estado = d => {
     onSave(o) {
       if (EST_MOTIVO.includes(o.estado) && !o.motivo) { toast('Indica el motivo del estado ' + o.estado, 'err'); return false; }
       if (EST_REVISION.includes(o.estado) && !o.rev) { toast('Indica la fecha de revisión', 'err'); return false; }
-      const prev = i.estado; i.estado = o.estado; i.estadoMotivo = EST_MOTIVO.includes(o.estado) ? o.motivo : ''; i.estadoRev = EST_REVISION.includes(o.estado) ? o.rev : null; i.actualizada = hoy();
-      if (o.estado === 'Completado') { i.finReal = hoy(); if (i.avance < 100) { i.avance = 100; i.hist.push([hoy(), 100]); } }
-      if (prev !== o.estado) log('Cambio', i.id, `Estado: ${prev} → ${o.estado}` + (o.motivo ? ' — ' + o.motivo : ''));
-      toast('Estado actualizado'); refresh();
+      if (o.estado === 'Completado') { const falta = gates(i, 'Cierre').filter(x => !x.ok).map(x => x.t); if (falta.length) { toast('No se puede completar. Falta: ' + falta.join('; '), 'err'); return false; } }   // F-05/U-12
+      const aplicar = () => { const prev = i.estado; i.estado = o.estado; i.estadoMotivo = EST_MOTIVO.includes(o.estado) ? o.motivo : ''; i.estadoRev = EST_REVISION.includes(o.estado) ? o.rev : null; i.actualizada = hoy();
+        if (o.estado === 'Completado') i.finReal = hoy();
+        if (prev !== o.estado) log('Cambio', i.id, `Estado: ${prev} → ${o.estado}` + (o.motivo ? ' — ' + o.motivo : ''));
+        toast('Estado actualizado'); refresh(); };
+      if (o.estado === 'Cancelado') { confirmBox('¿Cancelar «' + esc(i.titulo) + '»? Dejará de contar en KPIs y alertas. Puedes reabrirlo después.', aplicar, 'Cancelar proyecto', true); return false; }   // U-02
+      aplicar();
     }
+  });
+};
+Acts.reabrirPrj = d => {   // N-F-07
+  const i = byId(d.id); if (!i || esProp(i) || !isDone(i) || !esGasto()) return NO_PERM('Solo Gasto puede reabrir un proyecto cerrado');
+  openForm({
+    title: 'Reabrir proyecto · ' + i.titulo, saveLabel: 'Reabrir', values: { nota: '' }, fields: [{ k: 'nota', l: 'Motivo de la reapertura (queda en la bitácora)', t: 'textarea', req: true, w: 3 }],
+    onSave(o) { const prev = i.estado; i.estado = 'En curso'; i.estadoMotivo = ''; i.estadoRev = null; i.finReal = null; i.actualizada = hoy(); log('Cambio', i.id, `Proyecto reabierto (era ${prev}): ${o.nota}`); toast('Proyecto reabierto'); refresh(); }
   });
 };
 Acts.reopen = d => {
@@ -5594,7 +5605,7 @@ function areaDeAccion(d, el) {
 }
 const ACT_ADMIN = ['catadd', 'catdel', 'expjson', 'impjson', 'reset', 'sptest', 'spconnect', 'spprov', 'spsync', 'splogout', 'sppnp', 'spcopy', 'spseed', 'spretry', 'xlsxall', 'atab', 'syncgo'];
 const CHG_ADMIN = ['cfg', 'spc', 'impfile', 'impinifile'];
-const ACT_EDIT = ['advance', 'advgo', 'applyrag', 'hitotoggle', 'resolvedec', 'aprobar', 'aprobargo', 'estado', 'reopen', 'edit', 'sfnew', 'sfedit', 'fnota'];
+const ACT_EDIT = ['advance', 'advgo', 'applyrag', 'hitotoggle', 'resolvedec', 'aprobar', 'aprobargo', 'estado', 'reopen', 'reabrirPrj', 'edit', 'sfnew', 'sfedit', 'fnota'];
 const CHG_EDIT = ['advto', 'hitotoggle', 'acutoggle', 'bitpres'];
 const ACT_COM = ['csug', 'cdel', 'cpart', 'ctema', 'cacc', 'cdec', 'cclose'];
 const CHG_COM = ['catt', 'ctoggle'];
