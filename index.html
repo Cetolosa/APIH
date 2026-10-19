@@ -1842,10 +1842,11 @@ const DataService = {
     this.setStatus({ msSave: Math.round(performance.now() - t0) });
     this.busy = false;
     if (this.conf && this.conf.length) {
-      const L = this.conf; this.conf = []; this.busy = false; this.dirty = false;
+      const L = this.conf; this.conf = []; this.busy = false; this.dirty = !!fail;   // S-02: si además hubo fallo de red, conservar los cambios pendientes
       const ids = L.map(x => x.id).join(', ');
       const bajar = confirm('Otra persona modificó mientras tanto: ' + ids + '.\n\nTus cambios en esos registros NO se guardaron para no pisar los suyos. Se cargarán los datos actuales.\n\n¿Descargar tus cambios no guardados (archivo JSON) para volver a aplicarlos?');
       if (bajar) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(L, null, 1)], { type: 'application/json' })); a.download = 'apih_cambios_no_guardados_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '') + '.json'; document.body.appendChild(a); a.click(); a.remove(); }
+      if (fail) { this.tries++; this.setStatus({ state: 'error', msg: 'Error de sincronización', err: fail.message, pending: this.diff().length }); clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), Math.min(60000, 5000 * this.tries)); return; }   // no recargar: se perderían las ediciones pendientes
       await this.refresh(false, true); return;
     }
     if (this.badMsg && this.badMsg.length) { const n = this.badMsg.length; console.warn('APIH: registros rechazados por el servidor', this.badMsg); this.badMsg = []; if (typeof toast === 'function') toast(n + ' registro(s) fueron rechazados por el servidor y no se guardaron (revisa tus datos o recarga la página). El resto sí se guardó.', 'err'); }
@@ -2264,6 +2265,8 @@ function fitMain() {
 /* A-1: saneamiento de ids y enums en todas las fuentes (remoto, importaciones, IA, Excel).
    Ids: solo [A-Za-z0-9_-]. Enums: sin <>"`=\ . Aplicado a la misma transformación en todas las filas,
    así que las referencias (ini, comite, subfase, deps) siguen coincidiendo. El texto libre se escapa al render. */
+const SAN_DTK = ['fecha', 'fechaReal', 'inicioPlan', 'finPlan', 'finEst', 'inicio', 'fin', 'creada', 'faseDesde', 'inicioReal', 'finReal', 'fRev', 'fIdent', 'limite', 'fResol', 'fNue', 'fAnt', 'estadoRev'];
+const sanDate = v => { if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return v; const y = +v.slice(0, 4); return y < 1900 ? '1900-01-01' : y > 2100 ? '2100-12-31' : v; };   // N-S-03: fechas guardadas fuera de rango se acotan
 const SAN_IDK = ['id', 'ini', 'comite', 'subfase', 'proyecto'], SAN_ENK = ['fase', 'estado', 'tipo', 'rag', 'prioridad', 'moneda', 'area', 'categoria', 'cat', 'dueno', 'resp', 'lider', 'sponsor', 'negocio', 'proveedor', 'origen'];
 const sanId = s => typeof s === 'string' ? s.replace(/[^A-Za-z0-9_\-]/g, '').slice(0, 30) : s;
 const sanEnum = s => typeof s === 'string' ? s.replace(/[<>"`=\\]/g, '') : s;
@@ -2271,6 +2274,7 @@ function sanRow(r) { if (!r || typeof r !== 'object' || Array.isArray(r)) return
   Object.keys(r).forEach(k => { const v = r[k];
     if (SAN_IDK.includes(k)) { if (typeof v === 'string') r[k] = sanId(v); }
     else if (SAN_ENK.includes(k)) { if (typeof v === 'string') r[k] = sanEnum(v); }
+    else if (SAN_DTK.includes(k)) { if (typeof v === 'string') r[k] = sanDate(v); }
     else if (k === 'deps' && Array.isArray(v)) r[k] = v.map(d => typeof d === 'string' ? sanId(d) : d);
     else if (k === 'subfases' && Array.isArray(v)) v.forEach(sanRow); });
   return r; }
@@ -3387,7 +3391,7 @@ function fasesVentana(i) {
   });
 }
 const fzRiesgosFase = (i, v) => riesgosDe(i.id).filter(r => riesgoAbierto(r) && r.fRev && v.ini && v.fin && r.fRev >= v.ini && r.fRev <= v.fin);
-function fzEscala(d0, d1, W) {
+function fzEscala(d0, d1In, W) { const d1 = diffD(d1In, d0) > 3650 ? addD(d0, 3650) : d1In;   // N-S-03: escala acotada a 10 años; fechas extremas (año 9999) colgaban la vista
   const days = Math.max(1, diffD(d1, d0) + 1), ppd = W / days, x = s => Math.min(W, Math.max(0, diffD(s, d0) * ppd)), ticks = [];
   if (days <= 130) { let d = d0; while (pD(d).getDay() !== 1) d = addD(d, 1); for (; d <= d1; d = addD(d, 7)) ticks.push({ x: x(d), t: +d.slice(8) + ' ' + MES3[+d.slice(5, 7) - 1].toLowerCase() }); }
   else { let d = d0.slice(0, 8) + '01'; if (d < d0) d = toISO(new Date(+d0.slice(0, 4), +d0.slice(5, 7), 1, 12)); for (; d <= d1; d = toISO(new Date(+d.slice(0, 4), +d.slice(5, 7), 1, 12))) ticks.push({ x: x(d), t: MES3[+d.slice(5, 7) - 1] + ' ' + d.slice(2, 4) }); }
@@ -4213,7 +4217,7 @@ Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
 /* V22.52: proyecto <-> IA (exportar con instrucciones, importar con vista previa) */
 const IAP_TXT = ['titulo', 'desc', 'bc', 'sponsor', 'lider', 'negocio', 'categoria', 'resumen', 'logros', 'proximos', 'issue', 'riesgoTxt'], IAP_NUM = ['avance', 'presupuesto', 'gastado', 'beneficio'], IAP_DATE = ['inicioPlan', 'finPlan', 'finEst'];
-const iapFecha = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v));
+const iapFecha = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v)) && +v.slice(0, 4) >= 1900 && +v.slice(0, 4) <= 2100;   // N-S-03: años 1900-2100
 function iapPendientes(i) {
   const p = [], hs = hitosDe(i.id), rs = riesgosDe(i.id), um = cfgI(i, 'umbralCritico');
   [['desc', 'Descripción / objetivo'], ['sponsor', 'Sponsor'], ['lider', 'Líder'], ['negocio', 'Responsable de negocio'], ['inicioPlan', 'Inicio plan'], ['finPlan', 'Fin plan'], ['logros', 'Logros del período'], ['proximos', 'Próximos pasos']].forEach(([k, n]) => { if (!String(i[k] || '').trim()) p.push('Falta: ' + n); });
