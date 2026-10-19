@@ -24,6 +24,7 @@ jobs:
       - run: node tests/unit/notificaciones.js
       - run: node tests/unit/powerbi-modelo.js
       - run: az bicep build --file infra/main.bicep --stdout > /dev/null
+      - run: node tests/unit/paridad-prototipo-corporativo.js
       - run: node tests/unit/mssql-conexion.js
       - run: node tests/seguridad/defensas-api.js
       - name: Verificar el paquete de despliegue (dependencias, función, núcleo empaquetado, configuración)
