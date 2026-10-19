@@ -34,7 +34,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 ## 4. Documentos y datos creados
 - Propuesta técnica para TI: **fuente vigente = Claude Docs** «APIH Corporativo · Propuesta técnica para revisión con TI» (https://claude.ai/code/artifact/ae0913ea-ba10-4bfd-a8b2-609b4d7e9754), **versión 2 (17-10)** con lo construido hasta C2.16, incluido el pentest interno (sección Seguridad); el PDF se descarga desde el doc. Enviada a TI: `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf` (v1). `APIH_Corporativo_Propuesta_TI.pdf` es la v1 previa al envío.
 - Documentos de operación (C2.15): `docs/operacion/` (guion UAT con casos V4, V5, F1–F3, I2; manual de usuario; runbook; clasificación de datos) y `docs/seguridad.md`.
-- Plan vigente importable a APIH: `docs/APIH_Corporativo_plan_C2.15.json` (estado al 17-10). El de C1.3 queda como histórico.
+- Plan vigente importable a APIH: `docs/APIH_Corporativo_plan_C2.20.json` (estado al 19-10; importarlo crea un proyecto nuevo, para el existente actualizar los campos a mano). Los de C2.15 y C1.3 quedan como histórico.
 - Plan y brechas (Claude Docs, privado): https://claude.ai/artifact/2GquKhzaERtSspc3J9n8ay
 - `docs/APIH_iniciativas_con_plan.json`: las 2 iniciativas con hitos y riesgos, listo para **Administración → Importar iniciativas** (el importador omite títulos que ya existen; si ya se cargó una versión previa, borrar y reimportar).
 - Memoria del proyecto (claude.ai): `areas/apih.md`.
