@@ -6,8 +6,7 @@
 <!-- CSP: limita a dónde puede conectarse la app (impide enviar datos o tokens a un servidor ajeno), bloquea plugins, <base> y formularios externos -->
 <!-- S-06: connect-src limitado al tenant de SharePoint configurado; si cambia el tenant, actualizar esta directiva. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://hpsjzuqcijjwthrxgmeu.supabase.co https://graph.microsoft.com https://login.microsoftonline.com https://aramark365.sharepoint.com;  object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'">
-<script>/* S-16: no permitir que la app se muestre embebida en otro sitio (clickjacking). Complementar con frame-ancestors en el servidor. */
-if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.style.display = "none"; } }</script>
+
 <title>APIH · Aramark Portfolio Intelligence Hub</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F6CBD'/%3E%3Ctext x='16' y='23' font-size='20' font-family='Segoe UI,Arial' font-weight='800' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
 <style>
@@ -218,6 +217,13 @@ table.mini{width:100%;border-collapse:collapse;font-size:12px}table.mini th{text
 /* ---------- V4: tema oscuro ---------- */
 :root[data-theme=dark]{color-scheme:dark;--fzamb:#F2B33D;--pri:#4BA0F0;--pri-d:#8CC4FA;--pri-l:#16324F;--bg:#14181D;--bg2:#1B2027;--card:#1F252D;--bd:#313A45;--bd2:#2A323C;--bd3:#475260;--tx:#E8EAED;--tx2:#A9B2BD;--tx3:#8D98A5;--green:#4CC24C;--amber:#F5B83D;--red:#F0646A;--redbg:#4A1F23;--ambbg:#473912;--sh:0 1px 2px rgba(0,0,0,.4);--shl:0 8px 28px rgba(0,0,0,.6)}
 :root[data-theme=dark] .top{background:linear-gradient(90deg,#0A1B30,#0B2E52)}
+:root[data-theme=dark] [style*="color:#0D446A"],:root[data-theme=dark] [style*="color: #0D446A"]{color:#8CC4FA!important}   /* N-V-02: texto con color fijo legible en oscuro */
+:root[data-theme=dark] [style*="color:#CA5010"],:root[data-theme=dark] [style*="color: #CA5010"]{color:#F5A36B!important}
+:root[data-theme=dark] [style*="color:#107C10"],:root[data-theme=dark] [style*="color: #107C10"]{color:#7FD17F!important}
+:root[data-theme=dark] [style*="color:#D13438"],:root[data-theme=dark] [style*="color: #D13438"]{color:#FF8A8D!important}
+:root[data-theme=dark] [style*="color:#8764B8"],:root[data-theme=dark] [style*="color: #8764B8"]{color:#C4A8F0!important}
+:root[data-theme=dark] [style*="color:#A4262C"],:root[data-theme=dark] [style*="color: #A4262C"]{color:#FF9FA3!important}
+:root[data-theme=dark] [style*="color:#6B4E00"],:root[data-theme=dark] [style*="color: #6B4E00"]{color:#F2C14E!important}
 :root[data-theme=dark] .gs-res,:root[data-theme=dark] .pop,:root[data-theme=dark] .modal{background:var(--card);color:var(--tx)}
 :root[data-theme=dark] .nav:hover,:root[data-theme=dark] .btn:hover{background:#2A323C}
 :root[data-theme=dark] .btn{background:var(--card);border-color:var(--bd3)}
@@ -2409,6 +2415,7 @@ Acts.gstog = () => { const t = $('.top'); if (!t) return; t.classList.toggle('gs
 document.addEventListener('click', e => { const ap = $('#app'); if (ap && ap.classList.contains('side-open') && !e.target.closest('#side, [data-act=side]')) ap.classList.remove('side-open'); const t = $('.top'); if (t && t.classList.contains('gs-open') && !e.target.closest('.gsearch, [data-act=gstog]')) t.classList.remove('gs-open'); });
 Acts.panel = () => { UI.panel = !UI.panel; renderChrome(); saveUI(); };
 Acts.sel = d => selectEntity(d.t, d.id);
+Acts.gfix = d => { Modal.close(); selectEntity('ini', d.id); };   // U-12: lleva a la ficha para corregir la compuerta
 Acts.panelx = () => { UI.sel = null; UI.panel = false; renderChrome(); renderPanel(); saveUI(); };
 Acts.unsel = () => { UI.sel = null; renderPanel(); saveUI(); };
 Acts.gsel = d => { $('#gsres').classList.remove('open'); $('#gs').value = ''; selectEntity(d.t, d.id); };
@@ -2874,13 +2881,13 @@ Acts.advance = d => {
 };
 Chg.advto = el => {
   const i = byId(el.dataset.id), to = el.value, g = gates(i, to), miss = g.filter(x => !x.ok);
-  $('#advg').innerHTML = (to === i.fase ? `<p class="mut">La ${tipoLbl(i).toLowerCase()} ya está en esta fase.</p>` : `<div class="gates">${g.map(x => `<div class="${x.ok ? 'ok' : 'no'}">${icon(x.ok ? 'check' : 'x', 14)}<span>${esc(x.t)}</span></div>`).join('') || '<p class="mut">Sin compuertas para esta fase.</p>'}</div>${miss.length && esGasto() ? `<label class="chk" style="margin-top:8px"><input type="checkbox" id="advforce"> <span>Forzar cambio pese a ${miss.length} compuerta(s) incumplida(s) (queda registrado en bitácora)</span></label>` : ''}`);
+  $('#advg').innerHTML = (to === i.fase ? `<p class="mut">La ${tipoLbl(i).toLowerCase()} ya está en esta fase.</p>` : `<div class="gates">${g.map(x => `<div class="${x.ok ? 'ok' : 'no'}">${icon(x.ok ? 'check' : 'x', 14)}<span>${esc(x.t)}</span>${x.ok ? '' : ` <a class="lnk" data-act="gfix" data-id="${i.id}">Corregir</a>`}</div>`).join('') || '<p class="mut">Sin compuertas para esta fase.</p>'}</div>${miss.length && esGasto() ? `<label class="chk" style="margin-top:8px"><input type="checkbox" id="advforce"> <span>Forzar cambio pese a ${miss.length} compuerta(s) incumplida(s) (queda registrado en bitácora)</span></label>` : ''}`);
 };
 Acts.advgo = d => {
   const i = byId(d.id), to = $('#adv_to').value; if (to === i.fase) return Modal.close();
   const miss = gates(i, to).filter(x => !x.ok), force = $('#advforce') && $('#advforce').checked;
   if (miss.length && !esGasto()) return toast('Hay compuertas incumplidas. Solo el perfil Gasto puede forzarlas: completa los datos.', 'err');
-  if (miss.length && !force) return toast('Hay compuertas incumplidas. Márcalas como forzadas o completa los datos.', 'err');
+  if (miss.length && !force) return toast(`Hay ${miss.length} compuerta(s) sin cumplir. Pulsa «Corregir» en cada una o marca «Forzar cambio» (solo Gasto).`, 'err');   // U-12
   const from = i.fase; i.fase = to; i.faseDesde = hoy(); i.actualizada = hoy();
   if (to === 'Ejecución' && !i.inicioReal) i.inicioReal = hoy();
   if (to === 'Ejecución' && !i.base && i.inicioPlan && i.finPlan) congelarBase(i, false);
@@ -3046,7 +3053,7 @@ Acts.aprobar = d => {
 Acts.aprobargo = d => {
   const p = byId(d.id), miss = gatesAprobar(p).filter(x => !x.ok), force = $('#advforce') && $('#advforce').checked;
   if (miss.length && !esGasto()) return toast('Hay compuertas incumplidas. Solo el perfil Gasto puede forzarlas: completa los datos.', 'err');
-  if (miss.length && !force) return toast('Hay compuertas incumplidas. Márcalas como forzadas o completa los datos.', 'err');
+  if (miss.length && !force) return toast(`Hay ${miss.length} compuerta(s) sin cumplir. Pulsa «Corregir» en cada una o marca «Forzar cambio» (solo Gasto).`, 'err');   // U-12
   const nota = ($('#apr_nota') || {}).value || '';
   const n = aprobarPropuesta(p, (miss.length ? '[forzado: ' + miss.map(m => m.t).join(', ') + '] ' : '') + nota.trim());
   Modal.close(); UI.sel = { t: 'ini', id: n.id }; UI.tab = 'resumen'; toast('Proyecto ' + n.id + ' creado'); refresh();
@@ -4233,7 +4240,7 @@ Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
         if (x.faseNota && typeof x.faseNota === 'object' && !Array.isArray(x.faseNota)) { n.faseNota = {}; fasesDe(n).forEach(fx => { const v = x.faseNota[fx]; if (typeof v === 'string' && v.trim()) n.faseNota[fx] = cutDesc(v.trim()); }); if (!Object.keys(n.faseNota).length) delete n.faseNota; }
         sfImportar(n, x.subfases, m => avisos.push(n.titulo + ': ' + m)); (x.hitos || []).forEach((h, k) => { if (!h || !h.subfase) return; const hh = St.hitos[nh0 + k], sf = hh && sfRef(n, h.subfase, hh.fase); if (!hh) return; if (!sf) return avisos.push(n.titulo + ': el hito «' + hh.nombre + '» apunta a una subfase que no existe (' + h.subfase + ')'); if (sf.fase !== hh.fase) return avisos.push(n.titulo + ': el hito «' + hh.nombre + '» es de ' + hh.fase + ' y la subfase «' + sf.nombre + '» de ' + sf.fase + ' (sin subfase)'); hh.subfase = sf.id; });
         (x.riesgos || []).forEach(r => { St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: n.id, cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: n.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '', ...r }); nr++; });
-        log('Cambio', n.id, T + ' importada: ' + n.titulo + (x.hitos ? ' (' + x.hitos.length + ' hitos' + (x.riesgos ? ', ' + x.riesgos.length + ' riesgos' : '') + ')' : '')); });
+        log('Cambio', n.id, T + (PR ? ' importada: ' : ' importado: ') + n.titulo + (x.hitos ? ' (' + x.hitos.length + ' hitos' + (x.riesgos ? ', ' + x.riesgos.length + ' riesgos' : '') + ')' : '')); });
       const ns = St.ini.slice(-nuevas.length).reduce((a, x) => a + subfasesDe(x).length, 0);
       toast(nuevas.length + ' iniciativa(s) importada(s), ' + nh + ' hitos, ' + nr + ' riesgos' + (ns ? ', ' + ns + ' subfases' : '') + (avisos.length ? ' · ' + avisos.length + ' aviso(s): ' + avisos.slice(0, 2).join(' | ') : ''), avisos.length ? 'err' : 'ok'); avisos.forEach(a => log('Cambio', '', 'Importación: ' + a)); refresh(); }, 'Importar');
   } catch (e) { toast('No se pudo importar: ' + e.message, 'err'); } }; r.readAsText(fl); };
