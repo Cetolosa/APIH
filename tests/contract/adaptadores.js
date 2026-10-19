@@ -6,7 +6,7 @@ const crearServicio = require('../../services/api/src/servicio');
 const crearStoreMemoria = require('../../services/api/src/store-memoria');
 const crearApp = require('../../services/api/src/app');
 const HOY = '2026-10-16';
-const usuario = o => ({ email: 'prueba@aramark.cl', nombre: 'Prueba', rol: o && o.puedeEscribir === false ? 'Lectura' : 'Editor' });
+const usuario = o => ({ email: 'prueba@aramark.cl', nombre: 'Prueba', rol: o && o.rol ? o.rol : o && o.puedeEscribir === false ? 'Lectura' : 'Editor' });
 const OPS = ['listar', 'obtener', 'crear', 'actualizar', 'cambiarEstado', 'cambiarFase', 'aprobarPropuesta', 'eliminar', 'compuerta', 'fases', 'listarHitos', 'crearHito', 'actualizarHito', 'completarHito', 'eliminarHito', 'listarRiesgos', 'crearRiesgo', 'actualizarRiesgo', 'eliminarRiesgo', 'listarRegistros', 'guardarRegistro', 'eliminarRegistro', 'sello'];
 
 function servicio(o, store) {
@@ -17,7 +17,7 @@ function servicio(o, store) {
 function http(o, store) {
   const s = crearServicio({ store: store || crearStoreMemoria(), hoy: () => HOY, config: { umbralCritico: 15 } });
   const handle = crearApp({ servicio: s, env: {} }), u = usuario(o);
-  const principal = Buffer.from(JSON.stringify({ identityProvider: 'aad', userDetails: u.email, userRoles: ['authenticated', u.rol === 'Editor' ? 'apih-editor' : 'apih-lectura'] })).toString('base64');
+  const principal = Buffer.from(JSON.stringify({ identityProvider: 'aad', userDetails: u.email, userRoles: ['authenticated', u.rol === 'Admin' ? 'apih-admin' : u.rol === 'Editor' ? 'apih-editor' : 'apih-lectura'] })).toString('base64');
   const call = async (method, path, body, version, query) => {
     const r = await handle({ method, path, query: query || {}, body, headers: Object.assign({ 'x-ms-client-principal': principal }, version != null ? { 'If-Match': '"' + version + '"' } : {}) });
     const j = r.body ? JSON.parse(r.body) : undefined;

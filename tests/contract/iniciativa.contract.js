@@ -77,6 +77,24 @@ module.exports = async function contratoIniciativa(fabrica, log = console.log) {
     assert.strictEqual(a.avance, 100); assert.ok(a.finReal);
     await falla(d.cambiarEstado(a.id, { estado: 'En curso' }, a.version), 'INVALIDA', 'estado');
   });
+  await caso('reabrir proyecto Completado: solo Admin, limpia finReal (N-F-07)', async () => {
+    const mk = async (d) => { let a = await d.crear(prj({ presupuesto: 10 }));
+      for (const n of ['H1', 'H2']) { const h = await d.crearHito(a.id, { nombre: n, fase: 'Planificación', fecha: '2026-10-10' }); await d.completarHito(h.id, null, h.version); }
+      a = await d.cambiarFase(a.id, 'Ejecución', a.version); a = await d.actualizar(a.id, { avance: 100 }, a.version);
+      a = await d.cambiarFase(a.id, 'Transición', a.version); a = await d.cambiarFase(a.id, 'Cierre', a.version);
+      return d.cambiarEstado(a.id, { estado: 'Completado' }, a.version); };
+    const ad = fabrica({ rol: 'Admin' }); const a = await mk(ad);
+    const r = await ad.cambiarEstado(a.id, { estado: 'En curso' }, a.version);
+    assert.strictEqual(r.estado, 'En curso'); assert.ok(!r.finReal);
+  });
+  await caso('Completado exige compuertas de Cierre (avance 100 %)', async () => {
+    const d = fabrica(); let a = await d.crear(prj({ presupuesto: 10 }));
+    for (const n of ['H1', 'H2']) { const h = await d.crearHito(a.id, { nombre: n, fase: 'Planificación', fecha: '2026-10-10' }); await d.completarHito(h.id, null, h.version); }
+    a = await d.cambiarFase(a.id, 'Ejecución', a.version); a = await d.actualizar(a.id, { avance: 100 }, a.version);
+    a = await d.cambiarFase(a.id, 'Transición', a.version); a = await d.cambiarFase(a.id, 'Cierre', a.version);
+    a = await d.actualizar(a.id, { avance: 80 }, a.version);
+    await falla(d.cambiarEstado(a.id, { estado: 'Completado' }, a.version), 'COMPUERTA');
+  });
   await caso('hitos: crear, completar (fechaReal), validar y semáforo', async () => {
     const d = fabrica(); const a = await d.crear(prj());
     await falla(d.crearHito(a.id, { nombre: '', fecha: '2026-10-20' }), 'INVALIDA', 'nombre');

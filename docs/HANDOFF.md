@@ -16,7 +16,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Abierto** (V22.63: correcciones de la revisión V22.62). Congelar cuando el usuario lo pida | **C2.19** · traspaso de V22.63 (compuertas de Cierre, reabrir solo Admin, importación endurecida, ayuda «?» única, Administración con una barra) · `tests/e2e/correr-corporativo.sh` 10/10 · seguridad: defensas-api y pentest-api con fallas previas por revisar · producción objetivo **27-11-2026** |
+| Estado | **Abierto** (V22.63: correcciones de la revisión V22.62). Congelar cuando el usuario lo pida | **C2.19** · traspaso de V22.63 (compuertas de Cierre, reabrir solo Admin, importación endurecida, ayuda «?» única, Administración con una barra) · `tests/e2e/correr-corporativo.sh` 10/10 · seguridad 25/25 (`defensas-api.js`) · producción objetivo **27-11-2026** |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo: `apps/corporativo`, `services/api`, `packages/core`, `db/`, `infra/`, `powerbi/`, `tests/`; luego repo de Aramark que indique TI |
