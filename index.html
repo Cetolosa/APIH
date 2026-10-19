@@ -4992,7 +4992,7 @@ function cocFit() {
 }
 Acts.cocsel = d => { const f = F('cielo', {}); f.sel = (f.sel === d.id || !d.id) ? '' : d.id; render(); };
 Acts.cocpg = d => { const f = F('cielo', {}); f.pg = (f.pg || 0) + (+d.d); render(); };
-const CIELO_TABS = [['sem', 'Esta semana'], ['ins', 'Insignias'], ['gal', 'Galería Michelin'], ['how', 'Cómo funciona']];
+const CIELO_TABS = [['sem', 'Esta semana'], ['ins', 'Insignias'], ['gal', 'Galería Michelin']];
 Views.cielo = {
   render() {
     const f = F('cielo', { tab: 'sem' }), me = miUsuario(), P = cieloPersona(me), C = cieloColectivo(), meta = cfgMi('cieloMeta') || 80, adm = rolActual() === 'Gasto' || rolActual() === 'Administrador';
@@ -5008,7 +5008,7 @@ Views.cielo = {
       return head + `<section class="card sky-card"><header><h2>Galería Michelin</h2><small style="color:#cfe0f5">${G.length} proyecto${G.length === 1 ? '' : 's'} · las estrellas se ganan por hitos y no se pierden</small></header>${G.length ? `<div class="gal">${G.slice(0, 12).map(i => `<button class="gal-i" data-act="sel" data-t="ini" data-id="${i.id}">${msRow(i, 26, true)}<b>${esc(cut(i.titulo, 30))}</b><small>${msN(i) ? msN(i) + ' de 3 estrellas' : 'Sin estrellas aún'}${i.estado === 'Completado' ? (i.finReal ? ' · cerrado ' + fmtD(i.finReal) : ' · completado') : ''}${i.lider === me ? ' · tuyo' : ''}</small></button>`).join('')}</div>${G.length > 12 ? `<p class="sky-hint">+ ${G.length - 12} más</p>` : ''}` : '<p class="sky-e">Aquí quedarán, para siempre, las estrellas Michelin de tus proyectos.<br>La primera llega al completar a tiempo la primera fase o el primer hito del cronograma.</p>'}</section>`;
     }
     if (f.tab === 'how') {
-      return head + `<div class="grid12"><section class="card c6"><header><h2>Los 5 tenedores de la semana</h2><small>cada proyecto activo, de lunes a domingo</small></header><div class="sky-leg">${STAR_DEF.map(d => `<div>${STAR_SVG('on', 15)}<span><b>${d.l}</b> ${esc(d.tip)}</span></div>`).join('')}</div><p class="mut" style="font-size:12px;margin:8px 0 0">Los tenedores suben y bajan: se encienden al gestionar bien y se apagan si algo queda pendiente. Si no hay nada que evaluar (por ejemplo, un proyecto sin compromisos), aparece un punto: «no aplica». Hitos y compromisos se miden con las fechas reales; Riesgos y Gobierno, solo en la semana en curso.</p>
+      return pageHead('Reglas del juego', 'Mi cocina · cómo se ganan los tenedores y las estrellas Michelin.') + `<div style="margin:0 0 10px"><button class="btn sm" data-act="cielotab" data-k="sem">← Volver a Mi cocina</button></div>` + `<div class="grid12"><section class="card c6"><header><h2>Los 5 tenedores de la semana</h2><small>cada proyecto activo, de lunes a domingo</small></header><div class="sky-leg">${STAR_DEF.map(d => `<div>${STAR_SVG('on', 15)}<span><b>${d.l}</b> ${esc(d.tip)}</span></div>`).join('')}</div><p class="mut" style="font-size:12px;margin:8px 0 0">Los tenedores suben y bajan: se encienden al gestionar bien y se apagan si algo queda pendiente. Si no hay nada que evaluar (por ejemplo, un proyecto sin compromisos), aparece un punto: «no aplica». Hitos y compromisos se miden con las fechas reales; Riesgos y Gobierno, solo en la semana en curso.</p>
       <h3 class="sky-lt">Estrellas Michelin (hasta 3)</h3><div class="sky-leg">${MS_DEF.map(d => `<div>${MS_SVG(true, 15)}<span><b>${d.l}.</b> ${esc(d.tip)}</span></div>`).join('')}</div><p class="mut" style="font-size:12px;margin:8px 0 0">Se ganan una a una por hitos del cronograma y <b>una vez ganadas no se pierden</b>. Un cambio de fecha aprobado en Control de cambios explica un atraso. Aplican a proyectos: las propuestas no tienen cronograma.</p></section>
       <section class="card c6"><header><h2>Niveles, racha e insignias</h2></header><div class="sky-leg"><div>${icon('fork', 15)}<span><b>Racha:</b> semanas seguidas con los 5 tenedores (todos tus proyectos, sin ninguno pendiente).</span></div><div>${icon('spark', 15)}<span><b>Niveles:</b> Pinche, Cocinero (1 semana perfecta), Chef de partida (4) y Chef ejecutivo (12), contando las últimas 26 semanas.</span></div><div>${icon('flag', 15)}<span><b>Insignias:</b> ${insignias(me).length} reconocimientos por conductas concretas. Se ganan solas; no se pierden.</span></div><div>${icon('users', 15)}<span><b>Salón de chefs:</b> porcentaje de tenedores encendidos del portafolio frente a la meta (${meta}%), el promedio de tenedores y las estrellas Michelin repartidas. Sin ranking de personas.</span></div></div>
       <h3 class="sky-lt">Reglas del juego limpio</h3><div class="sky-leg"><div>${icon('check', 15)}<span>Reportar un rojo a tiempo vale lo mismo que un verde.</span></div><div>${icon('check', 15)}<span>«Sin novedades» no da tenedor la tercera semana seguida.</span></div><div>${icon('check', 15)}<span>No se usa para evaluar desempeño ni para bonos.</span></div></div></section></div>`;
@@ -5506,7 +5506,7 @@ function filtrosHTML() {
     <button class="btn mine ${FL.mine ? 'on' : ''}" data-act="mine" aria-pressed="${FL.mine}" title="Mostrar solo lo que depende de ${esc(me)}">${icon('check', 14)}<span>Solo lo mío</span></button>
     ${on ? btn('Limpiar', 'flclear', { ic: 'x', cls: 'sm' }) : ''}
     ${FL.verComo ? `<span class="flt-note">Viendo como <b>${esc(FL.verComo)}</b> · <button class="lnk" data-act="vercomo" data-n="">Volver a mi usuario</button></span>` : ''}
-    ${GUIA[UI.view] ? `<button class="lnk flt-guia" data-act="guia" data-m="${UI.guiaOpen[UI.view] ? 'off' : 'on'}" aria-expanded="${!!UI.guiaOpen[UI.view]}" aria-label="Cómo operar esta pantalla" title="Cómo operar esta pantalla">${icon('help', 15)}<span class="gtx">Guía</span></button>` : ''}</div>`;
+</div>`;
 }
 Chg.respG = el => { FL.resp = el.value; ppInval(); refresh(); };
 Acts.mine = () => { FL.mine = !FL.mine; ppInval(); refresh(); };
@@ -9623,16 +9623,42 @@ const GUIA = {
     ['Conecta datos', 'SharePoint: «Probar conexión» → «Crear listas y columnas» → «Sincronizar ahora».'],
     ['Cuida la calidad', 'La auditoría lista campos faltantes; corrígelos desde cada ficha.'],
     ['Respalda', '«Respaldo JSON» antes de cambios grandes; «Importar respaldo» restaura.']] },
+  cielo: { t: 'Mi cocina', p: [
+    ['Lee tus tenedores', 'Cada proyecto activo muestra sus 5 tenedores de la semana, de lunes a domingo.'],
+    ['Enciende los apagados', 'Toca (o pasa el mouse sobre) un tenedor apagado para ver cómo ganarlo.'],
+    ['Actualiza', '«Ronda de actualización» te lleva proyecto por proyecto para dejarlos al día.'],
+    ['Revisa tus logros', 'Pestañas Insignias y Galería Michelin: lo obtenido y lo que falta. Las reglas están en «?» → «Reglas del juego».']] },
+  compromisos: { t: 'Compromisos', p: [
+    ['Lee qué debes y qué te deben', 'Incluye los acuerdos de reuniones y las acciones de comité.'],
+    ['Empieza por lo vencido', 'Los compromisos vencidos aparecen primero.'],
+    ['Cumple o registra', 'Marca como cumplido lo hecho; crea un compromiso nuevo con responsable y fecha.']] },
+  cambios: { t: 'Control de cambios', p: [
+    ['Registra el cambio', 'Todo cambio de alcance, fecha o presupuesto debe quedar registrado con su motivo.'],
+    ['Resuelve', 'Solo el sponsor, el administrador o Gasto aprueban o rechazan.'],
+    ['Mira el efecto', 'Cada cambio aprobado deja constancia de quién lo aprobó y cómo movió la línea base.']] },
+  miconfig: { t: 'Mi configuración', p: [
+    ['Ajusta los umbrales de alerta', 'Define desde cuándo un hito, riesgo o compromiso te genera una alerta.'],
+    ['Configura tus presentaciones', 'Preferencias que se aplican al armar presentaciones.'],
+    ['Define el menú por rol', 'Qué secciones ve cada rol en el menú lateral.']] },
+  ficha: { t: 'la ficha de la iniciativa', p: [
+    ['Lee la ficha completa', 'Toda la información de la iniciativa en una sola página.'],
+    ['Oculta lo que no necesites', 'El ojito oculta una sección; la flecha solo la contrae.'],
+    ['Comenta', '«Comentar» deja una observación para quien tenga acceso a esa área.'],
+    ['Edita', 'Cada sección tiene su propio botón de edición; el cambio queda en la bitácora.']] },
+  proposito: { t: 'Para qué sirve', p: [
+    ['Lee el propósito', 'Qué resuelve APIH para el portafolio de iniciativas TI.'],
+    ['Revisa el modelo de gobierno', 'Cómo se mueve una iniciativa: propuesta, compuertas, fases y comité.'],
+    ['Haz el recorrido', 'El «?» de cada pantalla ofrece «Ver recorrido» para conocer el sistema paso a paso.']] },
   ia: { t: 'IA', p: [
     ['Lee los hallazgos', 'Agentes con reglas sobre tus datos; la severidad 3 es crítica.'],
     ['Abre el caso', 'Clic en un hallazgo para ir al proyecto afectado.'],
     ['Usa el resumen', '«Copiar» o «A presentación» llevan el mensaje ejecutivo a donde lo necesites.']] }
 };
-Object.keys(GUIA).forEach(k => { if (!['admin', 'calendario'].includes(k)) GUIA[k].p.push(['Acota lo que ves', 'Barra de filtros: Área, Responsable o «Solo lo mío» (valen para todas las pantallas).']); });
+Object.keys(GUIA).forEach(k => { if (!['admin', 'calendario', 'miconfig', 'ficha', 'proposito'].includes(k)) GUIA[k].p.push(['Acota lo que ves', 'Barra de filtros: Área, Responsable o «Solo lo mío» (valen para todas las pantallas).']); });
 UI.guiaOpen = UI.guiaOpen || {};          // por pantalla; arranca cerrada
 function guiaHTML() {
   const g = GUIA[UI.view]; if (!g) return '';
-  if (!UI.guiaOpen[UI.view]) return sinFiltros(UI.view) ? `<div class="guia-min"><button class="lnk" data-act="guia" data-m="on" aria-expanded="false">${icon('help', 14)} Cómo operar esta pantalla</button></div>` : '';
+  if (!UI.guiaOpen[UI.view]) return '';   /* único acceso: «?» → «Cómo operar esta pantalla» */
   return `<section class="guia" aria-label="Cómo operar ${esc(g.t)}"><header><b>${icon('help', 15)} Cómo operar ${esc(g.t)}</b><button class="lnk" data-act="guia" data-m="off" aria-expanded="true">Cerrar</button></header>
     <ol>${g.p.map(([t, d]) => `<li><b>${esc(t)}</b><small>${esc(d)}</small></li>`).join('')}</ol></section>`;
 }
@@ -10197,7 +10223,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       ${dy ? `<div class="hp-dyn"><span>${icon('warn', 14)} <b>${esc(dy[0])}</b></span><button class="btn sm" data-act="go" data-v="${dy[1]}">Revisar</button></div>` : ''}
       ${P ? `<div class="hp-main edit-only">${btn(P.label, P.act, { d: P.d, ic: P.ic, cls: 'pri' })}</div>` : ''}
       <ul>${h.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
-      <div class="hp-f">${GUIA[UI.view] ? `<button class="btn sm" data-act="guia" data-m="on">Cómo operar esta pantalla</button>` : ''}<button class="btn sm" data-act="tour">Ver recorrido</button><button class="btn sm" data-act="go" data-v="proposito">Para qué sirve</button></div></div>`;
+      <div class="hp-f">${GUIA[UI.view] ? `<button class="btn sm" data-act="guia" data-m="on">Cómo operar esta pantalla</button>` : ''}${UI.view === 'cielo' ? `<button class="btn sm" data-act="cielotab" data-k="how">Reglas del juego</button>` : ''}<button class="btn sm" data-act="tour">Ver recorrido</button><button class="btn sm" data-act="go" data-v="proposito">Para qué sirve</button></div></div>`;
   }
   function cmtPopHTML() {
     const n = notasAbiertas().length;
@@ -10207,7 +10233,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.63', b: '19-10-2026 10:07' };
+  const VER = { v: 'V22.64', b: '19-10-2026 18:40' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
