@@ -868,7 +868,7 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const BAD = new Set(['SCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'BASE', 'META', 'LINK', 'FRAME', 'FRAMESET', 'APPLET']);
   const URLA = new Set(['href', 'src', 'xlink:href', 'action', 'formaction', 'poster', 'data']);
   window.limpiarHTML = function (html) {
-    html = String(html == null ? '' : html); if (!RISK.test(html)) return html;
+    html = String(html == null ? '' : html); if (!html.includes('<')) return html;   // S-07: sin atajo por regex (evadible con /onerror= o &#106;avascript:)
     const t = document.createElement('template'); dI.set.call(t, html);   // setter original: sin pasar otra vez por el filtro
     t.content.querySelectorAll('*').forEach(el => {
       if (BAD.has(el.tagName.toUpperCase())) { el.remove(); return; }
@@ -2915,7 +2915,7 @@ function decForm(d, ini, pre) {
       { k: 'limite', l: 'Fecha límite', t: 'date' }, { k: 'solicita', l: 'Solicitada por', list: people() }, { k: 'comite', l: 'Comité', t: 'select', opts: St.comites.map(c => ({ v: c.id, t: c.id + ' · ' + fmtD(c.fecha) })), blank: '—' }],
     onDanger: () => { St.decisiones = St.decisiones.filter(x => x.id !== d.id); St.comites.forEach(c => c.decisiones = c.decisiones.filter(x => x !== d.id)); toast('Decisión eliminada'); UI.sel = null; refresh(); },
     onSave(o) { if (!o.limite) { toast('La fecha límite es obligatoria', 'err'); return false; } if (o.limite > addD(hoy(), decMaxDias())) { toast('El plazo máximo de una decisión es de ' + decMaxDias() + ' días', 'err'); return false; } const tg = byId(o.ini); if (tg && o.tipo === 'Iniciar' && !esProp(tg)) { toast('“Iniciar” aplica solo a propuestas', 'err'); return false; } if (tg && o.tipo === 'Acelerar' && esProp(tg)) { toast('“Acelerar” aplica solo a proyectos', 'err'); return false; }
-      if (nw) { const n = { id: nextId('DEC', St.decisiones), estado: 'Pendiente', resolucion: '', fResol: null, aplicada: false, area: 'BISE', ...o }; St.decisiones.push(n); if (o.comite) { const c = St.comites.find(x => x.id === o.comite); if (c) c.decisiones.push(n.id); } log('Decisión', o.ini, `Decisión solicitada (${o.tipo}): ${o.titulo}`); toast('Decisión registrada'); } else { Object.assign(d, o); toast('Decisión guardada'); } refresh(); }
+      if (nw) { const n = { id: nextId('DEC', St.decisiones), estado: 'Pendiente', resolucion: '', fResol: null, aplicada: false, area: 'BISE', ...o }; St.decisiones.push(n); if (o.comite) { const c = St.comites.find(x => x.id === o.comite); if (c) c.decisiones.push(n.id); } log('Decisión', o.ini, `Decisión solicitada (${o.tipo}): ${o.titulo}`); toast('Decisión registrada'); } else { const oldC = d.comite; Object.assign(d, o); if (oldC !== d.comite) { (St.comites || []).forEach(c => { if (Array.isArray(c.decisiones)) c.decisiones = c.decisiones.filter(x => x !== d.id); }); const nc = d.comite && St.comites.find(c => c.id === d.comite); if (nc) { nc.decisiones = nc.decisiones || []; if (!nc.decisiones.includes(d.id)) nc.decisiones.push(d.id); } } toast('Decisión guardada'); } refresh(); }
   });
 }
 const EFECTO = (tipo, t) => ({ Iniciar: 'La propuesta se aprueba y se crea el proyecto en Planificación.', Acelerar: 'Prioridad → Alta (y el proyecto pausado vuelve a En curso).', Mantener: 'Sin cambios de estado.', Pausar: t && esProp(t) ? 'La propuesta pasa a En espera (revisión en 30 días).' : 'El proyecto pasa a Pausado (revisión en 30 días).', Cancelar: t && esProp(t) ? 'La propuesta pasa a Rechazada.' : 'El proyecto pasa a Cancelado.' }[tipo]);
@@ -2927,15 +2927,16 @@ Acts.resolvedec = d => {
     fields: [{ k: 'estado', l: 'Resultado', t: 'select', opts: ['Aprobada', 'Rechazada', 'Diferida'] }, { k: 'fResol', l: 'Fecha', t: 'date' }, { k: 'resolucion', l: 'Resolución / comentario de cierre', t: 'textarea', w: 3 }, { k: 'aplicar', l: 'Efecto', t: 'check', lbl: 'Aplicar efecto: ' + EFECTO(x.tipo, byId(x.ini)), w: 3 }],
     extra: `<p class="mut" style="margin-top:8px"><b>${esc(x.tipo)}</b> · ${esc(x.titulo)}</p>`,
     onSave(o) {
-      if (o.estado === 'Diferida') { x.limite = addD(x.limite || hoy(), 14); x.resolucion = o.resolucion; log('Decisión', x.ini, `Decisión diferida: ${x.titulo}`, 'Nueva fecha ' + fmtD(x.limite)); toast('Decisión diferida 14 días'); return refresh(); }
+      if (o.estado === 'Diferida') { x.limite = addD(x.limite && x.limite > hoy() ? x.limite : hoy(), 14); x.resolucion = o.resolucion; log('Decisión', x.ini, `Decisión diferida: ${x.titulo}`, 'Nueva fecha ' + fmtD(x.limite)); toast('Decisión diferida 14 días'); return refresh(); }
       x.estado = o.estado; x.resolucion = o.resolucion; x.fResol = o.fResol; x.aplicada = false;
       const i = byId(x.ini);
+      if (i && isDone(i) && ['Pausar', 'Cancelar'].includes(x.tipo)) toast('El proyecto ya está cerrado: no se aplica el efecto', 'err');
       if (o.estado === 'Aprobada' && o.aplicar && i) {
         const mot = o.resolucion || 'Decisión de comité ' + (x.comite || '');
-        if (x.tipo === 'Iniciar' && esProp(i) && i.estado !== 'Aprobada') { i.fase = 'Aprobación'; const n = aprobarPropuesta(i, mot); toast('Proyecto ' + n.id + ' creado desde ' + i.id); x.aplicada = true; }
+        if (x.tipo === 'Iniciar' && esProp(i) && i.estado !== 'Aprobada' && !isDone(i)) { i.fase = 'Aprobación'; const n = aprobarPropuesta(i, mot); toast('Proyecto ' + n.id + ' creado desde ' + i.id); x.aplicada = true; }
         else if (x.tipo === 'Acelerar' && !esProp(i)) { i.prioridad = 'Alta'; if (i.estado === 'Pausado') { i.estado = 'En curso'; i.estadoMotivo = ''; i.estadoRev = null; } x.aplicada = true; }
-        else if (x.tipo === 'Pausar') { i.estado = esProp(i) ? 'En espera' : 'Pausado'; i.estadoMotivo = mot; i.estadoRev = addD(hoy(), 30); x.aplicada = true; }
-        else if (x.tipo === 'Cancelar') { i.estado = esProp(i) ? 'Rechazada' : 'Cancelado'; i.estadoMotivo = mot; i.estadoRev = null; x.aplicada = true; }
+        else if (x.tipo === 'Pausar' && !isDone(i)) { i.estado = esProp(i) ? 'En espera' : 'Pausado'; i.estadoMotivo = mot; i.estadoRev = addD(hoy(), 30); x.aplicada = true; }
+        else if (x.tipo === 'Cancelar' && !isDone(i)) { i.estado = esProp(i) ? 'Rechazada' : 'Cancelado'; i.estadoMotivo = mot; i.estadoRev = null; x.aplicada = true; }
         i.actualizada = hoy();
       }
       log('Decisión', x.ini, `${x.tipo} · ${o.estado}: ${x.titulo}` + (o.resolucion ? ' — ' + o.resolucion : ''), x.aplicada ? 'Efecto aplicado' : null); toast('Decisión ' + o.estado.toLowerCase()); refresh();
@@ -3483,7 +3484,9 @@ function sfImportar(i, lista, warn) {
     if (!iapFecha(ini) || !iapFecha(fin) || fin < ini) return warn('Subfase «' + x.nombre + '»: fechas inválidas');
     if (ini < w.ini || fin > w.fin) return warn('Subfase «' + x.nombre + '»: debe quedar dentro de ' + x.fase + ' (' + rangoTx(w.ini, w.fin) + ')');
     const ya = subfasesDe(i).find(s => (x.id && s.id === x.id) || (s.fase === x.fase && _nrm(s.nombre) === _nrm(x.nombre)));
-    if (ya) { Object.assign(ya, { nombre: x.nombre.trim(), fase: x.fase, inicio: ini, fin, resp: x.resp != null ? x.resp : (ya.resp || '') }); if (typeof x.desc === 'string') { if (x.desc.trim()) ya.desc = cutDesc(x.desc.trim()); else delete ya.desc; } }
+    if (ya) { const faseAnt = ya.fase; Object.assign(ya, { nombre: x.nombre.trim(), fase: x.fase, inicio: ini, fin, resp: x.resp != null ? x.resp : (ya.resp || '') });
+      // N-F-04: si la subfase cambia de fase, sus hitos la siguen (y los que no cuadran quedan sin subfase)
+      if (faseAnt !== x.fase) (St.hitos || []).forEach(h => { if (h.ini === i.id && h.subfase === ya.id) { h.fase = x.fase; } }); if (typeof x.desc === 'string') { if (x.desc.trim()) ya.desc = cutDesc(x.desc.trim()); else delete ya.desc; } }
     else { if (subfasesDe(i).length >= 60) return warn('Subfase «' + x.nombre + '»: máximo 60 por iniciativa'); i.subfases = subfasesDe(i).concat([{ id: sfNextId(i), nombre: x.nombre.trim(), fase: x.fase, inicio: ini, fin, resp: x.resp || '', ...(typeof x.desc === 'string' && x.desc.trim() ? { desc: cutDesc(x.desc.trim()) } : {}) }]); }
   });
 }
@@ -4265,7 +4268,7 @@ Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = '';
       else if (IAP_DATE.includes(k)) { if (v !== null && v !== '' && !iapFecha(v)) return err.push(k + ': fecha inválida (' + v + ')'); const nv = v || null; if (nv !== (a || null)) { L(k, ver(a), ver(nv)); ap.push(() => { i[k] = nv; }); } }
       else if (k === 'rag' || k === 'prioridad' || k === 'moneda') { const cat = k === 'rag' ? RAGS : k === 'prioridad' ? PRIOS : Object.keys(MONEDAS); if (!cat.includes(v)) return err.push(k + ': valor inválido (' + v + ')'); if (v !== a) { L(k, ver(a), v); ap.push(() => { i[k] = v; }); } }
       else err.push('Campo no editable por esta vía: ' + k); });
-    const ip = P.inicioPlan !== undefined ? P.inicioPlan : i.inicioPlan, fp = P.finPlan !== undefined ? P.finPlan : i.finPlan; if (ip && fp && fp < ip) err.push('finPlan anterior a inicioPlan: se omiten cambios de fechas plan');
+    const ip = P.inicioPlan !== undefined ? P.inicioPlan : i.inicioPlan, fp = P.finPlan !== undefined ? P.finPlan : i.finPlan; if (ip && fp && fp < ip) err.push('finPlan anterior a inicioPlan: no se aplica nada hasta corregir el archivo');
     const bloqueo = ip && fp && fp < ip;
     if (o.notas_de_fase && typeof o.notas_de_fase === 'object' && !Array.isArray(o.notas_de_fase)) Object.keys(o.notas_de_fase).forEach(fx => { const v = o.notas_de_fase[fx]; if (!fasesDe(i).includes(fx)) return err.push('Nota de fase: «' + fx + '» no es una fase de ' + tipoLbl(i).toLowerCase()); if (typeof v !== 'string' || v.length > DESC_MAX) return err.push('Nota de fase ' + fx + ': texto inválido'); if ((faseNotaP(i, fx) || '') !== v) { ch.push('Nota de fase ' + fx); ap.push(() => { i.faseNota = Object.assign({}, i.faseNota); if (v.trim()) i.faseNota[fx] = cutDesc(v.trim()); else delete i.faseNota[fx]; }); } });
     const sfN = [];   // subfases que el archivo crea o cambia (para resolver referencias de hitos al validar)
@@ -4632,6 +4635,7 @@ function chgForm(c, pre) {
     onSave(o) {
       const i = byId(o.ini); if (!i) { toast('Elige un proyecto', 'err'); return false; }
       if (o.fNue && o.fNue === i.finPlan && !+o.pNue) { toast('La nueva fecha es igual a la actual', 'err'); return false; }
+      if (o.fNue && i.inicioPlan && o.fNue < i.inicioPlan) { toast('La nueva fecha de fin no puede ser anterior al inicio plan (' + fmtD(i.inicioPlan) + ')', 'err'); return false; }   // N-F-05
       if (nw) { const n = { id: nextId('CHG', St.cambios), ...o, pNue: +o.pNue || 0, solicita: me, fAnt: i.finPlan || null, pAnt: i.presupuesto || 0, estado: 'Solicitado', aprobador: '', fDec: null, nota: '', creada: hoy() }; St.cambios.push(n); log('Cambio', n.ini, `Solicitud de cambio ${n.id} (${n.tipo}): ${n.desc}. ${chgEfecto(n)}`); toast('Solicitud registrada: queda pendiente de aprobación'); }
       else { Object.assign(c, o, { pNue: +o.pNue || 0, fAnt: i.finPlan || null, pAnt: i.presupuesto || 0 }); toast('Solicitud actualizada'); }
       refresh();
@@ -5584,7 +5588,7 @@ function areaDeAccion(d, el) {
 const ACT_ADMIN = ['catadd', 'catdel', 'expjson', 'impjson', 'reset', 'sptest', 'spconnect', 'spprov', 'spsync', 'splogout', 'sppnp', 'spcopy', 'spseed', 'spretry', 'xlsxall', 'atab', 'syncgo'];
 const CHG_ADMIN = ['cfg', 'spc', 'impfile', 'impinifile'];
 const ACT_EDIT = ['advance', 'advgo', 'applyrag', 'hitotoggle', 'resolvedec', 'aprobar', 'aprobargo', 'estado', 'reopen', 'edit', 'sfnew', 'sfedit', 'fnota'];
-const CHG_EDIT = ['advto', 'hitotoggle'];
+const CHG_EDIT = ['advto', 'hitotoggle', 'acutoggle', 'bitpres'];
 const ACT_COM = ['csug', 'cdel', 'cpart', 'ctema', 'cacc', 'cdec', 'cclose'];
 const CHG_COM = ['catt', 'ctoggle'];
 function guardar(tabla, nombres, fn) {
