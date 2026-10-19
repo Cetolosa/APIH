@@ -953,13 +953,13 @@ const FASES = [...FASES_PROP, ...FASES_PRJ];
 const FASES_ACT = ['Planificación', 'Ejecución', 'Transición'];
 const FASES_PIPE = FASES_PROP;
 const FASE_COLOR = { 'Recepción': '#8A8886', 'Evaluación': '#8764B8', 'Caso de Negocio': '#4F6BED', 'Aprobación': '#038387', 'Planificación': '#0D446A', 'Ejecución': '#107C10', 'Transición': '#CA5010', 'Cierre': '#605E5C' };
-const ESTADOS_PROP = ['Vigente', 'En espera', 'Aprobada', 'Rechazada', 'Retirada'];
-const ESTADOS_PRJ = ['En curso', 'Pausado', 'Completado', 'Cancelado'];
+const ESTADOS_PROP = ['Vigente', 'En espera', 'Stand By', 'Aprobada', 'Rechazada', 'Retirada'];
+const ESTADOS_PRJ = ['En curso', 'Pausado', 'Stand By', 'Completado', 'Cancelado'];
 const EST_FINAL = { Propuesta: ['Aprobada', 'Rechazada', 'Retirada'], Proyecto: ['Completado', 'Cancelado'] };
-const EST_MOTIVO = ['En espera', 'Pausado', 'Rechazada', 'Retirada', 'Cancelado'];     // exigen motivo
+const EST_MOTIVO = ['En espera', 'Pausado', 'Stand By', 'Rechazada', 'Retirada', 'Cancelado'];     // exigen motivo
 const EST_REVISION = ['En espera', 'Pausado'];                                          // exigen fecha de revisión
 const ESTADOS = [...ESTADOS_PRJ, ...ESTADOS_PROP];
-const EST_C = { 'En curso': '#0D446A', 'Pausado': '#CA5010', 'Completado': '#107C10', 'Cancelado': '#D13438', 'Vigente': '#0D446A', 'En espera': '#CA5010', 'Aprobada': '#107C10', 'Rechazada': '#D13438', 'Retirada': '#8A8886', 'Pendiente': '#CA5010', 'Diferida': '#8A8886', 'Programado': '#CA5010', 'Realizado': '#107C10' };
+const EST_C = { 'En curso': '#0D446A', 'Pausado': '#CA5010', 'Completado': '#107C10', 'Cancelado': '#D13438', 'Vigente': '#0D446A', 'En espera': '#CA5010', 'Aprobada': '#107C10', 'Rechazada': '#D13438', 'Retirada': '#8A8886', 'Stand By': '#8A8886', 'Pendiente': '#CA5010', 'Diferida': '#8A8886', 'Programado': '#CA5010', 'Realizado': '#107C10' };
 const esProp = i => !!i && i.tipo === 'Propuesta';
 const tipoLbl = i => esProp(i) ? 'Propuesta' : 'Proyecto';
 const estadosDe = i => esProp(i) ? ESTADOS_PROP : ESTADOS_PRJ;
@@ -1143,7 +1143,9 @@ function audParse(texto) {
 
 /* ---------- cálculos de dominio ---------- */
 const isDone = i => EST_FINAL[esProp(i) ? 'Propuesta' : 'Proyecto'].includes(i.estado);
-const isLive = i => !isDone(i);
+/* Stand By = fuera de TODOS los indicadores, alertas y vistas de gestión; solo la Tabla lo muestra y la presentación lo cuenta */
+const esSB = i => !!i && i.estado === 'Stand By';
+const isLive = i => !isDone(i) && !esSB(i);
 const isActive = i => !esProp(i) && FASES_ACT.includes(i.fase) && i.estado === 'En curso';
 /* ---- Filtros globales V6: Área + Responsable + «Solo lo mío» (válidos en todas las pantallas) ---- */
 const ADMIN_USERS = ['Christian Tolosa'];                          // único administrador (ver también esAdmin())
@@ -1165,7 +1167,7 @@ function personProjects(n) {
   if (!_PP) {
     _PP = {}; const add = (nm, id) => { if (nm && id) (_PP[nm] = _PP[nm] || new Set()).add(id); };
     St.ini.forEach(i => [i.lider, i.sponsor, i.negocio, i.propuestoPor, i.solicita].forEach(nm => String(nm || '').split(/\s+-\s+|,/).forEach(x => add(x.trim(), i.id))));
-    St.hitos.forEach(h => add(h.resp, h.ini)); St.riesgos.forEach(r => add(r.dueno, r.ini)); St.decisiones.forEach(d => add(d.solicita, d.ini));
+    St.hitos.forEach(h => add(h.resp, h.ini)); St.riesgos.forEach(r => add(r.dueno, r.ini)); DECS().forEach(d => add(d.solicita, d.ini));
     St.comites.forEach(c => [...(c.acciones || []), ...(c.compromisos || [])].forEach(a => add(a.resp, a.ini)));
   }
   return _PP[n] || new Set();
@@ -1174,13 +1176,18 @@ const respOk = i => { const r = respSel(); return !r || personProjects(r).has(i.
 const respItem = (x, f) => { const r = respSel(); return !r || (x[f] || (byId(x.ini) || {}).lider) === r; };   // si el registro no trae responsable propio, rige el líder de la iniciativa      // filtro estricto sobre el campo propio (hito.resp, riesgo.dueno, decisión.solicita)
 const inArea = i => (St.cfg.areaGlobal === 'Todas' || (i.area || '').split(',').map(x => x.trim()).includes(St.cfg.areaGlobal)) && respOk(i) && (!PRES_MIO || _nrm(i.lider) === _nrm(miUsuario())) && (typeof areaVisible !== 'function' || areaVisible(i.area));
 /* scope() = PROYECTOS del área global · scopeP() = PROPUESTAS · scopeAll() = ambos */
-const scope = () => St.ini.filter(i => !esProp(i) && inArea(i));
-const scopeP = () => St.ini.filter(i => esProp(i) && inArea(i));
-const scopeAll = () => St.ini.filter(inArea);
+const scope = () => St.ini.filter(i => !esProp(i) && !esSB(i) && inArea(i));
+const scopeP = () => St.ini.filter(i => esProp(i) && !esSB(i) && inArea(i));
+const scopeAll = () => St.ini.filter(i => !esSB(i) && inArea(i));
+const scopeTT = t => St.ini.filter(i => inArea(i) && (t === 'Propuesta' ? esProp(i) : t === 'Todo' ? true : !esProp(i)));   // solo la Tabla de iniciativas: incluye Stand By
+const RIESGOS = () => St.riesgos.filter(r => !esSB(byId(r.ini)));
+const DECS = () => St.decisiones.filter(x => !esSB(byId(x.ini)));
+const CAMBIOS = () => St.cambios.filter(x => !esSB(byId(x.ini)));
+const ACUERDOS = () => St.compromisos.filter(x => !esSB(byId(x.ini)));
 const PRJS = () => St.ini.filter(i => !esProp(i));
 const PROPS = () => St.ini.filter(esProp);
 /* hitos visibles = solo de proyectos (las propuestas no tienen cronograma) */
-const HITOS = () => St.hitos.filter(h => { const i = byId(h.ini); return i && !esProp(i); });
+const HITOS = () => St.hitos.filter(h => { const i = byId(h.ini); return i && !esProp(i) && !esSB(i); });
 /* índices por iniciativa (O(1) en vez de filtrar toda la lista por cada proyecto); se invalidan en save() y al cambiar la lista */
 let _ixGen = 0; const _ix = {};
 const _porIni = (k, id) => { const arr = St[k]; let c = _ix[k]; if (!c || c.arr !== arr || c.n !== arr.length || c.g !== _ixGen) { const m = new Map(); arr.forEach(x => { let l = m.get(x.ini); if (!l) m.set(x.ini, l = []); l.push(x); }); _ix[k] = c = { arr, n: arr.length, g: _ixGen, m }; } return (c.m.get(id) || []).slice(); };
@@ -1211,7 +1218,7 @@ const roi = i => i.presupuesto > 0 ? (((+i.beneficio || 0) - i.presupuesto) / i.
 const expo = r => r.prob * r.imp;
 const nivelRiesgo = e => e >= cfgMi('umbralCritico') ? { n: 'Crítico', c: '#D13438' } : e >= 10 ? { n: 'Alto', c: '#CA5010' } : e >= 5 ? { n: 'Medio', c: '#F2A100' } : { n: 'Bajo', c: '#107C10' };
 const riesgoAbierto = r => r.estado !== 'Cerrado';
-const riesgosCriticos = () => St.riesgos.filter(r => riesgoAbierto(r) && expo(r) >= cfgI(byId(r.ini),'umbralCritico') && (!byId(r.ini) || (isLive(byId(r.ini)) && inArea(byId(r.ini)))));   // F-16
+const riesgosCriticos = () => RIESGOS().filter(r => riesgoAbierto(r) && expo(r) >= cfgI(byId(r.ini),'umbralCritico') && (!byId(r.ini) || (isLive(byId(r.ini)) && inArea(byId(r.ini)))));   // F-16
 const diasSinUpd = i => i.actualizada ? diffD(hoy(), i.actualizada) : 999;
 function ragSugerido(i) {   // RAG automático sugerido
   let p = 0; const why = [];
@@ -2198,8 +2205,8 @@ function navBadge(k) {
   if (k === 'riesgos') return riesgosCriticos().length;
   if (k === 'hitos') return HITOS().filter(h => !h.completado && h.fecha < hoy() && (!byId(h.ini) || inArea(byId(h.ini)))).length;
   if (k === 'compromisos') return typeof acuVencidos === 'function' ? acuVencidos() : 0;
-  if (k === 'cambios') return St.cambios ? St.cambios.filter(c => c.estado === 'Solicitado').length : 0;
-  if (k === 'decisiones') return St.decisiones.filter(d => d.estado === 'Pendiente').length;
+  if (k === 'cambios') return St.cambios ? CAMBIOS().filter(c => c.estado === 'Solicitado').length : 0;
+  if (k === 'decisiones') return DECS().filter(d => d.estado === 'Pendiente').length;
   if (k === 'ia') return typeof computeAlerts === 'function' ? computeAlerts().filter(a => a.sev === 3).length : 0;
   return 0;
 }
@@ -2361,9 +2368,9 @@ function panelIni(i) {
     b = `<div class="pn-sec"><h4>Hallazgos de agentes</h4>${fs.map(f => `<div class="note ${f.sev === 3 ? 'bad' : f.sev === 2 ? 'warn' : ''}"><b>${esc(f.agente)}:</b> ${esc(f.titulo)}<br><small>${esc(f.detalle)}</small></div>`).join('') || '<p class="mut">Sin hallazgos: cumple las reglas de los agentes.</p>'}</div>
     <div class="pn-sec"><h4>Historial de avance</h4><div style="margin:6px 0">${spark(i.hist.map(x => x[1]), 300, 46)}</div><small class="mut">${i.hist.length} registros de ciclo</small></div>`;
   }
-  const fin = isDone(i), canAprobar = PR && !fin && i.fase === 'Aprobación' && i.estado === 'Vigente';
+  const fin = isDone(i), canAprobar = PR && !fin && i.fase === 'Aprobación' && i.estado === 'Vigente';   // (Stand By no aprueba)
   return pnHead(`${tipoLbl(i)} ${i.id} · ${esc(i.area)}`, esc(i.titulo), `${tipoPill(i)} ${PR ? '' : ragPill(i.rag)} ${faseTag(i)} ${estPill(i.estado)} ${prioPill(i.prioridad)} ${PR ? '' : starsMini(i)}`,
-    `${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' }) + btn('Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm' })}${fin && !PR ? btn('Reabrir', 'reabrirPrj', { d: { id: i.id }, ic: 'refresh', cls: 'sm', title: 'Solo Gasto: vuelve el proyecto a En curso' }) : ''}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
+    `${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin && !esSB(i) ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : (esSB(i) ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' })) + btn(esSB(i) ? 'Reactivar' : 'Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm', title: esSB(i) ? 'Stand By: fuera de indicadores. Reactívala cambiando el estado' : 'Cambiar estado' })}${fin && !PR ? btn('Reabrir', 'reabrirPrj', { d: { id: i.id }, ic: 'refresh', cls: 'sm', title: 'Solo Gasto: vuelve el proyecto a En curso' }) : ''}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
     `<div class="tabs sm">${tabs.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="ptab" data-tab="${k}">${n}</button>`).join('')}</div><div class="pn-b">${b}</div>`;
 }
 function panelRisk(r) {
@@ -2388,7 +2395,7 @@ function gsearch(q) {
   St.ini.forEach(i => { if ((i.titulo + ' ' + i.id + ' ' + i.lider + ' ' + i.sponsor + ' ' + i.proveedor).toLowerCase().includes(q)) m.push({ t: 'ini', id: i.id, l: i.titulo, s: i.id + ' · ' + i.fase, ic: 'list' }); });
   St.riesgos.forEach(r => { if ((r.desc + ' ' + r.id).toLowerCase().includes(q)) m.push({ t: 'risk', id: r.id, l: r.desc, s: r.id + ' · riesgo ' + expo(r), ic: 'shield' }); });
   HITOS().forEach(h => { if (h.nombre.toLowerCase().includes(q)) m.push({ t: 'hito', id: h.id, l: h.nombre, s: 'Hito · ' + nameOf(h.ini), ic: 'flag' }); });
-  St.decisiones.forEach(d => { if ((d.titulo + d.id).toLowerCase().includes(q)) m.push({ t: 'dec', id: d.id, l: d.titulo, s: d.id + ' · decisión ' + d.tipo, ic: 'gavel' }); });
+  DECS().forEach(d => { if ((d.titulo + d.id).toLowerCase().includes(q)) m.push({ t: 'dec', id: d.id, l: d.titulo, s: d.id + ' · decisión ' + d.tipo, ic: 'gavel' }); });
   St.ini.forEach(i => (i.subfases || []).forEach(sf => { if (String(sf.nombre || '').toLowerCase().includes(q)) m.push({ t: 'ini', id: i.id, l: sf.nombre, s: 'Subfase · ' + i.titulo, ic: 'list' }); }));   /* N-U-16 */
   box.innerHTML = m.slice(0, 9).map(x => `<button data-act="gsel" data-t="${x.t}" data-id="${x.id}">${icon(x.ic, 15)}<span><b>${esc(x.l)}</b><small>${esc(x.s)}</small></span></button>`).join('') || '<div class="empty-s">Sin resultados</div>';
   box.classList.add('open');
@@ -2799,6 +2806,7 @@ Acts.pjson = () => {
    ============================================================ */
 const people = () => uniq([...St.usuarios.map(u => u.n), ...St.ini.flatMap(i => [i.lider, i.sponsor, i.negocio]).filter(Boolean)]).sort();
 const iniOpts = tipo => St.ini.filter(i => !tipo || i.tipo === tipo).slice().sort(by('id')).map(i => ({ v: i.id, t: i.id + ' · ' + i.titulo }));
+const iniOptsF = tipo => iniOpts(tipo).filter(o => !esSB(byId(o.v)));   /* filtros de pantallas de gestión: sin Stand By (los formularios sí lo conservan para no perder vínculos) */
 function hasCycle(id, deps) {   // ¿agregar deps a id crea ciclo?
   const seen = new Set(); const st = [...deps];
   while (st.length) { const x = st.pop(); if (x === id) return true; if (seen.has(x)) continue; seen.add(x); const i = byId(x); if (i) st.push(...i.deps); }
@@ -3099,7 +3107,7 @@ Acts.estado = d => {
   openForm({
     title: 'Cambiar estado · ' + i.titulo, saveLabel: 'Aplicar', values: { estado: i.estado, motivo: i.estadoMotivo || '', rev: i.estadoRev || '' },
     fields: [{ k: 'estado', l: 'Nuevo estado', t: 'select', opts, w: 3 }, { k: 'motivo', l: 'Motivo (obligatorio para ' + EST_MOTIVO.join(', ') + ')', t: 'textarea', w: 3 }, { k: 'rev', l: 'Fecha de revisión (obligatoria para ' + EST_REVISION.join(' y ') + ')', t: 'date' }],
-    extra: `<p class="mut" style="margin-top:8px">${esProp(i) ? 'Para aprobar una propuesta usa “Aprobar y crear proyecto”.' : 'Completado solo está disponible en la fase Cierre.'}</p>`,
+    extra: `<p class="mut" style="margin-top:8px">${esProp(i) ? 'Para aprobar una propuesta usa “Aprobar y crear proyecto”.' : 'Completado solo está disponible en la fase Cierre.'} «Stand By» saca la ${tipoLbl(i).toLowerCase()} de indicadores, alertas y presentación (solo se cuenta); para reactivarla elige ${esProp(i) ? 'Vigente' : 'En curso'}.</p>`,
     onSave(o) {
       if (EST_MOTIVO.includes(o.estado) && !o.motivo) { toast('Indica el motivo del estado ' + o.estado, 'err'); return false; }
       if (EST_REVISION.includes(o.estado) && !o.rev) { toast('Indica la fecha de revisión', 'err'); return false; }
@@ -3153,10 +3161,10 @@ const priorScore = i => { if (!i.score) return 0; const s = i.score, r = roi(i),
 function myWork() {
   const me = miUsuario(), items = [], L = d => diffD(d, hoy());
   HITOS().forEach(h => { const i = byId(h.ini); if (!i || i.lider !== me || h.completado || !isLive(i) || !inArea(i)) return; if (L(h.fecha) <= 14) items.push({ k: 'hito', id: h.id, t: h.nombre, s: i.titulo, when: h.fecha, over: L(h.fecha) < 0, ic: 'flag' }); });
-  St.riesgos.forEach(r => { if (r.dueno === me && riesgoAbierto(r) && r.fRev && L(r.fRev) <= 14) items.push({ k: 'risk', id: r.id, t: 'Revisar riesgo: ' + r.desc, s: nameOf(r.ini), when: r.fRev, over: L(r.fRev) < 0, ic: 'shield' }); });
-  St.decisiones.forEach(d => { if (d.estado === 'Pendiente' && d.solicita === me && d.limite && L(d.limite) <= 14) items.push({ k: 'dec', id: d.id, t: 'Decisión: ' + d.titulo, s: d.ini ? nameOf(d.ini) : '', when: d.limite, over: L(d.limite) < 0, ic: 'gavel' }); });
+  RIESGOS().forEach(r => { if (r.dueno === me && riesgoAbierto(r) && r.fRev && L(r.fRev) <= 14) items.push({ k: 'risk', id: r.id, t: 'Revisar riesgo: ' + r.desc, s: nameOf(r.ini), when: r.fRev, over: L(r.fRev) < 0, ic: 'shield' }); });
+  DECS().forEach(d => { if (d.estado === 'Pendiente' && d.solicita === me && d.limite && L(d.limite) <= 14) items.push({ k: 'dec', id: d.id, t: 'Decisión: ' + d.titulo, s: d.ini ? nameOf(d.ini) : '', when: d.limite, over: L(d.limite) < 0, ic: 'gavel' }); });
   St.comites.forEach(c => [...(c.acciones || []).map(a => ({ ...a, tp: 'Acción' })), ...(c.compromisos || []).map(a => ({ ...a, tp: 'Compromiso' }))].forEach(a => { if (a.resp === me && ['Abierta', 'Abierto'].includes(a.estado) && a.limite && L(a.limite) <= 14) items.push({ k: 'acc', id: a.id, t: a.tp + ': ' + a.texto, s: a.ini ? nameOf(a.ini) : c.nombre, when: a.limite, over: L(a.limite) < 0, ic: 'check' }); }));
-  (St.compromisos || []).forEach(a => { if (a.resp === me && a.estado === 'Abierto' && a.limite && L(a.limite) <= 14) items.push({ k: 'acu', id: a.id, t: 'Compromiso: ' + a.texto, s: a.ini ? nameOf(a.ini) : (a.tema || 'General'), when: a.limite, over: L(a.limite) < 0, ic: 'check' }); });
+  ACUERDOS().forEach(a => { if (a.resp === me && a.estado === 'Abierto' && a.limite && L(a.limite) <= 14) items.push({ k: 'acu', id: a.id, t: 'Compromiso: ' + a.texto, s: a.ini ? nameOf(a.ini) : (a.tema || 'General'), when: a.limite, over: L(a.limite) < 0, ic: 'check' }); });
   St.ini.forEach(i => { if (i.lider === me && isLive(i) && FASES_ACT.includes(i.fase) && diasSinUpd(i) > cfgI(i,'diasSinUpdate') && inArea(i)) items.push({ k: 'upd', id: i.id, t: 'Actualizar avance (hace ' + diasSinUpd(i) + ' d)', s: i.titulo, when: addD(i.actualizada, cfgI(i,'diasSinUpdate')), over: true, ic: 'refresh' }); });
   return items.sort(by('when'));
 }
@@ -3166,10 +3174,10 @@ Views.dashboard = {
   render() {
     const K = kpis(), L = scope(), live = L.filter(isLive), al = computeAlerts();
     const crit = live.filter(i => FASES_ACT.includes(i.fase) || i.fase === 'Cierre').sort(by(i => -critScore(i))).slice(0, 6);
-    const risks = riesgosCriticos().length ? St.riesgos.filter(r => riesgoAbierto(r) && (!byId(r.ini) || inArea(byId(r.ini)))).sort(by(r => -expo(r))).slice(0, 6) : St.riesgos.filter(riesgoAbierto).sort(by(r => -expo(r))).slice(0, 6);
+    const risks = riesgosCriticos().length ? RIESGOS().filter(r => riesgoAbierto(r) && (!byId(r.ini) || inArea(byId(r.ini)))).sort(by(r => -expo(r))).slice(0, 6) : RIESGOS().filter(riesgoAbierto).sort(by(r => -expo(r))).slice(0, 6);
     const hs = HITOS().filter(h => !h.completado && byId(h.ini) && inArea(byId(h.ini)) && isLive(byId(h.ini))).sort(by('fecha'));
     const hv = hs.filter(h => h.fecha < hoy()).length, hp = hs.filter(h => h.fecha >= hoy()).slice(0, 6);
-    const dp = St.decisiones.filter(d => d.estado === 'Pendiente').sort(by('limite')).slice(0, 5);
+    const dp = DECS().filter(d => d.estado === 'Pendiente').sort(by('limite')).slice(0, 5);
     const rag = RAGS.map(r => ({ l: r, v: live.filter(i => i.rag === r).length, c: RAG_C[r] }));
     const work = myWork();
     const yr = +hoy().slice(0, 4), qs = [1, 2, 3, 4].map(q => ({ q, items: live.filter(i => { const f = forecast(i); return f && +f.slice(0, 4) === yr && quarter(f) === q; }).sort(by(i => -critScore(i))) }));
@@ -3181,7 +3189,7 @@ Views.dashboard = {
     <section class="kpis" aria-label="Indicadores clave">
       ${kp('', 'play', 'Proyectos Activos', K.activos, `${K.total} proyectos · ${K.cerradas} completados`, stackBar(FASES_ACT.map(f => ({ l: f, v: L.filter(i => i.fase === f && isActive(i)).length, c: FASE_COLOR[f] })), 6), 'proyectos')}
       ${kp(K.atrasados ? 'bad' : 'good', 'clock', 'Atrasados', K.atrasados, K.atrasados ? `${Math.round(K.atrasados / Math.max(1, K.activos) * 100)}% de los activos · desv. &gt; ${cfgMi('tolDesv')} d` : (hv ? `Proyectos sin desvío, pero ${hv} ${hv === 1 ? 'hito vencido' : 'hitos vencidos'}` : 'Sin desviaciones relevantes'), '', 'gantt')}
-      ${kp(K.riesgosCrit ? 'bad' : 'good', 'shield', 'Riesgos Críticos', K.riesgosCrit, `Exposición ≥ ${cfgMi('umbralCritico')} · ${St.riesgos.filter(riesgoAbierto).length} riesgos abiertos`, '', 'riesgos')}
+      ${kp(K.riesgosCrit ? 'bad' : 'good', 'shield', 'Riesgos Críticos', K.riesgosCrit, `Exposición ≥ ${cfgMi('umbralCritico')} · ${RIESGOS().filter(riesgoAbierto).length} riesgos abiertos`, '', 'riesgos')}
       ${kp(K.ontrackPct >= 60 ? 'good' : K.ontrackPct >= 35 ? 'warn' : 'bad', 'check', '% On Track', pct(K.ontrackPct), `${K.ontrack} de ${K.activos} activos en verde y a tiempo`, prog(K.ontrackPct, K.ontrackPct >= 60 ? 'Verde' : K.ontrackPct >= 35 ? 'Ámbar' : 'Rojo', 6), 'portfolio')}
     </section>
     <section class="kpis kpis2" aria-label="Indicadores secundarios">
@@ -3265,18 +3273,18 @@ function pcols() { const f = F('portfolio', {}); f.tipo = tipoPF(); const T = f.
 const PCELL = (c, i) => ((c.t === 'j' && esProp(i)) || (c.t === 'p' && !esProp(i))) ? '<span class="mut">—</span>' : c.r(i);
 const GROUPS = { '': 'Sin agrupar', area: 'Área', fase: 'Fase', rag: 'RAG', lider: 'Responsable', prioridad: 'Prioridad', categoria: 'Categoría', estado: 'Estado' };
 function portfolioRows() {
-  const f = F('portfolio', {}); f.tipo = tipoPF(); let rows = f.tipo === 'Propuesta' ? scopeP() : f.tipo === 'Todo' ? scopeAll() : scope();
+  const f = F('portfolio', {}); f.tipo = tipoPF(); let rows = scopeTT(f.tipo);
   if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(i => (i.titulo + i.id + i.lider + i.sponsor + i.proveedor + i.desc).toLowerCase().includes(q)); }
   if (f.fase) rows = rows.filter(i => i.fase === f.fase); if (f.estado) rows = rows.filter(i => i.estado === f.estado); if (f.rag) rows = rows.filter(i => i.rag === f.rag);
   if (f.tini) rows = rows.filter(i => i.tipoIni === f.tini); if (f.prio) rows = rows.filter(i => i.prioridad === f.prio); if (f.resp) rows = rows.filter(i => i.lider === f.resp); if (f.area) rows = rows.filter(i => i.area.split(',').includes(f.area));
-  if (f.hideDone) rows = rows.filter(isLive);
+  if (f.hideDone) rows = rows.filter(i => !isDone(i));
   const c = PCOLS.find(x => x.k === f.sort) || PCOLS[0]; rows = rows.slice().sort(by(c.s, f.dir || 1));
   return rows;
 }
 Views.portfolio = {
   render() {
     const f = F('portfolio', { tipo: tipoPF(), q: '', fase: '', estado: '', rag: '', prio: '', resp: '', area: '', group: '', sort: 'id', dir: 1, cols: ['tipo','id','titulo','fase','avance','afase','lider','prioridad','rag','desv','hitosn','estado'], hideDone: false, dens: 'n', col: {} });
-    const rows = portfolioRows(), cols = pcols().filter(c => !(['tini', 'sponsor'].includes(c.k) && rows.length && rows.every(i => !c.f(i)))), all = f.tipo === 'Propuesta' ? scopeP() : f.tipo === 'Todo' ? scopeAll() : scope(), nPrj = scope().length, nProp = scopeP().length;
+    const rows = portfolioRows(), cols = pcols().filter(c => !(['tini', 'sponsor'].includes(c.k) && rows.length && rows.every(i => !c.f(i)))), all = scopeTT(f.tipo), nPrj = scopeTT('Proyecto').length, nProp = scopeTT('Propuesta').length;
     const grp = f.group; let body = '';
     const rowH = i => `<tr data-act="sel" data-t="ini" data-id="${i.id}" class="${UI.sel && UI.sel.id === i.id ? 'sel' : ''}">${cols.map(c => `<td class="${c.num ? 'n' : ''} c-${c.k}">${PCELL(c, i)}</td>`).join('')}</tr>`;
     if (!grp) body = rows.map(rowH).join('');
@@ -3653,7 +3661,7 @@ function pasosDe(i) {
     else if (r.fRev && r.fRev < H) add('rv' + r.id, 0, 'Riesgo', 'Revisa el riesgo «' + r.desc + '»', 'La revisión venció el ' + fzd(r.fRev) + '. Mientras no se revise, el indicador de Riesgos queda en rojo.', 'Riesgos', 'Editar riesgo', 'edit', { t: 'risk', id: r.id }, r.fRev);
     else if (r.fRev && diffD(r.fRev, H) <= 7) add('rs' + r.id, r.fRev === H ? 0 : 1, 'Riesgo ' + n.n.toLowerCase(), 'Prepara la revisión de «' + r.desc + '» (' + fzd(r.fRev) + ')', n.n + ' (' + expo(r) + ')' + (r.mit ? '. Mitigación: ' + cut(r.mit, 90) : '.'), 'Riesgos', 'Abrir riesgo', 'sel', { t: 'risk', id: r.id }, r.fRev);
   });
-  St.compromisos.filter(c => c.ini === i.id && !['Cumplido', 'Cancelado'].includes(c.estado) && c.limite && diffD(c.limite, H) <= 7).forEach(c => add('c' + c.id, c.limite <= H ? 0 : 1, 'Compromiso', (c.limite < H ? 'Cumple el compromiso vencido «' : 'Cumple «') + cut(c.texto || c.titulo || 'compromiso', 70) + '»', (c.limite < H ? 'Venció el ' : 'Vence el ') + fzd(c.limite) + (c.resp ? ' · ' + c.resp : '') + '.', 'Compromisos', 'Ver compromisos', 'go', { v: 'compromisos' }, c.limite));
+  ACUERDOS().filter(c => c.ini === i.id && !['Cumplido', 'Cancelado'].includes(c.estado) && c.limite && diffD(c.limite, H) <= 7).forEach(c => add('c' + c.id, c.limite <= H ? 0 : 1, 'Compromiso', (c.limite < H ? 'Cumple el compromiso vencido «' : 'Cumple «') + cut(c.texto || c.titulo || 'compromiso', 70) + '»', (c.limite < H ? 'Venció el ' : 'Vence el ') + fzd(c.limite) + (c.resp ? ' · ' + c.resp : '') + '.', 'Compromisos', 'Ver compromisos', 'go', { v: 'compromisos' }, c.limite));
   const FS = fasesDe(i), nx = FS[FS.indexOf(i.fase) + 1];
   if (nx) {
     const g = gates(i, nx), falta = g.filter(x => !x.ok), V = fasesVentana(i), v = V.find(x => x.actual), cerca = v && v.fin && diffD(v.fin, H) <= 7;
@@ -3755,7 +3763,7 @@ function heatColor(e) { return e >= 20 ? '#B3262B' : e >= 15 ? '#D13438' : e >= 
 Views.riesgos = {
   render() {
     const f = F('risk', { q: '', estado: '', cat: '', nivel: '', dueno: '', cell: '', ini: '', hideClosed: true });
-    let all = St.riesgos.filter(r => (!byId(r.ini) || inArea(byId(r.ini))) && porTipo(byId(r.ini)) && respItem(r, 'dueno')); const open = all.filter(riesgoAbierto);
+    let all = RIESGOS().filter(r => (!byId(r.ini) || inArea(byId(r.ini))) && porTipo(byId(r.ini)) && respItem(r, 'dueno')); const open = all.filter(riesgoAbierto);
     let rows = all.slice();
     if (f.hideClosed) rows = rows.filter(riesgoAbierto);
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(r => (r.desc + r.id + nameOf(r.ini) + r.dueno).toLowerCase().includes(q)); }
@@ -3785,13 +3793,13 @@ Views.riesgos = {
 };
 Acts.hcell = d => { const f = F('risk', {}); f.cell = f.cell === d.c ? '' : d.c; render(); };
 Acts.rnivel = d => { const f = F('risk', {}); f.nivel = f.nivel === d.n ? '' : d.n; render(); };
-Acts.riskcsv = () => { download('APIH_riesgos_' + hoy() + '.csv', toCSV(St.riesgos.filter(r => { const i = byId(r.ini); return !i || areaVisible(i.area); }), [{ h: 'ID', f: r => r.id }, { h: 'Proyecto', f: r => nameOf(r.ini) }, { h: 'Descripción', f: r => r.desc }, { h: 'Categoría', f: r => r.cat }, { h: 'Impacto', f: r => r.imp }, { h: 'Probabilidad', f: r => r.prob }, { h: 'Exposición', f: expo }, { h: 'Mitigación', f: r => r.mit }, { h: 'Dueño', f: r => r.dueno }, { h: 'Estado', f: r => r.estado }]), 'text/csv'); toast('Riesgos exportados'); };
+Acts.riskcsv = () => { download('APIH_riesgos_' + hoy() + '.csv', toCSV(RIESGOS().filter(r => { const i = byId(r.ini); return !i || areaVisible(i.area); }), [{ h: 'ID', f: r => r.id }, { h: 'Proyecto', f: r => nameOf(r.ini) }, { h: 'Descripción', f: r => r.desc }, { h: 'Categoría', f: r => r.cat }, { h: 'Impacto', f: r => r.imp }, { h: 'Probabilidad', f: r => r.prob }, { h: 'Exposición', f: expo }, { h: 'Mitigación', f: r => r.mit }, { h: 'Dueño', f: r => r.dueno }, { h: 'Estado', f: r => r.estado }]), 'text/csv'); toast('Riesgos exportados'); };
 
 /* ======================= HITOS ======================= */
 Views.hitos = {
   render() {
     const f = F('hitos', { q: '', est: '', ini: '', resp: '', cat: '' });
-    let all = St.hitos.filter(h => byId(h.ini) && inArea(byId(h.ini)) && porTipo(byId(h.ini)) && respItem(h, 'resp') && byId(h.ini).estado !== 'Cancelado'); let rows = all.slice();
+    let all = St.hitos.filter(h => byId(h.ini) && !esSB(byId(h.ini)) && inArea(byId(h.ini)) && porTipo(byId(h.ini)) && respItem(h, 'resp') && byId(h.ini).estado !== 'Cancelado'); let rows = all.slice();
     if (f.cat) rows = rows.filter(h => (h.cat || '') === (f.cat === '—' ? '' : f.cat));
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(h => (h.nombre + nameOf(h.ini)).toLowerCase().includes(q)); }
     if (f.ini) rows = rows.filter(h => h.ini === f.ini); if (f.resp) rows = rows.filter(h => h.resp === f.resp);
@@ -3824,8 +3832,8 @@ function calEvents() {
   HITOS().forEach(h => { const i = byId(h.ini); if (i && inArea(i) && respItem(h, 'resp')) ev.push({ f: h.fecha, t: 'Hito', l: h.nombre, s: i.titulo, ref: ['hito', h.id], c: hitoEstado(h).c, done: h.completado, ini: h.ini, resp: h.resp }); });
   St.comites.forEach(c => ev.push({ f: c.fecha, t: 'Comité', l: c.nombre, s: c.hora + ' · ' + c.lugar, ref: ['com', c.id], done: c.estado === 'Realizado' }));
   St.ini.forEach(i => { if (inArea(i) && isLive(i) && [...FASES_ACT, 'Cierre'].includes(i.fase) && forecast(i)) ev.push({ f: forecast(i), t: 'Entrega', l: 'Entrega: ' + i.titulo, s: i.fase, ref: ['ini', i.id], c: RAG_C[i.rag], ini: i.id, resp: i.lider }); });
-  St.decisiones.forEach(d => { if (d.estado === 'Pendiente' && d.limite) ev.push({ f: d.limite, t: 'Vencimiento', l: 'Decisión: ' + d.titulo, s: d.tipo, ref: ['dec', d.id], ini: d.ini, resp: d.solicita }); });
-  St.riesgos.forEach(r => { if (riesgoAbierto(r) && r.fRev) ev.push({ f: r.fRev, t: 'Vencimiento', l: 'Revisión riesgo: ' + r.desc, s: nameOf(r.ini), ref: ['risk', r.id], ini: r.ini, resp: r.dueno }); });
+  DECS().forEach(d => { if (d.estado === 'Pendiente' && d.limite) ev.push({ f: d.limite, t: 'Vencimiento', l: 'Decisión: ' + d.titulo, s: d.tipo, ref: ['dec', d.id], ini: d.ini, resp: d.solicita }); });
+  RIESGOS().forEach(r => { if (riesgoAbierto(r) && r.fRev) ev.push({ f: r.fRev, t: 'Vencimiento', l: 'Revisión riesgo: ' + r.desc, s: nameOf(r.ini), ref: ['risk', r.id], ini: r.ini, resp: r.dueno }); });
   St.comites.forEach(c => [...c.acciones, ...c.compromisos].forEach(a => { if (['Abierta', 'Abierto'].includes(a.estado) && a.limite) ev.push({ f: a.limite, t: 'Vencimiento', l: (c.compromisos.includes(a) ? 'Compromiso: ' : 'Acción: ') + a.texto, s: a.resp, ref: a.ini ? ['ini', a.ini] : ['com', c.id], ini: a.ini, resp: a.resp }); }));
   St.pres.forEach(p => { if (p.fecha) ev.push({ f: p.fecha, t: 'Ciclo', l: p.nombre.length > 46 ? p.nombre.slice(0, 44) + '…' : p.nombre, s: p.area, ref: ['go', 'presentaciones'], areaX: p.area }); });
   St.eventos.forEach(e => ev.push({ f: e.fecha, t: e.tipo, l: e.titulo, s: e.nota || '', ref: ['evt', e.id], ini: e.ini, resp: e.resp }));
@@ -3954,7 +3962,7 @@ Acts.cpart = d => { const c = St.comites.find(x => x.id === d.id); openForm({ ti
 Acts.carmar = d => {   /* U-19: arma la agenda con lo pendiente */
   const c = St.comites.find(x => x.id === d.id); if (!c) return; const prop = d.kind === 'prop', n0 = c.temas.length;
   const ya = (t, ini) => c.temas.some(x => x.t === t && (x.ini || '') === (ini || ''));
-  St.decisiones.filter(x => x.estado === 'Pendiente' && x.ini && byId(x.ini) && (prop ? esProp(byId(x.ini)) : !esProp(byId(x.ini)))).forEach(x => { const t = 'Decidir: ' + x.titulo; if (!ya(t, x.ini)) c.temas.push({ t, ini: x.ini, notas: '' }); });
+  DECS().filter(x => x.estado === 'Pendiente' && x.ini && byId(x.ini) && (prop ? esProp(byId(x.ini)) : !esProp(byId(x.ini)))).forEach(x => { const t = 'Decidir: ' + x.titulo; if (!ya(t, x.ini)) c.temas.push({ t, ini: x.ini, notas: '' }); });
   if (prop) St.ini.filter(i => esProp(i) && isLive(i)).forEach(i => { const t = 'Revisar propuesta: ' + i.titulo; if (!ya(t, i.id)) c.temas.push({ t, ini: i.id, notas: '' }); });
   const n = c.temas.length - n0; toast(n ? n + ' tema(s) agregados a la agenda' : 'No hay pendientes nuevos para agregar'); if (n) refresh();
 };
@@ -3974,11 +3982,11 @@ Acts.actadl = d => { const c = St.comites.find(x => x.id === d.id); download('Ac
 Views.decisiones = {
   render() {
     const f = F('dec', { tipo: '', estado: 'Pendiente', q: '' });
-    let rows = St.decisiones.filter(d => (!d.ini || (byId(d.ini) && inArea(byId(d.ini))) || !byId(d.ini)) && respItem(d, 'solicita'));
+    let rows = DECS().filter(d => (!d.ini || (byId(d.ini) && inArea(byId(d.ini))) || !byId(d.ini)) && respItem(d, 'solicita'));
     if (f.tipo) rows = rows.filter(d => d.tipo === f.tipo); if (f.estado) rows = rows.filter(d => d.estado === f.estado);
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(d => (d.titulo + d.recomendacion + nameOf(d.ini)).toLowerCase().includes(q)); }
     rows.sort(by(d => (d.estado === 'Pendiente' ? '0' : '1') + (d.limite || '9')));
-    const all = St.decisiones, pend = all.filter(d => d.estado === 'Pendiente');
+    const all = DECS(), pend = all.filter(d => d.estado === 'Pendiente');
     const tcard = t => `<button class="kpi sm tcard ${f.tipo === t ? 'on' : ''}" style="--c:${DEC_C[t]}" data-act="dtipo" data-t="${t}"><div class="k-top"><span class="dtype" style="background:${DEC_C[t]}">${icon(DEC_ICON[t], 14)}</span><span class="k-l">${t}</span></div><div class="k-v">${pend.filter(d => d.tipo === t).length}<small> pend.</small></div><div class="k-s">${all.filter(d => d.tipo === t && d.estado !== 'Pendiente').length} resueltas</div></button>`;
     return pageHead('Decisiones', 'Gestión independiente de decisiones de portafolio. Al aprobar, se puede aplicar el efecto sobre el proyecto o la propuesta automáticamente.', `<span class="edit-only">${btn('Nueva decisión', 'new', { d: { t: 'dec' }, ic: 'plus', cls: 'pri' })}</span>`) + `
     ${all.length ? `<div class="chips-row tc">${DEC_TIPOS.map(tcard).join('')}</div>` : ''}
@@ -4007,7 +4015,7 @@ Views.bitacora = {
     <div class="composer big edit-only"><select id="bt-ini">${selOpts(iniOpts(), '', 'General (sin proyecto)')}</select><input id="bt-tema" list="bt-temas" data-key="bt-tema" placeholder="Tema o persona" data-chg="noop" data-live="no" style="max-width:190px"><datalist id="bt-temas">${temas.map(t => `<option value="${esc(t)}">`).join('')}</datalist><input id="bt-txt" data-key="bt-txt" placeholder="Escribe un comentario o nota para la bitácora…" data-chg="noop" data-live="no"><label class="chk" title="Solo aplica a notas ligadas a un proyecto o propuesta"><input type="checkbox" id="bt-pres" checked> <span>En presentación</span></label><button class="btn pri" data-act="bitadd">${icon('send', 14)}<span>Publicar</span></button></div>
     <div class="toolbar"><div class="search"><span>${icon('search', 14)}</span><input data-key="b-q" data-chg="flt" data-v="bit" data-f="q" type="search" placeholder="Buscar en la bitácora…" value="${esc(f.q)}"></div>
       <div class="chips">${BIT_TIPOS.map(t => `<button class="chip ${f.tipos.includes(t) ? 'on' : ''}" style="--c:${BIT_C[t]}" data-act="btipo" data-t="${t}"><i></i>${t}</button>`).join('')}</div>
-      <select data-chg="flt" data-v="bit" data-f="ini">${selOpts([{ v: '__gen', t: 'Solo generales (sin proyecto)' }, ...iniOpts()], f.ini, 'Todos los proyectos y propuestas')}</select>${temas.length ? `<select data-chg="flt" data-v="bit" data-f="tema">${selOpts(temas, f.tema, 'Todos los temas')}</select>` : ''}<span class="mut" style="margin-left:auto;font-size:12px">${rows.length} ${rows.length === 1 ? 'entrada' : 'entradas'}</span></div>
+      <select data-chg="flt" data-v="bit" data-f="ini">${selOpts([{ v: '__gen', t: 'Solo generales (sin proyecto)' }, ...iniOptsF()], f.ini, 'Todos los proyectos y propuestas')}</select>${temas.length ? `<select data-chg="flt" data-v="bit" data-f="tema">${selOpts(temas, f.tema, 'Todos los temas')}</select>` : ''}<span class="mut" style="margin-left:auto;font-size:12px">${rows.length} ${rows.length === 1 ? 'entrada' : 'entradas'}</span></div>
     <div class="feed">${days.map(g => `<div class="f-day"><h3>${dl(g.d)}</h3>${g.items.map(b => `<div class="f-i"><span class="f-dot" style="background:${BIT_C[b.tipo]}">${icon({ 'Cambio': 'edit', 'Actualización': 'refresh', 'Riesgo': 'shield', 'Comentario': 'users', 'Decisión': 'gavel' }[b.tipo] || 'edit', 12)}</span><div class="f-c"><div class="f-m"><b>${esc(b.autor)}</b><span class="pill" style="--c:${BIT_C[b.tipo]}">${b.tipo}</span>${b.ini ? iniLink(b.ini) : ''}${b.tema ? `<span class="pill soft">${esc(b.tema)}</span>` : ''}${b.tipo === 'Comentario' && b.ini ? `<label class="chk edit-only" title="Incluir esta nota en las presentaciones" style="margin-left:auto"><input type="checkbox" data-chg="bitpres" data-id="${esc(b.id)}" ${b.inPres === false ? '' : 'checked'}> <span>En presentación</span></label>` : ''}<small>${b.ts.length > 10 ? b.ts.slice(11, 16) : ''}</small></div><p>${esc(b.texto)}</p>${b.meta ? `<small class="meta">${esc(b.meta)}</small>` : ''}</div></div>`).join('')}</div>`).join('') || empty('Sin entradas para estos filtros', 'book')}
     ${rows.length > f.n ? `<div style="text-align:center;margin:14px"><button class="btn" data-act="bmore">Cargar más (${rows.length - f.n})</button></div>` : ''}</div>`;
   }
@@ -4074,21 +4082,21 @@ function notifPara(user) {
     if (d < 0 && aplica('hito_venc', i, h.resp)) add('hito_venc', h.id, i, `«${h.nombre}» venció hace ${-d} d (${fmtD(h.fecha)}) · ${i.titulo}`, { ts: h.fecha, sev: -d > 30 ? 3 : 2 });
     else if (d >= 0 && d <= pH && aplica('hito_prox', i, h.resp)) add('hito_prox', h.id, i, `«${h.nombre}» vence ${d === 0 ? 'hoy' : 'en ' + d + ' d'} (${fmtD(h.fecha)}) · ${i.titulo}`, { ts: h.fecha });
   });
-  St.compromisos.filter(a => a.estado === 'Abierto' && a.limite).forEach(a => {
+  ACUERDOS().filter(a => a.estado === 'Abierto' && a.limite).forEach(a => {
     const i = byId(a.ini); if (a.ini && !visible(i)) return; const d = diffD(a.limite, hy);
     if (d < 0 && aplica('comp_venc', i, a.resp)) add('comp_venc', a.id, i, `«${cut(a.texto, 70)}» venció hace ${-d} d · ${a.resp || 'sin responsable'}`, { ts: a.limite });
     else if (d >= 0 && d <= pC && aplica('comp_prox', i, a.resp)) add('comp_prox', a.id, i, `«${cut(a.texto, 70)}» vence ${d === 0 ? 'hoy' : 'en ' + d + ' d'} · ${a.resp || 'sin responsable'}`, { ts: a.limite });
   });
   St.riesgos.filter(r => riesgoAbierto(r)).forEach(r => { const i = byId(r.ini); if (!i || !isLive(i) || !visible(i)) return; const e = expo(r); if (e >= cfgI(i, 'umbralCritico') && aplica('riesgo_crit', i, r.dueno)) add('riesgo_crit', r.id, i, `Exposición ${e}: ${cut(r.desc, 80)} · ${i.titulo}`, { ts: r.fIdent || hy }); });
-  St.decisiones.filter(d => d.estado === 'Pendiente' && d.limite && d.limite < hy).forEach(d => { const i = byId(d.ini); if (d.ini && !visible(i)) return; if (aplica('dec_venc', i, d.solicita)) add('dec_venc', d.id, i, `«${cut(d.titulo, 70)}» venció hace ${diffD(hy, d.limite)} d`, { ts: d.limite }); });
+  DECS().filter(d => d.estado === 'Pendiente' && d.limite && d.limite < hy).forEach(d => { const i = byId(d.ini); if (d.ini && !visible(i)) return; if (aplica('dec_venc', i, d.solicita)) add('dec_venc', d.id, i, `«${cut(d.titulo, 70)}» venció hace ${diffD(hy, d.limite)} d`, { ts: d.limite }); });
   vivas.filter(isActive).forEach(i => {
     if (atrasado(i) && aplica('atraso', i)) add('atraso', i.id, i, `${i.titulo}: +${desv(i)} d sobre el plan`);
     const du = diasSinUpd(i); if (du > cfgI(i, 'diasSinUpdate') && aplica('sin_update', i)) add('sin_update', i.id, i, `${i.titulo}: ${du >= 999 ? 'sin registro de actualización' : du + ' d sin actualizar'}`);
   });
   scopeP().filter(i => isLive(i) && visible(i) && i.estado === 'Vigente').forEach(i => { const d = diasEnFase(i), amb = cfgI(i, 'propDiasAmb') || 30; if (d > amb && aplica('prop_estancada', i)) add('prop_estancada', i.id, i, `${i.titulo}: ${d} d en la fase ${i.fase}`); });
-  St.cambios.filter(c => c.estado === 'Solicitado').forEach(c => { const i = byId(c.ini); if (!visible(i)) return; if (aplica('cambio_pend', i, c.aprobador)) add('cambio_pend', c.id, i, `${c.tipo}: ${cut(c.desc || c.id, 70)} · pide ${c.solicita || '—'}`, { ts: c.creada || hy }); });
+  CAMBIOS().filter(c => c.estado === 'Solicitado').forEach(c => { const i = byId(c.ini); if (!visible(i)) return; if (aplica('cambio_pend', i, c.aprobador)) add('cambio_pend', c.id, i, `${c.tipo}: ${cut(c.desc || c.id, 70)} · pide ${c.solicita || '—'}`, { ts: c.creada || hy }); });
   /* --- eventos (últimos NOTIF_VENT días; no avisan al autor del cambio) --- */
-  St.cambios.filter(c => c.estado !== 'Solicitado' && c.fDec && diffD(hy, c.fDec) <= NOTIF_VENT).forEach(c => { const i = byId(c.ini); if (!visible(i)) return; if (aplica('cambio_res', i, c.solicita)) add('cambio_res', c.id, i, `Tu solicitud de ${String(c.tipo).toLowerCase()} fue ${String(c.estado).toLowerCase()} · ${cut(c.desc || c.id, 60)}`, { ts: c.fDec }); });
+  CAMBIOS().filter(c => c.estado !== 'Solicitado' && c.fDec && diffD(hy, c.fDec) <= NOTIF_VENT).forEach(c => { const i = byId(c.ini); if (!visible(i)) return; if (aplica('cambio_res', i, c.solicita)) add('cambio_res', c.id, i, `Tu solicitud de ${String(c.tipo).toLowerCase()} fue ${String(c.estado).toLowerCase()} · ${cut(c.desc || c.id, 60)}`, { ts: c.fDec }); });
   St.bitacora.forEach(b => {
     if (!b.ini || diffD(hy, String(b.ts).slice(0, 10)) > NOTIF_VENT || _nrm(b.autor) === u) return;
     const i = byId(b.ini); if (!visible(i)) return; const ts = String(b.ts).slice(0, 10), T = b.texto || '';
@@ -4321,7 +4329,7 @@ function iapExport(i) {
     subfases: subfasesDe(i).map(x => ({ id: x.id, nombre: x.nombre, fase: x.fase, inicio: x.inicio, fin: x.fin, resp: x.resp || '', desc: x.desc || '' })),
     hitos: hitosDe(i.id).sort(by('fecha')).map(h => ({ id: h.id, nombre: h.nombre, cat: h.cat || '', desc: h.desc || '', subfase: h.subfase || '', fase: h.fase, fecha: h.fecha, completado: !!h.completado, fechaReal: h.fechaReal || null, resp: h.resp || '' })),
     riesgos: riesgosDe(i.id).map(r => ({ id: r.id, desc: r.desc, cat: r.cat, prob: r.prob, imp: r.imp, estado: r.estado, dueno: r.dueno || '', fIdent: r.fIdent || '', fRev: r.fRev || '', mit: r.mit || '' })),
-    contexto_decisiones: St.decisiones.filter(d => d.ini === i.id).map(d => ({ id: d.id, titulo: d.titulo, estado: d.estado }))
+    contexto_decisiones: DECS().filter(d => d.ini === i.id).map(d => ({ id: d.id, titulo: d.titulo, estado: d.estado }))
   };
 }
 Acts.proyia = d => { const i = byId(d.id); if (!i) return;
@@ -4542,7 +4550,7 @@ Acts.wk = d => {
   if (soloLectura() || !puedeEditarIni(i)) return NO_PERM('Tu rol o el modo solo lectura no permiten editar');
   if (!d.first && !UI.wkq) UI.wkn = 0;
   const sg = ragSugerido(i), ah = avanceHitos(i), fc = forecast(i), dv = desv(i), q = UI.wkq, pos = UI.wkn ? UI.wkn - (q ? q.length : 0) : 0;
-  const abiertos = St.compromisos.filter(a => a.ini === i.id && a.estado === 'Abierto');
+  const abiertos = ACUERDOS().filter(a => a.ini === i.id && a.estado === 'Abierto');
   const v = { avance: i.avance || 0, rag: i.rag, logros: '', proximos: i.proximos || '', issue: i.issue || '', finEst: i.finEst || i.finPlan || '' };
   const use = (f, val, txt) => `<a class="lnk" data-act="wkset" data-f="${f}" data-v="${esc(val)}">${txt}</a>`;
   openForm({
@@ -4579,7 +4587,7 @@ Acts.wknc = d => {
 /* informe de estado listo para copiar */
 function informeTxt(i) {
   const f = forecast(i), hs = hitosDe(i.id), prox = hs.filter(h => !h.completado).sort(by('fecha')).slice(0, 5), cr = riesgosDe(i.id).filter(r => riesgoAbierto(r)).sort(by(r => -expo(r))).slice(0, 3);
-  const ac = St.compromisos.filter(a => a.ini === i.id && a.estado === 'Abierto'), cp = St.cambios.filter(c => c.ini === i.id && c.estado === 'Solicitado'), ca = St.cambios.filter(c => c.ini === i.id && c.estado === 'Aprobado');
+  const ac = ACUERDOS().filter(a => a.ini === i.id && a.estado === 'Abierto'), cp = CAMBIOS().filter(c => c.ini === i.id && c.estado === 'Solicitado'), ca = CAMBIOS().filter(c => c.ini === i.id && c.estado === 'Aprobado');
   const L = [`INFORME DE ESTADO · ${i.titulo} (${i.id})`, `Fecha: ${fmtD(hoy())} · Líder: ${i.lider || '—'} · Sponsor: ${i.sponsor || '—'} · Fase: ${i.fase} · Salud: ${i.rag || '—'}`, ''];
   if (!esProp(i)) L.push(`Avance: ${i.avance}% (esperado ${Math.round(esperado(i))}%) · Fin plan ${fmtD(i.finPlan)} → proyectado ${fmtD(f)}${desv(i) ? ' (+' + desv(i) + ' d)' : ''} · Presupuesto ${fmtMon(i.presupuesto, monOf(i))}, consumido ${fmtMon(i.gastado, monOf(i))}`, '');
   L.push('LOGROS', i.logros || '—', '', 'PRÓXIMOS PASOS', i.proximos || '—', '');
@@ -4601,9 +4609,9 @@ Acts.informe = d => {
    ------------------------------------------------------------------ */
 const ACU_ABIERTO = a => a.estado === 'Abierto';
 function todosAcu() {
-  const own = St.compromisos.map(a => Object.assign({ src: 'acu', abierto: a.estado === 'Abierto' }, a));
+  const own = ACUERDOS().map(a => Object.assign({ src: 'acu', abierto: a.estado === 'Abierto' }, a));
   const com = []; St.comites.forEach(c => ['acciones', 'compromisos'].forEach(k => (c[k] || []).forEach(a => { const ab = ['Abierta', 'Abierto'].includes(a.estado); com.push({ id: a.id, texto: a.texto, resp: a.resp, de: '', limite: a.limite, ini: a.ini || null, estado: ab ? 'Abierto' : 'Cumplido', src: 'com', c: c.id, k, origen: 'Comité · ' + fmtD(c.fecha), tema: '', abierto: ab }); })));
-  return [...own, ...com].filter(a => !a.ini || !byId(a.ini) || inArea(byId(a.ini)));
+  return [...own, ...com].filter(a => !a.ini || !byId(a.ini) || (inArea(byId(a.ini)) && !esSB(byId(a.ini))));
 }
 function acuVencidos() { if (!St || !St.compromisos) return 0; const me = miUsuario(); return todosAcu().filter(a => a.abierto && a.resp === me && a.limite && a.limite < hoy()).length; }
 function acuForm(a, pre) {
@@ -4651,7 +4659,7 @@ Views.compromisos = {
     <div class="toolbar"><div class="seg">${[['debo', 'Debo', all.filter(a => debo(a) && a.abierto).length], ['deben', 'Me deben', all.filter(a => deben(a) && a.abierto).length], ['todos', 'Todos', all.filter(a => a.abierto).length]].map(([k, l, n]) => `<button class="${f.vista === k ? 'on' : ''}" data-act="acuv" data-k="${k}">${l} <small style="display:inline;color:inherit;opacity:.75">${n}</small></button>`).join('')}</div>
       <div class="seg">${[['Abierto', 'Abiertos'], ['Cerrado', 'Cerrados'], ['', 'Todos']].map(([k, l]) => `<button class="${f.est === k ? 'on' : ''}" data-act="acue" data-k="${k}">${l}</button>`).join('')}</div>
       <div class="search"><span>${icon('search', 14)}</span><input data-key="acu-q" data-chg="flt" data-v="acu" data-f="q" type="search" placeholder="Buscar compromiso…" value="${esc(f.q)}"></div>
-      <select data-chg="flt" data-v="acu" data-f="ini" aria-label="Iniciativa">${selOpts([{ v: '__gen', t: 'Solo generales' }, ...iniOpts()], f.ini, 'Todas las iniciativas')}</select></div>
+      <select data-chg="flt" data-v="acu" data-f="ini" aria-label="Iniciativa">${selOpts([{ v: '__gen', t: 'Solo generales' }, ...iniOptsF()], f.ini, 'Todas las iniciativas')}</select></div>
     ${rows.length ? `<div class="tbl-w"><table class="tbl cards-m"><thead><tr><th></th><th>Compromiso</th><th>Responsable</th><th>Solicitado por</th><th>Iniciativa</th><th>Fecha</th><th class="edit-only"></th></tr></thead><tbody>${rows.map(tr).join('')}</tbody></table></div>` : empty(f.vista === 'debo' ? 'Sin compromisos tuyos con estos filtros' : 'Sin compromisos con estos filtros', 'check')}`;
   }
 };
@@ -4668,9 +4676,9 @@ function resumenDe(me) {
   const deben = todosAcu().filter(a => a.abierto && a.de === me && a.resp !== me && a.limite && a.limite < hoy()).sort(by('limite'));
   const hs = HITOS().filter(h => { const i = byId(h.ini); return i && i.lider === me && !h.completado && isLive(i) && L(h.fecha) <= 7; }).sort(by('fecha'));
   const upd = St.ini.filter(i => !esProp(i) && i.lider === me && isLive(i) && FASES_ACT.includes(i.fase) && diasSinUpd(i) > MIN_DIAS_RONDA);
-  const rs = St.riesgos.filter(r => r.dueno === me && riesgoAbierto(r) && r.fRev && L(r.fRev) <= 7);
-  const dc = St.decisiones.filter(d => d.estado === 'Pendiente' && d.solicita === me && d.limite && L(d.limite) <= 7);
-  const cg = St.cambios.filter(c => c.estado === 'Solicitado' && esAprobadorDe(byId(c.ini)) && c.solicita !== me);
+  const rs = RIESGOS().filter(r => r.dueno === me && riesgoAbierto(r) && r.fRev && L(r.fRev) <= 7);
+  const dc = DECS().filter(d => d.estado === 'Pendiente' && d.solicita === me && d.limite && L(d.limite) <= 7);
+  const cg = CAMBIOS().filter(c => c.estado === 'Solicitado' && esAprobadorDe(byId(c.ini)) && c.solicita !== me);
   const rel = d => L(d) < 0 ? `VENCIDO hace ${-L(d)} d` : L(d) === 0 ? 'hoy' : `en ${L(d)} d (${fmtD(d)})`;
   const sec = (t, arr, fn) => { if (arr.length) S.push([t, arr.map(fn)]); };
   sec('Compromisos que debes cumplir', acu, a => `${a.texto}${a.ini && byId(a.ini) ? ' · ' + byId(a.ini).titulo : ''} — ${rel(a.limite)}`);
@@ -4740,11 +4748,11 @@ Acts.chgdec = d => {
 Views.cambios = {
   render() {
     const f = F('chg', { est: 'Solicitado', tipo: '', q: '' });
-    let rows = St.cambios.filter(c => { const i = byId(c.ini); return !i || inArea(i); });
+    let rows = CAMBIOS().filter(c => { const i = byId(c.ini); return !i || inArea(i); });
     if (f.est) rows = rows.filter(c => c.estado === f.est); if (f.tipo) rows = rows.filter(c => c.tipo === f.tipo);
     if (f.q) { const q = f.q.toLowerCase(); rows = rows.filter(c => (c.desc + c.motivo + nameOf(c.ini) + c.solicita).toLowerCase().includes(q)); }
     rows.sort(by(c => (c.estado === 'Solicitado' ? '0' : '1') + (c.creada || '')));
-    const all = St.cambios, n = e => all.filter(c => c.estado === e).length;
+    const all = CAMBIOS(), n = e => all.filter(c => c.estado === e).length;
     const tr = c => { const i = byId(c.ini), can = c.estado === 'Solicitado' && esAprobadorDe(i) && (c.solicita !== miUsuario() || rolActual() === 'Gasto');
       return `<tr><td class="mono">${c.id}</td><td>${iniLink(c.ini, esc(cut(nameOf(c.ini), 30)))}</td><td>${esc(c.tipo)}</td>
         <td style="white-space:normal;min-width:260px"><b>${esc(c.desc)}</b><small>${esc(chgEfecto(c))}</small><small>Motivo: ${esc(c.motivo || '—')}</small></td><td>${esc(c.solicita || '—')}<small>${fmtD(c.creada)}</small></td>
@@ -4808,11 +4816,11 @@ function starsOf(i, W) {
   const tope = dia && sinAvanceSostenido(i, W); if (tope) dia = false;
   out.dia = dia ? 'on' : 'off';
   /* Hitos */
-  const hs = hitosDe(i.id), expl = St.cambios.some(c => c.ini === i.id && c.estado !== 'Rechazado' && c.tipo === 'Fecha' && (c.creada || '') <= E);
+  const hs = hitosDe(i.id), expl = CAMBIOS().some(c => c.ini === i.id && c.estado !== 'Rechazado' && c.tipo === 'Fecha' && (c.creada || '') <= E);
   const hv = vencidosA(hs, 'fecha', E, (h, e) => h.completado && (h.fechaReal || '') <= e);
   out.hit = !hs.length ? 'na' : (!hv.length || expl) ? 'on' : 'off';
   /* Compromisos */
-  const cs = St.compromisos.filter(c => c.ini === i.id && c.estado !== 'Cancelado' && (c.creada || '') <= addD(W, 6));
+  const cs = ACUERDOS().filter(c => c.ini === i.id && c.estado !== 'Cancelado' && (c.creada || '') <= addD(W, 6));
   const cv = vencidosA(cs, 'limite', E, (c, e) => c.estado === 'Cumplido' && (c.fechaReal || '') <= e);
   out.cmp = !cs.length ? 'na' : !cv.length ? 'on' : 'off';
   /* Riesgos y Gobierno: solo se evalúan en la semana en curso (no hay historial de revisiones) */
@@ -4820,7 +4828,7 @@ function starsOf(i, W) {
     const rs = riesgosDe(i.id).filter(riesgoAbierto);
     out.rsk = !rs.length ? 'na' : rs.some(r => (r.fRev && r.fRev < hoy()) || (expo(r) >= cfgI(i,'umbralCritico') && !String(r.mit || '').trim())) ? 'off' : 'on';
     const f = forecast(i), fuera = f && i.finPlan && desv(i) > cfgI(i,'tolDesv');
-    out.gob = fuera && !St.cambios.some(c => c.ini === i.id && c.estado !== 'Rechazado') ? 'off' : 'on';
+    out.gob = fuera && !CAMBIOS().some(c => c.ini === i.id && c.estado !== 'Rechazado') ? 'off' : 'on';
   } else { out.rsk = 'na'; out.gob = 'na'; }
   return STAR_DEF.map(d => ({ ...d, s: out[d.k], ...(d.k === 'dia' && tope ? { tip: 'Llevas ' + TOPE_SIN_AVANCE + ' semanas actualizando sin avance real: sube el % de avance o cierra un hito y se enciende.' } : {}) }));
 }
@@ -4842,7 +4850,7 @@ function cieloColectivo() {
   const W0 = hoyW(), ps = proyActivos(null, W0).filter(i => inArea(i)), cur = ps.map(i => ({ i, st: starsOf(i, W0) }));
   const on = cur.reduce((s, x) => s + x.st.filter(y => y.s === 'on').length, 0), off = cur.reduce((s, x) => s + x.st.filter(y => y.s === 'off').length, 0);
   const serie = []; for (let k = 7; k >= 0; k--) { const W = addD(W0, -7 * k); let a = 0, b = 0; proyActivos(null, W).filter(i => inArea(i)).forEach(i => starsHist(starsOf(i, W)).forEach(x => { if (x.s === 'on') a++; else if (x.s === 'off') b++; })); serie.push(a + b ? Math.round(a / (a + b) * 100) : 0); }
-  const prjs = St.ini.filter(i => !esProp(i) && inArea(i));
+  const prjs = scope();
   return { n: ps.length, prom: ps.length ? on / ps.length : 0, msTot: prjs.reduce((a, i) => a + msN(i), 0), ms3: prjs.filter(i => msN(i) === 3).length, llenas: cur.filter(x => cieloLleno(x.st)).length, pct: on + off ? Math.round(on / (on + off) * 100) : 0, serie, ayuda: cur.filter(x => x.st.some(y => y.s === 'off')).sort(by(x => -x.st.filter(y => y.s === 'off').length)) };
 }
 const starTxt = x => x.l + ': ' + (x.s === 'on' ? 'lograda' : x.s === 'off' ? 'pendiente. ' + x.tip : 'no aplica esta semana');
@@ -4865,18 +4873,18 @@ function impecable(i) {
   if (esProp(i) || i.estado !== 'Completado' || !(i.avance >= 100)) return false;
   if (hitosDe(i.id).some(h => !h.completado)) return false;
   if (riesgosDe(i.id).some(riesgoAbierto)) return false;
-  if (i.finReal && i.finPlan && i.finReal > i.finPlan && !St.cambios.some(c => c.ini === i.id && c.estado === 'Aprobado' && c.tipo === 'Fecha')) return false;
+  if (i.finReal && i.finPlan && i.finReal > i.finPlan && !CAMBIOS().some(c => c.ini === i.id && c.estado === 'Aprobado' && c.tipo === 'Fecha')) return false;
   return true;
 }
 function insignias(me) {
   const P = cieloPersona(me), C = cieloColectivo(), meta = cfgMi('cieloMeta') || 80, W0 = hoyW();
   let cs = 0; for (let k = 0; k < 26; k++) { const W = addD(W0, -7 * k), ps = proyActivos(me, W); if (!ps.length) break; if (ps.every(i => starsOf(i, W)[1].s !== 'off')) cs++; else break; }
-  const aviso = St.cambios.filter(c => c.solicita === me && c.fAnt && c.creada && c.creada <= c.fAnt).length;
-  const cump = St.compromisos.filter(a => a.resp === me && a.estado === 'Cumplido' && a.fechaReal && a.limite && a.fechaReal <= a.limite).length;
-  const cierres = St.ini.filter(i => i.lider === me && impecable(i)).length;
+  const aviso = CAMBIOS().filter(c => c.solicita === me && c.fAnt && c.creada && c.creada <= c.fAnt).length;
+  const cump = ACUERDOS().filter(a => a.resp === me && a.estado === 'Cumplido' && a.fechaReal && a.limite && a.fechaReal <= a.limite).length;
+  const cierres = St.ini.filter(i => !esSB(i) && i.lider === me && impecable(i)).length;
   const sem = new Set(St.bitacora.filter(b => b.autor === me && b.tipo === 'Actualización' && /^Actualización semanal/.test(b.texto || '')).map(b => wkIni(String(b.ts).slice(0, 10)))).size;
   const mk = (k, n, d, ic, c, v, of) => ({ k, n, d, ic, c, v: Math.min(v, of), of, ok: v >= of });
-  const misPrj = St.ini.filter(i => !esProp(i) && i.lider === me), msLed = misPrj.filter(i => msN(i) >= 1).length, ms3Led = misPrj.filter(i => msN(i) === 3).length;
+  const misPrj = St.ini.filter(i => !esProp(i) && !esSB(i) && i.lider === me), msLed = misPrj.filter(i => msN(i) >= 1).length, ms3Led = misPrj.filter(i => msN(i) === 3).length;
   return [
     mk('p1', 'Mesa perfecta', 'Completa los 5 tenedores de todos tus proyectos en una semana.', 'fork', '#0B5394', P.total, 1),
     mk('r4', 'Racha de 4', 'Cuatro semanas seguidas con los 5 tenedores.', 'spark', '#7A5AF8', P.racha, 4),
@@ -5003,7 +5011,7 @@ Views.cielo = {
       return head + `<section class="card"><header><h2>Insignias</h2><small>${n} de ${B.length} obtenidas · se ganan por conductas de gestión, nunca por competir</small></header><div class="badges">${B.map(b => `<div class="badge ${b.ok ? 'on' : ''}">${medalla(b)}<div><b>${b.n}</b><small>${esc(b.d)}</small><span class="bprog"><i style="width:${Math.round(b.v / b.of * 100)}%"></i></span><em>${b.ok ? 'Obtenida' : b.v + ' de ' + b.of}</em></div></div>`).join('')}</div></section>`;
     }
     if (f.tab === 'gal') {
-      const G = St.ini.filter(i => !esProp(i) && inArea(i) && (msN(i) || i.estado === 'Completado'));
+      const G = scope().filter(i => (msN(i) || i.estado === 'Completado'));
       G.sort((a, b) => msN(b) - msN(a) || String(b.finReal || b.actualizada || '').localeCompare(String(a.finReal || a.actualizada || '')));
       return head + `<section class="card sky-card"><header><h2>Galería Michelin</h2><small style="color:#cfe0f5">${G.length} proyecto${G.length === 1 ? '' : 's'} · las estrellas se ganan por hitos y no se pierden</small></header>${G.length ? `<div class="gal">${G.slice(0, 12).map(i => `<button class="gal-i" data-act="sel" data-t="ini" data-id="${i.id}">${msRow(i, 26, true)}<b>${esc(cut(i.titulo, 30))}</b><small>${msN(i) ? msN(i) + ' de 3 estrellas' : 'Sin estrellas aún'}${i.estado === 'Completado' ? (i.finReal ? ' · cerrado ' + fmtD(i.finReal) : ' · completado') : ''}${i.lider === me ? ' · tuyo' : ''}</small></button>`).join('')}</div>${G.length > 12 ? `<p class="sky-hint">+ ${G.length - 12} más</p>` : ''}` : '<p class="sky-e">Aquí quedarán, para siempre, las estrellas Michelin de tus proyectos.<br>La primera llega al completar a tiempo la primera fase o el primer hito del cronograma.</p>'}</section>`;
     }
@@ -5183,7 +5191,7 @@ Acts.basego = d => { const i = byId(d.id); if (!i || !puedeEditarIni(i)) return 
 Acts.baserebase = d => { const i = byId(d.id); if (!i || !esGasto()) return; confirmBox(`¿Reemplazar la línea base de <b>${esc(i.titulo)}</b>? La anterior queda en el historial.`, () => { congelarBase(i, true); toast('Línea base reemplazada'); refresh(); }, 'Reemplazar', true); };
 function escalarSync() {   // las decisiones que superan el plazo de escalamiento quedan marcadas y en bitácora (solo lo escribe el rol Gasto, una vez)
   if (!St || !St.decisiones || !esGasto() || FL.verComo) return; let n = 0;
-  St.decisiones.forEach(d => { if (decEscalada(d) && !d.escalada) { d.escalada = hoy(); n++; log('Decisión', d.ini, `Decisión escalada a Gasto: ${diffD(hoy(), d.limite)} d de atraso · ${d.titulo}`); St.bitacora[0].inPres = false; } });
+  DECS().forEach(d => { if (decEscalada(d) && !d.escalada) { d.escalada = hoy(); n++; log('Decisión', d.ini, `Decisión escalada a Gasto: ${diffD(hoy(), d.limite)} d de atraso · ${d.titulo}`); St.bitacora[0].inPres = false; } });
   if (n) save();
 }
 
@@ -5249,7 +5257,7 @@ const msRow = (i, sz = 16, all) => {
     return `<span class="stw" data-act="startip" data-t="${esc(t)}" title="${esc(t)}">${MS_SVG(!!got, sz)}</span>`;
   }).join('')}</span>`;
 };
-const cambioAprob = (i, tipo) => St.cambios.some(c => c.ini === i.id && c.estado === 'Aprobado' && c.tipo === tipo);
+const cambioAprob = (i, tipo) => CAMBIOS().some(c => c.ini === i.id && c.estado === 'Aprobado' && c.tipo === tipo);
 const hitoATiempo = (i, h) => !!h.completado && (!h.fechaReal || h.fechaReal <= h.fecha || cambioAprob(i, 'Fecha'));   // un cambio de fecha aprobado explica el atraso
 /* ¿cuántas estrellas cumple hoy el proyecto? (se evalúa con el historial de hitos, por eso no depende de cuándo se abra la app) */
 function michelinCalc(i) {
@@ -5281,7 +5289,7 @@ function michelinSync() {
   if (!St || !St.ini || !cieloOn()) return;
   const boot = !UI.msBoot; UI.msBoot = true; const nuevas = [];
   St.ini.forEach(i => {
-    if (esProp(i) || !puedeEditarIni(i)) return;
+    if (esProp(i) || esSB(i) || !puedeEditarIni(i)) return;
     const have = msN(i), want = michelinCalc(i); if (want <= have) return;
     i.michelin = i.michelin || []; for (let n = have + 1; n <= want; n++) i.michelin.push({ n, f: hoy() });
     log('Comentario', i.id, 'Estrella Michelin ' + want + ' de 3 obtenida: ' + MS_DEF[want - 1].tip); St.bitacora[0].inPres = false;
@@ -5316,8 +5324,8 @@ function findingsPMO() {
   });
   scope().filter(i => i.estado === 'Pausado' && i.estadoRev && i.estadoRev < hoy()).forEach(i => out.push({ agente: 'PMO', regla: 'Proyecto atrasado', sev: 1, ini: i.id, titulo: `${i.titulo}: revisión de “Pausado” vencida (${fmtD(i.estadoRev)})`, detalle: `Motivo: ${i.estadoMotivo || '—'}. Decidir si se reanuda o se cancela.`, fx: [{ t: 'Abrir proyecto', a: 'fxsel', id: i.id }] }));
   L.filter(i => i.estado === 'En curso').forEach(i => { const hv = hitosDe(i.id).filter(h => !h.completado && h.fecha < hoy()).sort(by('fecha')); if (hv.length) { const mx = diffD(hoy(), hv[0].fecha); out.push({ agente: 'PMO', regla: 'Hito vencido', sev: mx > 30 || hv.length > 2 ? 3 : 2, ini: i.id, titulo: `${hv.length} hito(s) vencido(s) en ${i.titulo}`, detalle: hv.slice(0, 3).map(h => `“${h.nombre}” (${fmtD(h.fecha)}, hace ${diffD(hoy(), h.fecha)} d)`).join('; ') + (hv.length > 3 ? '…' : ''), fx: [{ t: 'Replanificar primer hito', a: 'fxhito', id: hv[0].id }, { t: 'Marcar completado', a: 'fxdone', id: hv[0].id }] }); } });
-  St.decisiones.filter(d => d.estado === 'Pendiente' && d.limite && d.limite < hoy() && (!d.ini || (byId(d.ini) && inArea(byId(d.ini))))).forEach(d => out.push({ agente: 'PMO', regla: 'Decisión vencida', sev: 2, ini: d.ini, titulo: `Decisión vencida hace ${diffD(hoy(), d.limite)} d: ${d.titulo}`, detalle: `${d.tipo} · solicitada por ${d.solicita}. Debe resolverse en comité.`, fx: [{ t: 'Resolver ahora', a: 'resolvedec', id: d.id }] }));
-  St.decisiones.filter(d => decEscalada(d) && (!d.ini || (byId(d.ini) && inArea(byId(d.ini))))).forEach(d => out.push({ agente: 'PMO', regla: 'Decisión escalada', sev: 3, ini: d.ini, titulo: `Decisión escalada (${diffD(hoy(), d.limite)} d de atraso): ${d.titulo}`, detalle: `Superó el plazo de escalamiento (${decEscDias()} d). Requiere resolución del rol Gasto.`, fx: [{ t: 'Resolver ahora', a: 'resolvedec', id: d.id }] }));
+  DECS().filter(d => d.estado === 'Pendiente' && d.limite && d.limite < hoy() && (!d.ini || (byId(d.ini) && inArea(byId(d.ini))))).forEach(d => out.push({ agente: 'PMO', regla: 'Decisión vencida', sev: 2, ini: d.ini, titulo: `Decisión vencida hace ${diffD(hoy(), d.limite)} d: ${d.titulo}`, detalle: `${d.tipo} · solicitada por ${d.solicita}. Debe resolverse en comité.`, fx: [{ t: 'Resolver ahora', a: 'resolvedec', id: d.id }] }));
+  DECS().filter(d => decEscalada(d) && (!d.ini || (byId(d.ini) && inArea(byId(d.ini))))).forEach(d => out.push({ agente: 'PMO', regla: 'Decisión escalada', sev: 3, ini: d.ini, titulo: `Decisión escalada (${diffD(hoy(), d.limite)} d de atraso): ${d.titulo}`, detalle: `Superó el plazo de escalamiento (${decEscDias()} d). Requiere resolución del rol Gasto.`, fx: [{ t: 'Resolver ahora', a: 'resolvedec', id: d.id }] }));
   return out;
 }
 function findingsRiesgos() {
@@ -5362,7 +5370,7 @@ let _alertCache = null;
 function computeAlerts() {
   if (APIH_CONFIG.ia === false) return [];
   const key = St.ini.length + '|' + St.hitos.length + '|' + St.riesgos.length + '|' + St.decisiones.length + '|' + (St.ver || 0) + '|' + hoy() + '|' + St.cfg.areaGlobal + '|' + JSON.stringify(St.cfg.agentes);
-  const sig = St.ini.map(i => i.rag + i.fase + i.avance + i.estado + (i.actualizada || '') + i.finEst + i.finPlan).join(',') + St.hitos.map(h => (h.completado ? 1 : 0) + h.fecha).join('') + St.riesgos.map(r => r.prob * 10 + r.imp + r.estado).join(',') + St.decisiones.map(d => d.estado + d.limite).join(',') + St.cfg.tolDesv + St.cfg.umbralCritico + St.cfg.diasSinUpdate + St.cfg.capacidadMax + JSON.stringify(St.cfgU || {});
+  const sig = St.ini.map(i => i.rag + i.fase + i.avance + i.estado + (i.actualizada || '') + i.finEst + i.finPlan).join(',') + St.hitos.map(h => (h.completado ? 1 : 0) + h.fecha).join('') + St.riesgos.map(r => r.prob * 10 + r.imp + r.estado).join(',') + DECS().map(d => d.estado + d.limite).join(',') + St.cfg.tolDesv + St.cfg.umbralCritico + St.cfg.diasSinUpdate + St.cfg.capacidadMax + JSON.stringify(St.cfgU || {});
   if (_alertCache && _alertCache.k === key + sig) return _alertCache.v;
   const a = St.cfg.agentes; let out = [];
   if (a.pmo) out = out.concat(findingsPMO()); if (a.riesgos) out = out.concat(findingsRiesgos()); if (a.roadmap) out = out.concat(findingsRoadmap());
@@ -5378,7 +5386,7 @@ function execSummary(tone) {
   const recent = HITOS().filter(h => h.completado && h.fechaReal && diffD(hoy(), h.fechaReal) <= 30 && byId(h.ini) && inArea(byId(h.ini)));
   const cerr = L.filter(i => i.estado === 'Completado' && i.finReal && diffD(hoy(), i.finReal) <= 45);
   const nxt = HITOS().filter(h => !h.completado && h.fecha >= hoy() && diffD(h.fecha, hoy()) <= 30 && byId(h.ini) && inArea(byId(h.ini))).sort(by('fecha'));
-  const rc = riesgosCriticos(), pend = St.decisiones.filter(d => d.estado === 'Pendiente');
+  const rc = riesgosCriticos(), pend = DECS().filter(d => d.estado === 'Pendiente');
   const tone1 = K.ontrackPct >= 60 ? 'avanza de forma sólida' : K.ontrackPct >= 35 ? 'avanza con focos de atención' : 'requiere atención ejecutiva inmediata';
   const S = [];
   S.push({ h: 'Titular', p: [`El portafolio de TI ${tone1}: ${K.activos} proyectos activos, ${pct(K.ontrackPct)} on track, ${K.atrasados} atrasado(s) y ${K.riesgosCrit} riesgo(s) crítico(s). Hay ${K.pipe} propuestas en el pipeline (${K.propAprob} listas para aprobación).`] });
@@ -5398,10 +5406,10 @@ function ask(q) {
   const s = q.toLowerCase(), L = scope(), live = L.filter(isLive), K = kpis(); let h = '';
   const hit = L.find(i => i.titulo.toLowerCase().split(/[\s\-–:()+]+/).filter(w => w.length > 4).some(w => s.includes(w)) || s.includes(i.id.toLowerCase()));
   if (/atras|retras|desv/.test(s)) { const a = live.filter(atrasado).sort(by(i => -desv(i))); h = a.length ? `<b>${a.length} proyectos atrasados:</b><ul>${a.map(i => `<li>${lnk(i.id)} — +${desv(i)} d (fin proyectado ${fmtD(forecast(i))})</li>`).join('')}</ul>` : 'No hay proyectos atrasados sobre la tolerancia.'; }
-  else if (/riesg/.test(s)) { const r = St.riesgos.filter(riesgoAbierto).sort(by(x => -expo(x))).slice(0, 5); h = `<b>Top riesgos abiertos</b> (${riesgosCriticos().length} críticos):<ul>${r.map(x => `<li>[${expo(x)}] ${esc(x.desc)} — ${lnk(x.ini)}</li>`).join('')}</ul>`; }
+  else if (/riesg/.test(s)) { const r = RIESGOS().filter(riesgoAbierto).sort(by(x => -expo(x))).slice(0, 5); h = `<b>Top riesgos abiertos</b> (${riesgosCriticos().length} críticos):<ul>${r.map(x => `<li>[${expo(x)}] ${esc(x.desc)} — ${lnk(x.ini)}</li>`).join('')}</ul>`; }
   else if (/presupuest|costo|gast|dinero|financ/.test(s)) h = `Presupuesto en cartera <b>${fmtTot(K.M.pres)}</b>; consumido <b>${fmtTot(K.M.gas)}</b> (${pctMon(K.M.gas, K.M.pres)}%). Pipeline: <b>${fmtTot(K.M.presPipe)}</b>. Beneficio esperado: <b>${fmtTot(K.M.beneficio)}</b>.`;
   else if (/hito/.test(s)) { const v = HITOS().filter(x => !x.completado && x.fecha < hoy()); const p = HITOS().filter(x => !x.completado && x.fecha >= hoy()).sort(by('fecha')).slice(0, 4); h = `<b>${v.length}</b> hitos vencidos. Próximos:<ul>${p.map(x => `<li>${fmtD(x.fecha)} — ${esc(x.nombre)} (${lnk(x.ini)})</li>`).join('')}</ul>`; }
-  else if (/decisi/.test(s)) { const d = St.decisiones.filter(x => x.estado === 'Pendiente'); h = `<b>${d.length} decisiones pendientes:</b><ul>${d.slice(0, 6).map(x => `<li>${x.tipo}: ${esc(x.titulo)}${x.limite < hoy() ? ' <span class="neg">(vencida)</span>' : ''}</li>`).join('')}</ul>`; }
+  else if (/decisi/.test(s)) { const d = DECS().filter(x => x.estado === 'Pendiente'); h = `<b>${d.length} decisiones pendientes:</b><ul>${d.slice(0, 6).map(x => `<li>${x.tipo}: ${esc(x.titulo)}${x.limite < hoy() ? ' <span class="neg">(vencida)</span>' : ''}</li>`).join('')}</ul>`; }
   else if (/sobrecarg|capacidad|l[ií]der|carga/.test(s)) { const m = {}; live.filter(i => FASES_ACT.includes(i.fase)).forEach(i => m[i.lider] = (m[i.lider] || 0) + 1); h = `<b>Carga por líder</b> (proyectos activos, capacidad ${St.cfg.capacidadMax}):<ul>${Object.entries(m).sort((a, b) => b[1] - a[1]).map(([l, n]) => `<li>${esc(l)}: ${n}${n > St.cfg.capacidadMax ? ' <span class="neg">sobrecarga</span>' : ''}</li>`).join('')}</ul>`; }
   else if (/resumen|ejecutiv|estado general|c[oó]mo vamos/.test(s)) h = execSummary('con').slice(0, 3).map(x => `<b>${x.h}:</b> ${esc(x.p.join(' '))}`).join('<br>');
   else if (/on track|verde|rag|salud/.test(s)) h = `<b>${pct(K.ontrackPct)} on track</b> (${K.ontrack} de ${K.activos} activos). RAG vivas: ${RAGS.map(r => `${r} ${live.filter(i => i.rag === r).length}`).join(' · ')}.`;
@@ -5536,15 +5544,15 @@ function personasData() {
   const split = s => String(s || '').split(/\s+-\s+|,/).map(x => x.trim()).filter(Boolean);
   St.usuarios.forEach(u => { const p = g(u.n); p.cargo = u.cargo; p.acceso = u.rol; String(u.area || '').split(',').forEach(a => a.trim() && p.areas.add(a.trim())); });
   const rol = (n, r) => { const p = g(n); p.roles[r] = (p.roles[r] || 0) + 1; return p; };
-  St.ini.forEach(i => {
+  St.ini.filter(i => !esSB(i)).forEach(i => {
     const ar = String(i.area || '').split(',').map(x => x.trim()).filter(Boolean), live = isLive(i);
     split(i.lider).forEach(n => { const p = rol(n, esProp(i) ? 'Líder de propuesta' : 'Líder de proyecto'); ar.forEach(a => p.areas.add(a)); if (live && !esProp(i)) p.lidera++; });
     split(i.sponsor).forEach(n => { rol(n, 'Sponsor').areas.add(ar[0] || ''); });
     split(i.negocio).forEach(n => { rol(n, 'Negocio'); });
   });
-  St.hitos.forEach(h => { if (h.resp) { const p = rol(h.resp, 'Responsable de hito'); if (!h.completado) { p.hitos++; if (h.fecha < hoy()) p.hitosAtr++; } } });
-  St.riesgos.forEach(r => { if (r.dueno) { const p = rol(r.dueno, 'Dueño de riesgo'); if (riesgoAbierto(r)) p.riesgos++; } });
-  St.decisiones.forEach(d => { if (d.solicita) { const p = rol(d.solicita, 'Solicita decisiones'); if (d.estado === 'Pendiente') p.decis++; } });
+  St.hitos.filter(h => !esSB(byId(h.ini))).forEach(h => { if (h.resp) { const p = rol(h.resp, 'Responsable de hito'); if (!h.completado) { p.hitos++; if (h.fecha < hoy()) p.hitosAtr++; } } });
+  RIESGOS().forEach(r => { if (r.dueno) { const p = rol(r.dueno, 'Dueño de riesgo'); if (riesgoAbierto(r)) p.riesgos++; } });
+  DECS().forEach(d => { if (d.solicita) { const p = rol(d.solicita, 'Solicita decisiones'); if (d.estado === 'Pendiente') p.decis++; } });
   St.comites.forEach(c => {
     (c.participantes || []).forEach(x => { if (x.n) { const p = g(x.n); p.roles['Comité'] = (p.roles['Comité'] || 0) + 1; if (!p.cargo) p.cargo = x.rol; } });
     [...(c.acciones || []), ...(c.compromisos || [])].forEach(a => { if (a.resp) { const p = g(a.resp); if (['Abierta', 'Abierto'].includes(a.estado)) p.acc++; } });
@@ -8313,6 +8321,9 @@ function construirSlidesLogros_(datos, baseline, corte, hitosFlat, corteStr, are
       { tam: 9, color: ESTILO_ALT4.TEXTO, fuente: ESTILO_ALT4.FUENTE });
   });
 
+  if (datos.standBy > 0) ppt_texto_(slide, 'Stand By: ' + datos.standBy, X_CEN, yTarjetas + 108 + filasRag.length * 16 + 6, W_COL, ppt_altoTexto_(9, 1),
+    { tam: 9, color: ESTILO_ALT4.TEXTO_TERC, alinear: SlidesApp.ParagraphAlignment.CENTER, fuente: ESTILO_ALT4.FUENTE });
+
   // SALIERON
   ppt_texto_(slide, 'SALIERON (' + salidas.length + ')', X_SAL, yTitulos, W_COL, ppt_altoTexto_(10.5, 1),
     { tam: 10.5, negrita: true, color: ESTILO_ALT4.TEXTO_SEC, alinear: SlidesApp.ParagraphAlignment.CENTER, fuente: ESTILO_ALT4.FUENTE });
@@ -8786,7 +8797,7 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
   const MMi = (i, v) => (Number(v) || 0) * ({ CLP: 1e6, USD: 1e3, UF: 1 }[monOf(i)]);   // USD en miles, UF en unidades
   const lineas = t => String(t || '');
   const ETAPA_PROP = { 'Recepción': 'Creada', 'Evaluación': 'En evaluación', 'Caso de Negocio': 'Con caso de negocio', 'Aprobación': 'Aprobación' };
-  const estadoPrj = i => i.estado === 'Pausado' ? 'A la Espera' : i.estado === 'Cancelado' ? 'Stand By' : i.fase;
+  const estadoPrj = i => i.estado === 'Pausado' ? 'A la Espera' : i.estado === 'Stand By' ? 'Stand By' : i.fase;   // Cancelado ya no se rotula Stand By
   const areaDe = i => i.area || '';
 
   function rowPrj(i) {
@@ -8837,7 +8848,7 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
     const prjAll = single ? (it0 && !esProp(it0) ? [it0] : []) : St.ini.filter(i => !esProp(i) && isLive(i) && okArea(i));
     const propAll = single ? (it0 && esProp(it0) ? [it0] : []) : St.ini.filter(i => esProp(i) && isLive(i) && okArea(i));
     const prj = single ? prjAll : prjAll.filter(inc), prop = single ? propAll : propAll.filter(inc);   // el registro elegido para presentarlo solo entra siempre
-    const propTodas = single ? propAll : St.ini.filter(i => esProp(i) && okArea(i) && inc(i));
+    const propTodas = single ? propAll : St.ini.filter(i => esProp(i) && !esSB(i) && okArea(i) && inc(i));
     const ids = {}; [...prj, ...prop].forEach(i => ids[i.id] = 1);
     const hitosRows = St.hitos.filter(h => ids[h.ini]).map(h => ({ iniciativa_id: h.ini, nombre_hito: h.nombre, fecha: h.fecha, completado: !!h.completado, mostrar_detalle: inc(h) }));
     const sols = prop.filter(p => p.proveedor).map(p => ({ propuesta_id: p.id, seleccionada: true }));
@@ -8845,7 +8856,8 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
     St.bitacora.filter(b => b.tipo === 'Comentario' && ids[b.ini] && inc(b)).forEach(b => hist.push({ iniciativa_id: b.ini, fecha: b.ts.slice(0, 10), nota: b.texto }));
     GD = { Hitos: hitosRows, Propuestas: propTodas.map(rowProp), SolucionesProveedor: sols, Historial: hist, Iniciativas: prj.map(rowPrj) };
     const rows = prj.map(rowPrj);
-    const datos = { iniciativas: rows, resumen: { activas: rows.length, finalizadas: St.ini.filter(i => !esProp(i) && i.estado === 'Completado').length, en_ejecucion: prj.filter(i => i.fase === 'Ejecución' && i.estado === 'En curso').length, criticas: prj.filter(i => i.rag === 'Rojo').length } };
+    const standByN = single ? 0 : St.ini.filter(i => esSB(i) && okArea(i)).length;   // Stand By: fuera de todo; solo su número va en «Movimientos del ciclo»
+    const datos = { standBy: standByN, iniciativas: rows, resumen: { activas: rows.length, finalizadas: St.ini.filter(i => !esProp(i) && i.estado === 'Completado').length, en_ejecucion: prj.filter(i => i.fase === 'Ejecución' && i.estado === 'En curso').length, criticas: prj.filter(i => i.rag === 'Rojo').length } };
     const propRows = GD.Propuestas.filter(p => p.resultado === 'Pendiente');
     const propAsIni = propRows.map(p => {
       const fE = parsearFecha_(p.fecha_etapa) || parsearFecha_(p.fecha_propuesta), dias = fE ? Math.max(0, Math.floor((new Date() - fE) / 86400000)) : 0;
@@ -8863,7 +8875,7 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
     // decisiones y compromisos
     const perteneceDeck = x => PRES_MIO && !single ? !!(x.iniciativa_id && nombrePorId[x.iniciativa_id]) : !single ? (!x.iniciativa_id ? ppt_decisionAplicaAArea_(x.area, areaObjetivo) : (nombrePorId[x.iniciativa_id] ? true : (nombreV[x.iniciativa_id] && ppt_decisionAplicaAArea_(areaV[x.iniciativa_id], areaObjetivo)))) : (x.iniciativa_id === id);
     const decs = { sinResolver: [], cerradas: [] };
-    St.decisiones.filter(d => inc(d)).forEach(d => {
+    DECS().filter(d => inc(d)).forEach(d => {
       const it = { fila: d.id, decision: d.titulo + (d.recomendacion ? ' — ' + d.recomendacion : ''), fecha: D(d.limite), fecha_limite: D(d.limite), area: d.area || '', iniciativa_id: d.ini || '' };
       if (d.estado === 'Pendiente') { it.vencida = !!(it.fecha_limite && it.fecha_limite < new Date()); decs.sinResolver.push(it); }
       else if (d.fResol && (!corte || D(d.fResol) > corte)) { it.comentario_cierre = d.resolucion || d.estado; it.fecha_cierre = D(d.fResol); decs.cerradas.push(it); }
@@ -8883,7 +8895,7 @@ function calcularAvanceEsperado_(fechaInicioRaw, fechaFinRaw, hoy) {
     const todos = [...prj, ...prop];
     return {
       single, id, it0, areaObjetivo, fechaCiclo, corte, corte2, corteStr: f10(corte), corte2Str: f10(corte2), cicloStr: f10(fechaCiclo), datos, baseline, baseline2, hitosPorIniciativa, hitosFlat, decArea, seg, comentarios: {},
-      propRows, propAsIni, panorama: { clasificacion: clasif(St.ini.filter(i => !esProp(i))) }, datosStatus: { iniciativas: rows.concat(propAsIni) },
+      propRows, propAsIni, panorama: { clasificacion: clasif(St.ini.filter(i => !esProp(i) && !esSB(i))) }, datosStatus: { iniciativas: rows.concat(propAsIni) },
       mensaje, mensajeGen: generado, prjAll, propAll, prj, prop, etiquetaArea: single ? (areasDeIniciativa_(it0 && it0.area)[0] || 'Portafolio') : (areaObjetivo || 'Portafolio completo'), todos
     };
   }
@@ -9072,11 +9084,11 @@ function _cand(c) {   // universo del alcance (para el panel "Qué entra" y "Apl
   return withArea(c, () => {
     if (c.alcance === 'proyecto') {
       const ids = c.proys, out = { prj: [], prop: [], hito: [], rsk: [], dec: [], bit: [] };
-      ids.map(byId).filter(Boolean).forEach(i => { out[esProp(i) ? 'prop' : 'prj'].push(i); out.hito.push(...hitosDe(i.id)); out.rsk.push(...riesgosDe(i.id)); out.dec.push(...St.decisiones.filter(d => d.ini === i.id)); out.bit.push(...St.bitacora.filter(b => b.tipo === 'Comentario' && b.ini === i.id)); });
+      ids.map(byId).filter(Boolean).forEach(i => { out[esProp(i) ? 'prop' : 'prj'].push(i); out.hito.push(...hitosDe(i.id)); out.rsk.push(...riesgosDe(i.id)); out.dec.push(...DECS().filter(d => d.ini === i.id)); out.bit.push(...St.bitacora.filter(b => b.tipo === 'Comentario' && b.ini === i.id)); });
       return out;
     }
     const P = scope(), Q = scopeP(), inA = id => { const i = byId(id); return !i || inArea(i); };
-    return { prj: P.filter(isLive), prop: Q.filter(isLive), hito: HITOS().filter(h => inA(h.ini) && !h.completado), rsk: St.riesgos.filter(r => riesgoAbierto(r) && inA(r.ini)), dec: St.decisiones.filter(d => d.estado === 'Pendiente' && inA(d.ini)), bit: St.bitacora.filter(b => b.tipo === 'Comentario' && b.ini && inA(b.ini)) };
+    return { prj: P.filter(isLive), prop: Q.filter(isLive), hito: HITOS().filter(h => inA(h.ini) && !h.completado), rsk: St.riesgos.filter(r => riesgoAbierto(r) && inA(r.ini)), dec: DECS().filter(d => d.estado === 'Pendiente' && inA(d.ini)), bit: St.bitacora.filter(b => b.tipo === 'Comentario' && b.ini && inA(b.ini)) };
   });
 }
 function aplicarReglas(c) {
@@ -9550,7 +9562,8 @@ const GUIA = {
     ['Filtra', 'Usa búsqueda y selectores sobre la tabla (área, fase, estado, RAG).'],
     ['Ordena', 'Clic en el encabezado de una columna para ordenar.'],
     ['Abre una iniciativa', 'Clic en una fila: ficha completa en el panel derecho.'],
-    ['Exporta', 'Botones CSV / Excel / JSON para llevarte la vista filtrada.']] },
+    ['Exporta', 'Botones CSV / Excel / JSON para llevarte la vista filtrada.'],
+    ['Stand By', 'Es la única pantalla que muestra lo que está en «Stand By»: fuera de indicadores, avisos y presentación. Para reactivarlo, abre la ficha y pulsa «Reactivar».']] },
   proyectos: { t: 'Proyectos', p: [
     ['Busca o filtra', 'Barra superior de la lista: texto, área, fase, estado.'],
     ['Abre el proyecto', 'Clic en la fila: ficha con resumen, hitos, riesgos y bitácora.'],
@@ -9995,17 +10008,17 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     return [rall.length, catChips('r', rall.map(r => r.cat || '—')) + (rs.map(r => { const n = nivelRiesgo(expo(r)); return `<button class="al" data-act="sel" data-t="risk" data-id="${r.id}"><span class="expo" style="background:${n.c}">${expo(r)}</span><span><b>${esc(r.desc)}</b><small>${esc(r.cat || 'Sin categoría')} · ${r.estado} · ${esc(r.dueno || 'sin dueño')}</small></span></button>`; }).join('') || '<p class="mut">Sin riesgos en esta categoría.</p>')];
   }
   function secDec(i) {
-    const ds = St.decisiones.filter(d => d.ini === i.id);
+    const ds = DECS().filter(d => d.ini === i.id);
     if (!ds.length) return [0, V.emptyRich({ ic: 'gavel', title: 'Sin decisiones asociadas', line: 'Aquí quedan las decisiones del comité sobre esta iniciativa, con responsable y fecha.', p: ['Registrar decisión', 'new', { t: 'dec', ini: i.id }, 'gavel'] })];
     return [ds.length, ds.map(d => `<button class="al" data-act="sel" data-t="dec" data-id="${d.id}"><span class="pill" style="--c:${DEC_C[d.tipo]}">${esc(d.tipo)}</span><span><b>${esc(d.titulo)}</b><small>${esc(d.estado)} · límite ${fmtD(d.limite)}</small></span></button>`).join('')];
   }
   function secCom(i) {
-    const cs = St.compromisos.filter(c => c.ini === i.id);
+    const cs = ACUERDOS().filter(c => c.ini === i.id);
     if (!cs.length) return [0, V.emptyRich({ ic: 'users', title: 'Sin compromisos', line: 'Los acuerdos de reuniones quedan aquí con responsable y fecha.', p: ['Crear compromiso', 'acunew', { id: i.id }, 'check'] })];
     return [cs.length, cs.map(c => `<div class="hrow"><div><b>${esc(c.texto)}</b><small>${esc(c.estado)} · ${esc(c.resp || 'sin responsable')} · límite ${fmtD(c.limite)}</small></div></div>`).join('')];
   }
   function secCam(i) {
-    const cs = St.cambios.filter(c => c.ini === i.id);
+    const cs = CAMBIOS().filter(c => c.ini === i.id);
     if (!cs.length) return [0, V.emptyRich({ ic: 'refresh', title: 'Sin cambios solicitados', line: 'Todo cambio de alcance, fecha o presupuesto queda registrado con quién lo aprobó.', p: ['Solicitar cambio', 'chgnew', { id: i.id }, 'refresh'] })];
     return [cs.length, cs.map(c => `<div class="hrow"><div><b>${esc(c.tipo)} · ${esc(c.desc || c.id)}</b><small>${esc(c.estado)} · ${esc(c.solicita || '')} · ${fmtD(c.creada)}</small></div></div>`).join('')];
   }
@@ -10233,7 +10246,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.64', b: '19-10-2026 18:40' };
+  const VER = { v: 'V22.65', b: '19-10-2026 21:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
@@ -10576,7 +10589,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
         btn: [bAct('Pedir cambio de fecha', 'chgnew', { id: i.id }, true), bAct('Ver hitos de la ficha', 'cocir', { id: i.id, k: 'hit' })] });
     }
     if (off('cmp')) {
-      const cv = St.compromisos.filter(c => c.ini === i.id && c.estado !== 'Cancelado' && c.limite && c.limite < E && c.estado !== 'Cumplido');
+      const cv = ACUERDOS().filter(c => c.ini === i.id && c.estado !== 'Cancelado' && c.limite && c.limite < E && c.estado !== 'Cumplido');
       out.push({ k: 'cmp', t: 'Compromisos', por: 'Hay ' + cv.length + ' compromiso' + (cv.length === 1 ? '' : 's') + ' con fecha vencida:',
         lista: cv.slice(0, 4).map(c => '«' + cut(c.texto, 60) + '» (' + (c.resp || 'sin responsable') + ', límite ' + fmtD(c.limite) + ')'),
         como: 'Ábrelos desde la ficha y márcalos <b>Cumplido</b>, o cámbiales la fecha límite si se acordó otra.', btn: [bAct('Ir a los compromisos', 'cocir', { id: i.id, k: 'com' }, true)] });

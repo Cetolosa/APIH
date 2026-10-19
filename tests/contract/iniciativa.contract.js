@@ -58,6 +58,14 @@ module.exports = async function contratoIniciativa(fabrica, log = console.log) {
     const b = await d.cambiarEstado(a.id, { estado: 'Pausado', motivo: 'Sin fondos', rev: '2026-12-01' }, a.version);
     assert.strictEqual(b.estado, 'Pausado'); assert.strictEqual(b.estadoRev, '2026-12-01');
   });
+  await caso('Stand By: solo motivo (sin fecha de revisión), no es final y se reactiva', async () => {
+    const d = fabrica(); const a = await d.crear(prj());
+    await falla(d.cambiarEstado(a.id, { estado: 'Stand By' }, a.version), 'INVALIDA', 'estadoMotivo');
+    const b = await d.cambiarEstado(a.id, { estado: 'Stand By', motivo: 'Congelado por presupuesto' }, a.version);
+    assert.strictEqual(b.estado, 'Stand By'); assert.strictEqual(b.estadoRev, null);
+    const c = await d.cambiarEstado(a.id, { estado: 'En curso' }, b.version);
+    assert.strictEqual(c.estado, 'En curso'); assert.strictEqual(c.estadoMotivo, '');
+  });
   await caso('cambiarFase aplica compuertas (COMPUERTA) y avanza de a una fase', async () => {
     const d = fabrica(); let a = await d.crear(prj({ presupuesto: 0 }));
     await falla(d.cambiarFase(a.id, 'Transición', a.version), 'INVALIDA', 'fase');

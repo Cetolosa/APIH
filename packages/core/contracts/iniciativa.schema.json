@@ -39,7 +39,7 @@
     "prioridad":     { "enum": ["Alta", "Media", "Baja"] },
 
     "fase":          { "enum": ["Recepción", "Evaluación", "Caso de Negocio", "Aprobación", "Planificación", "Ejecución", "Transición", "Cierre"] },
-    "estado":        { "enum": ["Vigente", "En espera", "Aprobada", "Rechazada", "Retirada", "En curso", "Pausado", "Completado", "Cancelado"] },
+    "estado":        { "enum": ["Vigente", "En espera", "Stand By", "Aprobada", "Rechazada", "Retirada", "En curso", "Pausado", "Completado", "Cancelado"] },
     "estadoMotivo":  { "type": "string" },
     "estadoRev":     { "oneOf": [{ "$ref": "#/$defs/fecha" }, { "type": "null" }] },
     "rag":           { "enum": ["Verde", "Ámbar", "Rojo"] },
@@ -80,9 +80,9 @@
   },
   "allOf": [
     { "if": { "properties": { "tipo": { "const": "Propuesta" } } },
-      "then": { "properties": { "fase": { "enum": ["Recepción", "Evaluación", "Caso de Negocio", "Aprobación"] }, "estado": { "enum": ["Vigente", "En espera", "Aprobada", "Rechazada", "Retirada"] } } } },
+      "then": { "properties": { "fase": { "enum": ["Recepción", "Evaluación", "Caso de Negocio", "Aprobación"] }, "estado": { "enum": ["Vigente", "En espera", "Stand By", "Aprobada", "Rechazada", "Retirada"] } } } },
     { "if": { "properties": { "tipo": { "const": "Proyecto" } } },
-      "then": { "properties": { "fase": { "enum": ["Planificación", "Ejecución", "Transición", "Cierre"] }, "estado": { "enum": ["En curso", "Pausado", "Completado", "Cancelado"] } } } }
+      "then": { "properties": { "fase": { "enum": ["Planificación", "Ejecución", "Transición", "Cierre"] }, "estado": { "enum": ["En curso", "Pausado", "Stand By", "Completado", "Cancelado"] } } } }
   ],
   "$defs": {
     "fecha": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },

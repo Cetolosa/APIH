@@ -21,7 +21,7 @@ Todas son asíncronas (devuelven `Promise`).
 ## Reglas (las aplica el servidor; la UI las repite para avisar antes)
 1. `id`: si no viene, lo asigna el servidor (`PROP-n` o `PRJ-n` según `tipo`); si el cliente lo propone (C2.2, compatibilidad con la SPA), debe tener el prefijo del tipo y no existir (si existe → `CONFLICTO`). `tipo` no cambia después de crear.
 2. Fase y estado deben ser del tipo (Propuesta / Proyecto).
-3. Estados `En espera`, `Pausado`, `Rechazada`, `Retirada`, `Cancelado` exigen `estadoMotivo`; `En espera` y `Pausado` exigen `estadoRev`.
+3. Estados `En espera`, `Pausado`, `Stand By`, `Rechazada`, `Retirada`, `Cancelado` exigen `estadoMotivo`; `En espera` y `Pausado` exigen `estadoRev` (`Stand By` no). `Stand By` no es final: se reactiva a `En curso` / `Vigente`, y la iniciativa sale de indicadores, avisos y presentación.
 4. `Completado` solo en fase `Cierre`. `Aprobada` vía `aprobarPropuesta`, o (C2.2) creando primero el `PRJ` con `propuestaOrigen` (exige propuesta vigente en fase Aprobación) y luego `cambiarEstado` a `Aprobada`.
 5. `finPlan >= inicioPlan`; `finReal >= inicioReal`.
 6. `deps` sin ciclos ni referencia a sí misma.

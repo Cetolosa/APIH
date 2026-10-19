@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C2.22', b: '19-10-2026', origen: 'V22.64' };
+  const VERSION = { v: 'C2.23', b: '19-10-2026', origen: 'V22.65' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -27,9 +27,9 @@
 
   /* ---------- iniciativa (C1.1) — contrato: contracts/iniciativa.md y .schema.json ---------- */
   const FASES = { Propuesta: ['Recepción', 'Evaluación', 'Caso de Negocio', 'Aprobación'], Proyecto: ['Planificación', 'Ejecución', 'Transición', 'Cierre'] };
-  const ESTADOS = { Propuesta: ['Vigente', 'En espera', 'Aprobada', 'Rechazada', 'Retirada'], Proyecto: ['En curso', 'Pausado', 'Completado', 'Cancelado'] };
+  const ESTADOS = { Propuesta: ['Vigente', 'En espera', 'Stand By', 'Aprobada', 'Rechazada', 'Retirada'], Proyecto: ['En curso', 'Pausado', 'Stand By', 'Completado', 'Cancelado'] };
   const EST_FINAL = ['Aprobada', 'Rechazada', 'Retirada', 'Completado', 'Cancelado'];
-  const EST_MOTIVO = ['En espera', 'Pausado', 'Rechazada', 'Retirada', 'Cancelado'];
+  const EST_MOTIVO = ['En espera', 'Pausado', 'Stand By', 'Rechazada', 'Retirada', 'Cancelado'];
   const EST_REVISION = ['En espera', 'Pausado'];
   const RAGS = ['Verde', 'Ámbar', 'Rojo'], PRIOS = ['Alta', 'Media', 'Baja'], MONEDAS = ['CLP', 'USD', 'UF'];
   const ES_FECHA = /^\d{4}-\d{2}-\d{2}$/;
