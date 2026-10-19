@@ -8,7 +8,7 @@
 3. `SWA_NOMBRE=… SWA_RG=rg-apih-dev ./infra/entra-registro.sh` (registro de la app, asignación requerida, grupos).
 4. En Azure SQL (como admin Entra): `db/azure-sql/001_esquema.sql` y `002_permisos.sql` (nombre de la Function App).
 5. Pipeline: secretos `AZURE_CLIENT_ID/TENANT_ID/SUBSCRIPTION_ID` (OIDC) y `APIH_SWA_TOKEN`; variables `APIH_FUNC_NOMBRE`, `APIH_SWA_HOST`.
-6. Validar: `APIH_SQL_PRUEBAS=si … node tests/contract/run-azure-sql.js` y abrir la URL de la SWA.
+6. Validar (ver `docs/operacion/lista-despliegue.md`): `APIH_SQL_PRUEBAS=si … node tests/contract/run-azure-sql.js` y abrir la URL de la SWA.
 
 ## Recursos (dev)
 | Recurso | SKU | Nota |

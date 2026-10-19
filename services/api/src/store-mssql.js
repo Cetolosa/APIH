@@ -68,11 +68,26 @@ function ejecutorMssql(env) {
     authentication: { type: env.APIH_SQL_AUTH || 'azure-active-directory-default', options: env.AZURE_CLIENT_ID ? { clientId: env.AZURE_CLIENT_ID } : {} },
     pool: { max: 10, min: 0, idleTimeoutMillis: 30000 }
   });
-  const listo = pool.connect();
+  /* Conexión perezosa y con reintentos: una base serverless en autopausa responde 40613 en el primer intento mientras
+     despierta (hasta ~1 min), y la identidad administrada puede tardar en estar lista tras un arranque en frío.
+     Un fallo NO se queda cacheado (antes: promesa rechazada permanente + «unhandled rejection» al cargar la función). */
+  const TRANS = /^(40613|40197|40501|49918|49919|49920|10928|10929|ESOCKET|ETIMEOUT|ECONNCLOSED|ELOGIN)$/;
+  const esperar = ms => new Promise(r => setTimeout(r, ms));
+  const intentos = +env.APIH_SQL_INTENTOS || 6, pausa = +env.APIH_SQL_PAUSA_MS || 10000;
+  let listo = null;
+  const conectar = () => listo || (listo = (async () => {
+    for (let i = 1; ; i++) {
+      try { await pool.connect(); return; } catch (e) {
+        const c = String(e.number || e.code || (e.originalError && (e.originalError.number || e.originalError.code)) || '');
+        if (i >= intentos || !TRANS.test(c)) { listo = null; throw e; }
+        try { await pool.close(); } catch (_) { } await esperar(pausa);
+      }
+    }
+  })());
   const correr = async (req, q, p) => { Object.entries(p).forEach(([k, v]) => req.input(k, v)); return (await req.query(q)).recordset || []; };
-  const ej = async (q, p) => { await listo; return correr(pool.request(), q, p); };
+  const ej = async (q, p) => { await conectar(); return correr(pool.request(), q, p); };
   ej.tx = async fn => {
-    await listo; const t = new sql.Transaction(pool); await t.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
+    await conectar(); const t = new sql.Transaction(pool); await t.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
     const et = (q, p) => correr(new sql.Request(t), q, p); et.tx = f => f(et);
     try { const r = await fn(et); await t.commit(); return r; } catch (e) { try { await t.rollback(); } catch (_) { } throw e; }
   };
