@@ -4299,6 +4299,8 @@ Chg.proyiaf = el => { const fl = el.files[0], id = el.dataset.id; el.value = '';
     (o.riesgos || []).forEach(q => { if (!q || typeof q !== 'object') return; const x = q.id ? St.riesgos.find(y => y.id === q.id) : null; if (q.id && (!x || x.ini !== i.id)) return err.push('Riesgo ' + q.id + ' no pertenece a este proyecto');
       const qq = {}; ['desc', 'cat', 'prob', 'imp', 'estado', 'dueno', 'fIdent', 'fRev', 'mit'].forEach(k => { if (q[k] !== undefined) qq[k] = q[k]; });   // A-1: solo campos de riesgo (sin id/ini)
       if (['desc', 'dueno', 'mit'].some(k => qq[k] !== undefined && typeof qq[k] !== 'string')) return err.push((q.id || 'Riesgo nuevo') + ': texto inválido');
+      if (['prob', 'imp'].some(k => qq[k] !== undefined && !(Number.isInteger(qq[k]) && qq[k] >= 1 && qq[k] <= 5))) return err.push((q.id || 'Riesgo nuevo') + ': probabilidad/impacto debe ser entero 1-5');   // N-F-06
+      if (['fIdent', 'fRev'].some(k => qq[k] !== undefined && !iapFecha(qq[k]))) return err.push((q.id || 'Riesgo nuevo') + ': fecha inválida');   // N-F-06
       const v = Object.assign({}, x || { cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: i.lider || '', fIdent: hoy(), fRev: addD(hoy(), 30), mit: '' }, qq);
       if (!x && !String(q.desc || '').trim()) return err.push('Riesgo nuevo sin descripción'); if (!RISK_CATS.includes(v.cat)) return err.push((q.id || 'Riesgo nuevo') + ': categoría inválida'); if (!RISK_ESTADOS.includes(v.estado)) return err.push((q.id || 'Riesgo nuevo') + ': estado inválido');
       if (![v.prob, v.imp].every(n => Number.isInteger(n) && n >= 1 && n <= 5)) return err.push((q.id || 'Riesgo nuevo') + ': prob e imp deben ser enteros 1-5');
