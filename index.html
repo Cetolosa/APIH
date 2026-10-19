@@ -342,6 +342,7 @@ body{font-family:var(--font)}
 ::selection{background:color-mix(in srgb,var(--pri) 22%,transparent)}
 input,select,textarea{accent-color:var(--pri);caret-color:var(--pri)}
 .tbl td.n,.k-v,.k-s,.n{font-variant-numeric:tabular-nums}
+@media (max-width:1240px){.top{gap:8px;min-width:0}.top .hdate,.top .sync{display:none}.gsearch{min-width:0;max-width:300px}.top-r{min-width:0;gap:6px}.usr small{display:none}.usr b{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}}   /* U-27: barra superior sin desborde a 1024 px */
 @media (max-width:640px){
  .top{gap:6px;padding:0 8px}.top-r{gap:4px}.gsearch,.hdate,.sync,.areasel,.top-r>select,.usr>div{display:none}
  .brand-img{height:22px}.top .btn.pri span{display:none}
@@ -3379,7 +3380,7 @@ Views.propuestas = {
       <line x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}" stroke="#8A8886"/><line x1="${P}" y1="${P / 2}" x2="${P}" y2="${H - P}" stroke="#8A8886"/><text x="${W / 2}" y="${H - 8}" text-anchor="middle" class="ax">Esfuerzo →</text><text transform="translate(12 ${H / 2}) rotate(-90)" text-anchor="middle" class="ax">Valor →</text>
       ${dots.map(d => `<g class="dotg" data-act="sel" data-t="ini" data-id="${d.i.id}" tabindex="0"><circle cx="${d.x}" cy="${d.y}" r="${d.r}" fill="${FASE_COLOR[d.i.fase]}" fill-opacity=".55" stroke="${FASE_COLOR[d.i.fase]}" stroke-width="1.5"/><title>${esc(d.i.titulo)} · valor ${(d.i.score || {}).valor} · esfuerzo ${(d.i.score || {}).esfuerzo} · ${fmtN(d.i.presupuesto)} MM</title><text x="${d.x}" y="${d.y + 3.5}" text-anchor="middle" class="dl">${d.i.id.slice(5)}</text></g>`).join('')}</svg>`;
     const rank = rows.slice().sort(by(i => -priorScore(i))).slice(0, 8);
-    return pageHead('Propuestas · Pipeline de innovación', 'Del problema al caso de negocio y la aprobación. Al aprobar una propuesta se crea un proyecto. Cada fase exige compuertas de gobierno antes de avanzar.', `<span class="edit-only">${btn('Nueva propuesta', 'new', { d: { t: 'prop' }, ic: 'plus', cls: 'pri' })}</span>`) + `
+    return pageHead('Pipeline de propuestas', 'Del problema al caso de negocio y la aprobación. Al aprobar una propuesta se crea un proyecto. Cada fase exige compuertas de gobierno antes de avanzar.', `<span class="edit-only">${btn('Nueva propuesta', 'new', { d: { t: 'prop' }, ic: 'plus', cls: 'pri' })}</span>`) + `
     <section class="kpis k4"><div class="kpi"><div class="k-top"><span class="k-ic">${icon('bulb', 16)}</span><span class="k-l">En pipeline</span></div><div class="k-v">${total.n}</div><div class="k-s">${total.esp} en espera · ${rows.filter(i => i.fase === 'Aprobación' && i.estado === 'Vigente').length} listas para aprobar</div></div>
       <div class="kpi"><div class="k-top"><span class="k-ic">${icon('money', 16)}</span><span class="k-l">Costo estimado</span></div><div class="k-v">${fmtBig(total.p)}</div><div class="k-s">${restTxt(total.p)}<sup class="est">est.</sup></div></div>
       <div class="kpi good"><div class="k-top"><span class="k-ic">${icon('target', 16)}</span><span class="k-l">Valor potencial</span></div><div class="k-v">${fmtBig(total.b)}</div><div class="k-s">${restTxt(total.b)}Beneficio esperado <sup class="est">est.</sup></div></div>
@@ -3929,7 +3930,7 @@ Views.comite = {
 const temaRow = (c, t, k) => `<div class="trow"><span class="rk">${k + 1}</span><div class="r-m"><b>${esc(t.t)}</b><small>${t.ini ? iniLink(t.ini) : ''}${t.notas ? ' · ' + esc(t.notas) : ''}</small></div><button class="icon-btn sm edit-only" data-act="cdel" data-c="${c.id}" data-k="tema" data-id="${k}" aria-label="Quitar">${icon('x', 13)}</button></div>`;
 function temasSec(c, titulo, fn, kind) {
   const r = c.temas.map((t, k) => [t, k]).filter(([t]) => fn(t));
-  return `<section class="card c6"><header><h2>${titulo}</h2><span class="edit-only"><button class="lnk" data-act="ctema" data-id="${c.id}" data-kind="${kind}">+ Agregar tema</button></span></header>${r.map(([t, k]) => temaRow(c, t, k)).join('') || '<p class="mut">Sin temas.</p>'}</section>`;
+  return `<section class="card c6"><header><h2>${titulo}</h2><span class="edit-only"><button class="lnk" data-act="carmar" data-id="${c.id}" data-kind="${kind}" title="Agrega como temas las decisiones pendientes y las propuestas o proyectos en evaluación">Armar agenda</button> · <button class="lnk" data-act="ctema" data-id="${c.id}" data-kind="${kind}">+ Agregar tema</button></span></header>${r.map(([t, k]) => temaRow(c, t, k)).join('') || '<p class="mut">Sin temas.</p>'}</section>`;
 }
 function sugeridos(c) {
   const usados = new Set(c.temas.map(t => t.ini));
@@ -3945,6 +3946,13 @@ Chg.catt = el => { const c = St.comites.find(x => x.id === el.dataset.c); c.part
 Chg.ctoggle = el => { const c = St.comites.find(x => x.id === el.dataset.c), a = c[el.dataset.k].find(x => x.id === el.dataset.id); const k = el.dataset.k; a.estado = el.checked ? (k === 'acciones' ? 'Cerrada' : 'Cumplido') : (k === 'acciones' ? 'Abierta' : 'Abierto'); log('Actualización', a.ini, (k === 'acciones' ? 'Acción ' : 'Compromiso ') + (el.checked ? 'cumplido/a: ' : 'reabierto/a: ') + a.texto); refresh(); };
 Acts.cdel = d => { const c = St.comites.find(x => x.id === d.c); if (d.k === 'tema') c.temas.splice(+d.id, 1); else c[d.k] = c[d.k].filter(x => x.id !== d.id); refresh(); };
 Acts.cpart = d => { const c = St.comites.find(x => x.id === d.id); openForm({ title: 'Agregar participante', fields: [{ k: 'n', l: 'Nombre', req: true, list: people() }, { k: 'rol', l: 'Rol' }], values: { rol: 'Participante' }, onSave(o) { c.participantes.push({ ...o, asistio: false }); refresh(); } }); };
+Acts.carmar = d => {   /* U-19: arma la agenda con lo pendiente */
+  const c = St.comites.find(x => x.id === d.id); if (!c) return; const prop = d.kind === 'prop', n0 = c.temas.length;
+  const ya = (t, ini) => c.temas.some(x => x.t === t && (x.ini || '') === (ini || ''));
+  St.decisiones.filter(x => x.estado === 'Pendiente' && x.ini && byId(x.ini) && (prop ? esProp(byId(x.ini)) : !esProp(byId(x.ini)))).forEach(x => { const t = 'Decidir: ' + x.titulo; if (!ya(t, x.ini)) c.temas.push({ t, ini: x.ini, notas: '' }); });
+  if (prop) St.ini.filter(i => esProp(i) && isLive(i)).forEach(i => { const t = 'Revisar propuesta: ' + i.titulo; if (!ya(t, i.id)) c.temas.push({ t, ini: i.id, notas: '' }); });
+  const n = c.temas.length - n0; toast(n ? n + ' tema(s) agregados a la agenda' : 'No hay pendientes nuevos para agregar'); if (n) refresh();
+};
 Acts.ctema = d => { const c = St.comites.find(x => x.id === d.id); openForm({ title: 'Agregar tema de agenda', fields: [{ k: 't', l: 'Tema', req: true, w: 3 }, { k: 'ini', l: 'Proyecto / propuesta relacionada', t: 'select', opts: iniOpts(d.kind === 'prop' ? 'Propuesta' : d.kind === 'prj' ? 'Proyecto' : undefined), blank: '—', w: 3 }, { k: 'notas', l: 'Notas', t: 'textarea', w: 3 }], values: {}, onSave(o) { c.temas.push(o); refresh(); } }); };
 Acts.cacc = d => { const c = St.comites.find(x => x.id === d.id), k = d.k; openForm({ title: k === 'acciones' ? 'Nueva acción' : 'Nuevo compromiso', fields: [{ k: 'texto', l: 'Descripción', req: true, t: 'textarea', w: 3 }, { k: 'resp', l: 'Responsable', list: people() }, { k: 'limite', l: 'Fecha límite', t: 'date' }, { k: 'ini', l: 'Iniciativa', t: 'select', opts: iniOpts(), blank: '—', w: 3 }], values: { limite: addD(c.fecha, 7), resp: St.cfg.usuario }, onSave(o) { c[k].push({ id: (k === 'acciones' ? 'ACC-' : 'CMP-') + Math.random().toString(36).slice(2, 6), estado: k === 'acciones' ? 'Abierta' : 'Abierto', cierre: '', ...o, ini: o.ini || null }); log('Cambio', o.ini || null, (k === 'acciones' ? 'Acción registrada: ' : 'Compromiso registrado: ') + o.texto); refresh(); } }); };
 Acts.cdec = d => { const c = St.comites.find(x => x.id === d.id); decForm(null); setTimeout(() => { const s = $('#f_comite'); if (s) s.value = c.id; }, 20); };
@@ -5182,7 +5190,7 @@ const COLS_SIMPLE = ['tipo', 'id', 'titulo', 'fase', 'avance', 'lider', 'rag'];
 const NAV_GRP = { dashboard: 'Portafolio', cielo: 'Portafolio', portfolio: 'Portafolio', proyectos: 'Portafolio', propuestas: 'Portafolio', hitos: 'Portafolio', riesgos: 'Portafolio', roadmap: 'Portafolio', gantt: 'Portafolio', fases: 'Portafolio', capacidad: 'Portafolio',
   comite: 'Gobierno', decisiones: 'Gobierno', compromisos: 'Gobierno', cambios: 'Gobierno', bitacora: 'Gobierno', calendario: 'Gobierno', personas: 'Personas y reportes', presentaciones: 'Personas y reportes',
   miconfig: 'Sistema', admin: 'Sistema', ia: 'Sistema', proposito: 'Sistema' };
-const modoUI = () => (UI.uiOv || 'simple') === 'pro' ? 'pro' : 'simple';   // cada sesión parte en Simple
+const modoUI = () => { if (!UI.uiOv) { try { UI.uiOv = localStorage.getItem('apih_modo') || 'simple'; } catch (e) { UI.uiOv = 'simple'; } } return UI.uiOv === 'pro' ? 'pro' : 'simple'; };   // U-21: el modo se recuerda en este navegador
 
 const SX_SEC = ['fecha real', 'solicitado por', 'iniciativa', 'mitigación', 'prob.', 'impacto', 'dueño', 'tipo', 'solicita', 'cargo', 'áreas', 'hitos abiertos', 'riesgos', 'decisiones', 'roles en el portafolio', 'rol', 've', 'edita', 'usa ia', 'panel de administración', 'acceso', 'inicio plan', 'fin real', 'sponsor', 'negocio'];
 function simplify() {
@@ -5208,7 +5216,7 @@ function simplify() {
   m.querySelectorAll('.ph-act .btn').forEach(b => { if (/^(Excel|JSON|CSV|PDF|Exportar)\b/i.test(b.innerText.trim())) hide(b); });
 }
 Acts.sxtoggle = () => { UI.sx = !UI.sx; render(); };
-Acts.modo = d => { UI.uiOv = d.m; UI.sx = false; closePops(); render(); toast((d.m === 'simple' ? 'Interfaz Simple' : 'Interfaz Profesional') + ' (vale para esta sesión)'); };
+Acts.modo = d => { UI.uiOv = d.m; try { localStorage.setItem('apih_modo', d.m); } catch (e) { } UI.sx = false; closePops(); render(); toast((d.m === 'simple' ? 'Interfaz Simple' : 'Interfaz Profesional') + ' (se recuerda en este navegador)'); };
 function msToastSeen() { try { const k = 'apih_ms_toast_' + _nrm(St.cfg.usuario); if (sessionStorage.getItem(k)) return true; sessionStorage.setItem(k, '1'); } catch (e) { } return false; }
 
 Acts.startip = d => toast(d.t);
@@ -5651,7 +5659,7 @@ function areaDeAccion(d, el) {
 }
 const ACT_ADMIN = ['catadd', 'catdel', 'expjson', 'impjson', 'reset', 'sptest', 'spconnect', 'spprov', 'spsync', 'splogout', 'sppnp', 'spcopy', 'spseed', 'spretry', 'xlsxall', 'atab', 'syncgo'];
 const CHG_ADMIN = ['cfg', 'spc', 'impfile', 'impinifile'];
-const ACT_EDIT = ['advance', 'advgo', 'applyrag', 'hitotoggle', 'resolvedec', 'aprobar', 'aprobargo', 'estado', 'reopen', 'reabrirPrj', 'edit', 'sfnew', 'sfedit', 'fnota'];
+const ACT_EDIT = ['carmar', 'advance', 'advgo', 'applyrag', 'hitotoggle', 'resolvedec', 'aprobar', 'aprobargo', 'estado', 'reopen', 'reabrirPrj', 'edit', 'sfnew', 'sfedit', 'fnota'];
 const CHG_EDIT = ['advto', 'hitotoggle', 'acutoggle', 'bitpres'];
 const ACT_COM = ['csug', 'cdel', 'cpart', 'ctema', 'cacc', 'cdec', 'cclose'];
 const CHG_COM = ['catt', 'ctoggle'];
@@ -9203,7 +9211,7 @@ function incMarks() {
   const m = $('#main'); if (!m) return;
   const kindOf = (t, id) => t === 'ini' ? (esProp(St.ini.find(x => x.id === id) || {}) ? 'prop' : 'prj') : t === 'risk' ? 'rsk' : t;
   const objOf = (k, id) => (INC_E[k]() || []).find(x => x.id === id);
-  const chk = (k, id) => { const o = objOf(k, id); if (!o) return ''; return `<label data-act="noop" title="Incluir en presentación"><input type="checkbox" data-chg="incl" data-e="${k}" data-id="${esc(id)}" ${inc(o) ? 'checked' : ''}> <span>En pres.</span></label>`; };
+  const chk = (k, id) => { const o = objOf(k, id); if (!o) return ''; return `<label data-act="noop" title="Incluir en presentación"><input type="checkbox" data-chg="incl" data-e="${k}" data-id="${esc(id)}" ${inc(o) ? 'checked' : ''}> <span>En presentación</span></label>`; };
   m.querySelectorAll('table:not(.mini)').forEach(t => {
     const rows = [...t.querySelectorAll('tbody tr[data-t][data-id]')].filter(r => ['ini', 'hito', 'risk', 'dec'].includes(r.dataset.t)); if (!rows.length) return;
     t.querySelectorAll('thead tr').forEach((tr, i) => { const th = document.createElement('th'); th.className = 'inc-c'; if (i === 0) th.textContent = 'En presentación'; tr.appendChild(th); });
@@ -10273,7 +10281,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const p = sr('p', ph); if (p) p.title = p.textContent;
     const act = sr('.ph-act', ph);
     if (act && !sr('.v22-more', act)) {
-      const keep = b => b.classList.contains('v22-main') || b.classList.contains('sxbtn') || b.closest('.v22-more');
+      const keep = b => b.classList.contains('v22-main') || b.classList.contains('sxbtn') || b.closest('.v22-more') || /^\s*(Alta directa|Presentar|Ir a hoy|Nuev[oa]\b)/.test(b.textContent);   /* N-U-10/U-29: la acción principal de cada pantalla queda visible */
       const sec = sra('.btn', act).filter(b => !keep(b));
       if (sec.length >= 2) {
         const w = document.createElement('span'); w.className = 'popw v22-more'; const id = 'pop-ph-more';
@@ -10383,7 +10391,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   Acts.tourx = () => tourEnd();
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('v22-tour')) tourEnd(); });
   V.ready = () => {
-    UI.uiOv = 'simple';   // siempre parte en modo Simple
+    UI.uiOv = null;   // U-21: parte en el modo recordado (Simple por defecto)
     const seen = lsGet('apih_tour22') === '1' || window.__tour22;
     if (!seen && !document.getElementById('sb-login') && !AuthService.needsLogin) setTimeout(() => { if (!document.getElementById('modal')) Acts.tour(); }, 600);
   };
