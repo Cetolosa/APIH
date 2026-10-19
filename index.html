@@ -4129,13 +4129,52 @@ const INI_PLANTILLA = () => ({ formato: 'apih-iniciativas', v: 1, iniciativas: [
     _ayuda: 'hitos[].cat: ' + hitoCats().join(', ') + '. hitos[].desc, subfases[].desc, faseNota[<fase>]: texto libre (recordatorio/instrucciones), se ve en Mi cocina. subfases: dentro de UNA fase; inicio/fin vacíos heredan los de la fase. hitos[].subfase: nombre o id de una subfase de la misma fase.' }] });
 Acts.inipl = () => { download('APIH_iniciativas_plantilla.json', JSON.stringify(INI_PLANTILLA(), null, 1), 'application/json'); toast('Plantilla descargada'); };
 Acts.impini = () => $('#impinifile').click();
+/* V22.63 (A-1): normaliza cada fila de «Importar iniciativas» con lista blanca de campos y tipos.
+   Sin id/ini propios en riesgos ni hitos (los genera la app); enums sin <>"'`= ; fechas ISO; números acotados; sin claves desconocidas. */
+const INI_ENUM_RX = /^[^<>"'`=\\]{1,80}$/, SF_ID_RX = /^[A-Za-z0-9_-]{1,20}$/;
+function normIni(x) {
+  if (!x || typeof x !== 'object' || Array.isArray(x)) return null;
+  const txt = (v, max) => typeof v === 'string' ? v.trim().slice(0, max) : undefined;
+  const enm = v => typeof v === 'string' && INI_ENUM_RX.test(v.trim()) ? v.trim() : undefined;
+  const num = (v, lo, hi) => { const n = typeof v === 'string' && v.trim() !== '' ? +v : v; return typeof n === 'number' && isFinite(n) && n >= lo && n <= hi ? n : undefined; };
+  const dte = v => iapFecha(v) ? v : undefined;
+  const o = {}, set = (k, v) => { if (v !== undefined) o[k] = v; };
+  const tipo = x.tipo === 'Propuesta' ? 'Propuesta' : 'Proyecto';
+  const fl = tipo === 'Propuesta' ? FASES_PROP : FASES_PRJ, fAll = [...FASES_PRJ, ...FASES_PROP];
+  set('tipo', tipo); set('titulo', txt(x.titulo, 200));
+  ['desc', 'logros', 'proximos', 'bc', 'resumen', 'issue', 'riesgoTxt'].forEach(k => set(k, txt(x[k], DESC_MAX)));
+  ['lider', 'sponsor', 'negocio', 'proveedor', 'area', 'categoria', 'prioridad', 'moneda', 'rag'].forEach(k => set(k, enm(x[k])));
+  if (fl.includes(x.fase)) set('fase', x.fase);
+  set('avance', num(x.avance, 0, 100)); ['presupuesto', 'gastado', 'beneficio'].forEach(k => set(k, num(x[k], 0, 1e12)));
+  ['inicioPlan', 'finPlan', 'finEst', 'creada', 'faseDesde', 'inicioReal', 'finReal'].forEach(k => set(k, dte(x[k])));
+  if (Array.isArray(x.deps)) set('deps', x.deps.filter(d => typeof d === 'string' && SF_ID_RX.test(d)));
+  if (Array.isArray(x.tags)) set('tags', x.tags.filter(t => typeof t === 'string').map(t => t.trim().slice(0, 40)).filter(Boolean));
+  if (Array.isArray(x.hitos)) set('hitos', x.hitos.filter(h => h && typeof h === 'object' && typeof h.nombre === 'string' && h.nombre.trim()).map(h => {
+    const q = { nombre: h.nombre.trim().slice(0, 200) };
+    if (fAll.includes(h.fase)) q.fase = h.fase; set2(q, 'fecha', dte(h.fecha)); set2(q, 'fechaReal', dte(h.fechaReal));
+    if (typeof h.completado === 'boolean') q.completado = h.completado; set2(q, 'dias', num(h.dias, -3650, 3650));
+    set2(q, 'resp', enm(h.resp)); set2(q, 'desc', txt(h.desc, DESC_MAX)); set2(q, 'cat', enm(h.cat));
+    if (typeof h.subfase === 'string' && SF_ID_RX.test(h.subfase)) q.subfase = h.subfase;
+    return q; }));
+  if (Array.isArray(x.riesgos)) set('riesgos', x.riesgos.filter(r => r && typeof r === 'object').map(r => {
+    const q = {}; set2(q, 'desc', txt(r.desc, 500)); set2(q, 'cat', enm(r.cat)); set2(q, 'dueno', enm(r.dueno)); set2(q, 'mit', txt(r.mit, 500)); set2(q, 'estado', enm(r.estado));
+    set2(q, 'prob', num(r.prob, 1, 5)); set2(q, 'imp', num(r.imp, 1, 5)); set2(q, 'fIdent', dte(r.fIdent)); set2(q, 'fRev', dte(r.fRev));
+    return q; }).filter(q => q.desc));
+  if (Array.isArray(x.subfases)) set('subfases', x.subfases.filter(s => s && typeof s === 'object' && typeof s.nombre === 'string').map(s => {
+    const q = { nombre: s.nombre.trim().slice(0, 120) }; set2(q, 'id', typeof s.id === 'string' && SF_ID_RX.test(s.id) ? s.id : undefined);
+    if (fAll.includes(s.fase)) q.fase = s.fase; set2(q, 'resp', enm(s.resp)); set2(q, 'inicio', dte(s.inicio)); set2(q, 'fin', dte(s.fin)); set2(q, 'desc', txt(s.desc, DESC_MAX));
+    return q; }));
+  if (x.faseNota && typeof x.faseNota === 'object' && !Array.isArray(x.faseNota)) set('faseNota', x.faseNota);
+  return o;
+}
+const set2 = (o, k, v) => { if (v !== undefined) o[k] = v; };
 Chg.impinifile = el => { const fl = el.files[0]; el.value = ''; if (!fl) return;
   if (!esGasto() || FL.verComo) { toast('Solo el perfil Gasto puede importar iniciativas', 'err'); return; }
   const r = new FileReader(); r.onload = () => { try {
     const o = JSON.parse(r.result), L = Array.isArray(o) ? o : (o && Array.isArray(o.iniciativas) ? o.iniciativas : null);
     if (!L || !L.length) throw new Error('Formato inválido: se espera { "iniciativas": [...] }');
     const k = t => _nrm(t), ex = new Set(St.ini.map(i => k(i.titulo))), nuevas = [], omit = [];
-    L.forEach(x => { if (!x || !String(x.titulo || '').trim()) { omit.push('(sin título)'); return; } if (ex.has(k(x.titulo))) { omit.push(x.titulo); return; } ex.add(k(x.titulo)); nuevas.push(x); });
+    L.forEach(raw => { const x = normIni(raw); if (!x || !String(x.titulo || '').trim()) { omit.push('(sin título)'); return; } if (ex.has(k(x.titulo))) { omit.push(x.titulo); return; } ex.add(k(x.titulo)); nuevas.push(x); });
     if (!nuevas.length) { toast('Nada que importar: todas ya existen (' + omit.join(', ') + ')', 'err'); return; }
     let nh = 0, nr = 0; const th = nuevas.reduce((a, x) => a + (x.hitos || []).length, 0), avisos = [];
     confirmBox('Se agregarán <b>' + nuevas.length + '</b> iniciativa(s) con ' + th + ' hitos: ' + nuevas.map(x => esc(x.titulo)).join(', ') + '.' + (omit.length ? '<br>Omitidas por existir o sin título: ' + omit.map(esc).join(', ') + '.' : '') + '<br>Los datos actuales no se modifican. ¿Continuar?', () => {
