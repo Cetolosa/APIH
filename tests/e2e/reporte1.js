@@ -60,8 +60,14 @@ const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
   ok(S && S[0] === (await p.evaluate(() => hoy())) && S[1]['F:Ejecución'] != null, 'snapFases registra el avance de fase de hoy');
   // Modal y botón
   await p.evaluate(() => { selectEntity('ini', 'PRJ-777'); }); await p.waitForTimeout(300);
-  const hayBtn = await p.evaluate(() => [...document.querySelectorAll('#panel button')].some(x => x.textContent.trim() === 'Reporte'));
-  ok(hayBtn, 'el panel de la ficha no tiene el botón «Reporte»');
+  const hayBtn = await p.evaluate(() => [...document.querySelectorAll('#panel button')].some(x => x.textContent.trim() === 'Reporte 1 a 1'));
+  ok(hayBtn, 'el panel de la ficha no tiene el botón «Reporte 1 a 1»');
+  // «Reporte 1 a 1» visible (no escondido en «Más»/«Herramientas») también en la ficha completa
+  await p.evaluate(() => Acts.ficha({ id: 'PRJ-777' })); await p.waitForTimeout(400);
+  const vis = await p.evaluate(() => [...document.querySelectorAll('.fl2-top button')].filter(x => !x.closest('.pop')).map(x => x.textContent.trim()));
+  ok(vis.includes('Reporte 1 a 1'), 'la ficha completa no muestra «Reporte 1 a 1» a la vista: ' + vis.join('|'));
+  const visP = await p.evaluate(() => { selectEntity('ini', 'PRJ-777'); return [...document.querySelectorAll('#panel .pn-a button')].filter(x => !x.closest('.pop')).map(x => x.textContent.trim()); }); 
+  ok(visP.includes('Reporte 1 a 1'), 'el panel no muestra «Reporte 1 a 1» a la vista: ' + visP.join('|'));
   await p.evaluate(() => Acts.reporte({ id: 'PRJ-777' })); await p.waitForTimeout(300);
   const m1 = await p.evaluate(() => ({ t: document.querySelector('#rep-prev').innerText, info: document.querySelector('#rep-info').textContent }));
   ok(/Reporte de avance/.test(m1.t) && /Forma A \(automática/.test(m1.info), 'modal: vista previa y forma automática: ' + m1.info);
