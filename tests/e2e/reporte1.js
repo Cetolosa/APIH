@@ -2,7 +2,7 @@
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] }); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] }); const p = await b.newPage({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
   await p.addInitScript(() => localStorage.setItem('apih_tour22', '1')); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto(URL); await p.waitForTimeout(1500);
   await p.evaluate(() => { if (typeof DataService !== 'undefined' && DataService.svc) { clearInterval(DataService.poll); DataService.refresh = async () => {}; } });
@@ -74,6 +74,16 @@ const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
   await p.selectOption('#rep-forma', 'B'); await p.waitForTimeout(200);
   const m2 = await p.evaluate(() => ({ t: document.querySelector('#rep-prev').innerText, info: document.querySelector('#rep-info').textContent }));
   ok(/Forma B \(forzada\)/.test(m2.info) && /Próxima semana/.test(m2.t), 'modal: forzar Forma B');
+  // Exportar a PNG y PDF (descargas reales)
+  for (const [act, ext, magic] of [['reppng', 'png', [0x89, 0x50, 0x4e, 0x47]], ['reppdf', 'pdf', [0x25, 0x50, 0x44, 0x46]]]) {
+    const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 15000 }).catch(() => null), p.click('[data-act="' + act + '"]')]);
+    if (!dl) { ok(false, 'no hubo descarga ' + ext); continue; }
+    const f = await dl.path(); if (process.env.KEEP) require('fs').copyFileSync(f, '/tmp/rep.' + ext); const buf = require('fs').readFileSync(f);
+    ok(dl.suggestedFilename().endsWith('.' + ext) && /^Reporte_1a1_/.test(dl.suggestedFilename()), 'nombre ' + ext + ': ' + dl.suggestedFilename());
+    ok(buf.length > 5000 && magic.every((v, k) => buf[k] === v), ext + ' inválido (' + buf.length + ' bytes)');
+    if (ext === 'pdf') ok(/\/Type \/Page /.test(buf.toString('latin1')) && /%%EOF$/.test(buf.toString('latin1')), 'estructura PDF');
+    if (ext === 'png') { const wh = [buf.readUInt32BE(16), buf.readUInt32BE(20)]; ok(wh[0] === 1800 && wh[1] > 400, 'dimensiones PNG ' + wh); }
+  }
   ok(errs.length === 0, 'errores de página: ' + errs.join(' | '));
   console.log(fails.length ? 'FALLA\n - ' + fails.join('\n - ') : 'OK reporte1 — Forma A y B desde la ficha, auto/forzada, pesos opcionales, snapshot de fase, escape'); await b.close(); process.exit(fails.length ? 1 : 0);
 })();
