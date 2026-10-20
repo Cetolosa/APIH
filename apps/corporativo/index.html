@@ -2472,7 +2472,7 @@ function panelIni(i) {
   }
   const fin = isDone(i), canAprobar = PR && !fin && i.fase === 'Aprobación' && i.estado === 'Vigente';   // (Stand By no aprueba)
   return pnHead(`${tipoLbl(i)} ${i.id} · ${esc(i.area)}`, esc(i.titulo), `${tipoPill(i)} ${PR ? '' : ragPill(i.rag)} ${faseTag(i)} ${estPill(i.estado)} ${prioPill(i.prioridad)} ${PR ? '' : starsMini(i)}`,
-    `${!PR ? btn('Reporte 1 a 1', 'reporte', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Reporte de avance 1 a 1 (infografía HTML, forma A o B)' }) : ''}${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin && !esSB(i) ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : (esSB(i) ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' })) + btn(esSB(i) ? 'Reactivar' : 'Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm', title: esSB(i) ? 'Stand By: fuera de indicadores. Reactívala cambiando el estado' : 'Cambiar estado' })}${fin && !PR ? btn('Reabrir', 'reabrirPrj', { d: { id: i.id }, ic: 'refresh', cls: 'sm', title: 'Solo Gasto: vuelve el proyecto a En curso' }) : ''}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
+    `${!PR ? btn('Reporte 1 a 1', 'reporte', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Reporte de avance 1 a 1 (forma A o B; guardar como PNG, PDF o HTML)' }) : ''}${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin && !esSB(i) ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : (esSB(i) ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' })) + btn(esSB(i) ? 'Reactivar' : 'Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm', title: esSB(i) ? 'Stand By: fuera de indicadores. Reactívala cambiando el estado' : 'Cambiar estado' })}${fin && !PR ? btn('Reabrir', 'reabrirPrj', { d: { id: i.id }, ic: 'refresh', cls: 'sm', title: 'Solo Gasto: vuelve el proyecto a En curso' }) : ''}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
     `<div class="tabs sm">${tabs.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="ptab" data-tab="${k}">${n}</button>`).join('')}</div><div class="pn-b">${b}</div>`;
 }
 function panelRisk(r) {
@@ -4797,10 +4797,39 @@ Acts.reporte = d => {
   const i = byId(d.id); if (!i || esProp(i)) return; UI.repForma = 'auto'; UI.repId = i.id;
   Modal.open({ title: 'Reporte 1 a 1 · ' + i.titulo, wide: true,
     body: `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><label class="mut" style="display:flex;gap:6px;align-items:center">Forma <select id="rep-forma" data-chg="repforma" aria-label="Forma del reporte"><option value="auto">Automática</option><option value="A">A · una fase activa</option><option value="B">B · múltiples hitos y fases paralelas</option></select></label><span id="rep-info" class="mut"></span></div><p class="desc" style="margin:0 0 8px">Se arma con la ficha: estado = RAG, avance, hitos, subfases, logros, próximos pasos, issue, decisiones y compromisos abiertos. Cambia lo que ves en la ficha, no aquí.</p><div id="rep-prev" style="background:#f5f5f5;border-radius:8px;max-height:62vh;overflow:auto"></div>`,
-    footer: `<button class="btn" data-act="mclose">Cerrar</button><button class="btn" data-act="repcopy">Copiar HTML</button><button class="btn pri" data-act="repdl">Descargar HTML</button>` });
+    footer: `<button class="btn" data-act="mclose">Cerrar</button><button class="btn" data-act="repcopy">Copiar HTML</button><button class="btn" data-act="repdl">Descargar HTML</button><button class="btn" data-act="reppng">Guardar PNG</button><button class="btn pri" data-act="reppdf">Guardar PDF</button>` });
   repPintar(i);
 };
 Chg.repforma = el => { UI.repForma = el.value; const i = byId(UI.repId); if (i) repPintar(i); };
+/* Exportar el reporte a PNG / PDF sin librerías: SVG foreignObject → canvas → PNG; el PDF es 1 página con el JPEG embebido */
+function repCanvas(esc2) {
+  return new Promise((ok, ko) => {
+    const src = $('#rep-prev'); if (!src) return ko(new Error('sin vista previa'));
+    const w = 900, wrap = document.createElement('div'); wrap.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    wrap.style.cssText = 'width:' + w + 'px;box-sizing:border-box;background:#f5f5f5;padding:24px;font-family:Arial,sans-serif'; wrap.innerHTML = src.innerHTML;
+    const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;visibility:hidden'; host.appendChild(wrap); document.body.appendChild(host);
+    const h = Math.ceil(wrap.getBoundingClientRect().height); const xml = new XMLSerializer().serializeToString(wrap); host.remove();
+    const k = esc2 || 2, svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '"><foreignObject width="100%" height="100%">' + xml + '</foreignObject></svg>';
+    const img = new Image(); img.onload = () => { try { const c = document.createElement('canvas'); c.width = w * k; c.height = h * k; const x = c.getContext('2d'); x.fillStyle = '#f5f5f5'; x.fillRect(0, 0, c.width, c.height); x.scale(k, k); x.drawImage(img, 0, 0); ok({ c, w, h }); } catch (e) { ko(e); } };
+    img.onerror = () => ko(new Error('no se pudo dibujar el reporte')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+}
+function repPdfBlob(jpgB64, pw, ph, wpx, hpx) {
+  const bin = atob(jpgB64), n = bin.length, jpg = new Uint8Array(n); for (let q = 0; q < n; q++) jpg[q] = bin.charCodeAt(q);
+  const enc = t => { const u = new Uint8Array(t.length); for (let q = 0; q < t.length; q++) u[q] = t.charCodeAt(q) & 255; return u; };
+  const W = 595, H = Math.round(595 * ph / pw), parts = [], off = []; let len = 0;
+  const put = d => { const u = typeof d === 'string' ? enc(d) : d; parts.push(u); len += u.length; };
+  const obj = (id, d) => { off[id] = len; put(id + ' 0 obj\n'); put(d); put('\nendobj\n'); };
+  put('%PDF-1.4\n'); obj(1, '<< /Type /Catalog /Pages 2 0 R >>'); obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>');
+  const cs = 'q ' + W + ' 0 0 ' + H + ' 0 0 cm /Im0 Do Q'; obj(4, '<< /Length ' + cs.length + ' >>\nstream\n' + cs + '\nendstream');
+  off[5] = len; put('5 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + wpx + ' /Height ' + hpx + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + n + ' >>\nstream\n'); put(jpg); put('\nendstream\nendobj\n');
+  const xr = len; let t = 'xref\n0 6\n0000000000 65535 f \n'; for (let q = 1; q <= 5; q++) t += String(off[q]).padStart(10, '0') + ' 00000 n \n';
+  put(t + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF'); return new Blob(parts, { type: 'application/pdf' });
+}
+const repNombre = (i, ext) => 'Reporte_1a1_' + String(i.titulo).trim().replace(/\s+/g, '_').replace(/[^\w\-.]/g, '') + '_' + repFmt(hoy()).replace(/\//g, '-') + '.' + ext;
+Acts.reppng = async () => { const i = byId(UI.repId); if (!i) return; try { const { c } = await repCanvas(2); c.toBlob(b => { if (!b) return toast('No se pudo generar el PNG', 'err'); downloadBlob(repNombre(i, 'png'), b); toast('PNG descargado'); }, 'image/png'); } catch (e) { toast('No se pudo generar el PNG: ' + e.message, 'err'); } };
+Acts.reppdf = async () => { const i = byId(UI.repId); if (!i) return; try { const { c, w, h } = await repCanvas(2); const u = c.toDataURL('image/jpeg', 0.92); downloadBlob(repNombre(i, 'pdf'), repPdfBlob(u.split(',')[1], w, h, c.width, c.height)); toast('PDF descargado'); } catch (e) { toast('No se pudo generar el PDF: ' + e.message, 'err'); } };
 Acts.repdl = () => { const i = byId(UI.repId); if (!i) return; const r = repHtml(i, UI.repForma); download('Reporte_' + String(i.titulo).trim().replace(/\s+/g, '_').replace(/[^\w\-.]/g, '') + '_' + repFmt(hoy()).replace(/\//g, '-') + '_Forma' + r.forma + '.html', r.html, 'text/html'); toast('Reporte descargado'); };
 Acts.repcopy = async () => { const i = byId(UI.repId); if (!i) return; const h = repHtml(i, UI.repForma).html; try { await navigator.clipboard.writeText(h); toast('HTML copiado'); } catch (e) { const t = document.createElement('textarea'); t.value = h; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); toast('HTML copiado'); } catch (_) { toast('No se pudo copiar; usa Descargar HTML', 'err'); } t.remove(); } };
 
@@ -9858,7 +9887,7 @@ const GUIA = {
     ['Oculta lo que no necesites', 'El ojito oculta una sección; la flecha solo la contrae.'],
     ['Comenta', '«Comentar» deja una observación para quien tenga acceso a esa área.'],
     ['Edita', 'Cada sección tiene su propio botón de edición; el cambio queda en la bitácora.'],
-    ['Genera el reporte', 'Botón «Reporte 1 a 1»: infografía de avance en Forma A (una fase) o B (fases paralelas); se elige sola y puedes forzarla, copiarla o descargarla.']] },
+    ['Genera el reporte', 'Botón «Reporte 1 a 1»: infografía de avance en Forma A (una fase) o B (fases paralelas); se elige sola y puedes forzarla, copiarla, descargarla en HTML o guardarla como PNG o PDF.']] },
   proposito: { t: 'Para qué sirve', p: [
     ['Lee el propósito', 'Qué resuelve APIH para el portafolio de iniciativas TI.'],
     ['Revisa el modelo de gobierno', 'Cómo se mueve una iniciativa: propuesta, compuertas, fases y comité.'],
@@ -10447,7 +10476,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'C2.25', b: '20-10-2026 14:00' };
+  const VER = { v: 'C2.26', b: '20-10-2026 16:10' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
