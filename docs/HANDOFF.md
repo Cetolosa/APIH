@@ -16,7 +16,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 ## 2. Dos productos
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
-| Estado | **Abierto** (V22.69). Congelar cuando el usuario lo pida | **C2.27** · reporte de avance de la ficha (V22.66) + estado Stand By (V22.65) + paridad con el Prototipo + guía «Cómo operar» en todas las pantallas (V22.64) + verificación de despliegue (compuertas de Cierre, reabrir solo Admin, importación endurecida, ayuda «?» única, Administración con una barra) · `tests/e2e/correr-corporativo.sh` 10/10 · seguridad 25/25 (`defensas-api.js`) · producción objetivo **27-11-2026** |
+| Estado | **Abierto** (V22.70). Congelar cuando el usuario lo pida | **C2.28** · «Mi semana» en Mi cocina (importancia + ajuste propio guardado, pendientes personales clasificados) + reporte de avance de la ficha (V22.66) + estado Stand By (V22.65) + paridad con el Prototipo + guía «Cómo operar» en todas las pantallas (V22.64) + verificación de despliegue (compuertas de Cierre, reabrir solo Admin, importación endurecida, ayuda «?» única, Administración con una barra) · `tests/e2e/correr-corporativo.sh` 13/13 · seguridad 25/25 (`defensas-api.js`) · producción objetivo **27-11-2026** |
 | Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo: `apps/corporativo`, `services/api`, `packages/core`, `db/`, `infra/`, `powerbi/`, `tests/`; luego repo de Aramark que indique TI |
@@ -78,6 +78,7 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.15 | Importar/exportar subfases y categorías (archivo de iniciativas, «Con IA»); la iniciativa con subfases se sincroniza antes que sus hitos |
 | C2.16 | Revisión de seguridad: `docs/revision-seguridad-2026-10-17.md` (5 hallazgos corregidos, e2e `xss1`) |
 | C2.17 | Descripción/instrucciones por objeto (V22.61, ADR-015): `faseDesc` global + `faseNota` por proyecto, `desc` en subfase e hito; se ven en Mi cocina, ficha y Fases; core valida ≤500 y escapa; e2e `corp3` verifica round-trip al servidor |
+| C2.28 | Prototipo V22.70 + traspaso: «Tus siguientes pasos» por importancia 0–100 con ajuste propio persistente (perfil del usuario) y pendientes personales clasificados (Trabajo · Desarrollo profesional · Personal). Prueba `sem1`. |
 | C2.27 | Traspaso de V22.69: 1 a 1 respeta la marca «En presentación»; casilla en pestañas de la ficha. |
 | C2.26 | Traspaso de V22.68: «Reporte 1 a 1» exportable a PNG y PDF. |
 | C2.25 | Traspaso de V22.67: botón «Reporte 1 a 1» visible en la ficha y el panel. |
@@ -97,7 +98,7 @@ Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con
 ## 7. Pendientes
 - **TI:** comentarios a la propuesta (esperados hacia el 21-10, sin presión); habilitar ambiente dev (04-11). La v2 de la propuesta se envía solo si TI la pide o al responder sus comentarios.
 - **Al habilitar dev:** desplegar, validar en Azure (`tests/contract/run-azure-sql.js`), ejecutar el guion UAT.
-- **Pendiente funcional:** editor de listas de categorías en Administración; selector Tipo en Calendario y Capacidad; funciones diferidas (Pronóstico, Ruta crítica, Escenarios): el usuario aún no decide; core: `pasosDe` y contratos propios de decisiones, compromisos, bitácora y comités (C1.5).
-- **Prototipo:** abierto (V22.66). Congelar cuando el usuario lo pida.
+- **Pendiente funcional (ideas aprobadas el 20-10, aún sin construir):** historial/resumen de logros del jefe de proyecto (proyectos, hitos, «Desarrollo profesional» hechos) exportable a fin de año; bitácora que se llena sola al actualizar hitos/compromisos; resumen «qué cambió desde la última vez»; borrador del reporte semanal desde esta vista; comparación contra su propio historial (sin ranking). Editor de listas de categorías en Administración; selector Tipo en Calendario y Capacidad; funciones diferidas (Pronóstico, Ruta crítica, Escenarios): el usuario aún no decide; core: `pasosDe` y contratos propios de decisiones, compromisos, bitácora y comités (C1.5).
+- **Prototipo:** abierto (V22.70). Congelar cuando el usuario lo pida.
 - **Usuario:** que colegas creen contraseña individual y luego ejecutar SQL sección C (retirar la clave de equipo); (opcional) usuario «Bot IA» con rol Editor.
 - **Limitaciones conocidas:** cfg/cfgU last-write-wins; "leído" de avisos solo por navegador; email/Teams requieren canal de TI; tags pueden no subir desde la nube (crear en GitHub Releases).

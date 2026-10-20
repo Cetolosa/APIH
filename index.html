@@ -702,6 +702,7 @@ body{font:13px/1.45 var(--font)}
 .ps-t{font-size:13px;font-weight:600;margin-top:6px}.ps-p{font-size:12px;color:var(--tx2);margin-top:2px}.ps-nota{display:flex;gap:6px;align-items:flex-start;margin-top:6px;padding:6px 8px;border-left:3px solid var(--pri);background:var(--pri-l);border-radius:0 4px 4px 0;font-size:12px}.ps-nota svg{flex:0 0 auto;margin-top:1px;color:var(--pri)}.desc-ic{display:inline-flex;vertical-align:middle;color:var(--pri);cursor:help}.desc-l{display:block;color:var(--tx2);font-style:italic;margin-top:1px}
 .ps-a{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}.ps-pr{font-size:11px;padding:1px 8px;border-radius:10px;background:var(--pri-l);color:var(--pri)}.ps-b{display:inline-flex;gap:6px;margin-left:auto}
 .ps-card{margin-bottom:12px}.ps-g{font-size:11px;font-weight:700;letter-spacing:.04em;margin:12px 0 6px}
+.ps-pt{font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;border:1px solid var(--bd3);background:var(--card);color:var(--tx)}.ps-aj{min-height:30px;font-size:12px;border:1px solid var(--bd3);border-radius:6px;background:var(--card);color:var(--tx)}
 .ps-f{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 4px}.ps-f button{min-height:32px;padding:0 12px;border:1px solid var(--bd3);border-radius:16px;background:var(--card);color:var(--tx);font:inherit;font-size:12px;cursor:pointer}.ps-f button.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .ps-ban{display:flex;gap:8px;align-items:center;background:var(--navy);color:#fff;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:8px}
 /* ---------- V21: errores visuales ---------- */
@@ -3644,9 +3645,21 @@ Acts.fzsel = d => { const f = F('fases', {}); f.fk = +d.k; f.fid = d.id; render(
 
 /* ======================= V22.54 · Siguientes pasos (reglas explicables) + Planificación en la ficha ======================= */
 const PASO_U = [['Hoy', '#FDE7E9', '#A4262C'], ['Esta semana', '#FFF4CE', '#6B4E00'], ['Próximo', '#EAF1FB', '#0D446A']];
-const pospGet = () => { try { return JSON.parse(localStorage.getItem('apih_posp') || '{}'); } catch (e) { return {}; } };
-const pospSet = o => { try { localStorage.setItem('apih_posp', JSON.stringify(o)); } catch (e) { } };
+/* C2.28 · Preferencias personales de «Siguientes pasos» (viajan con el usuario, no con el navegador):
+   St.cfgU[usuario].sem = { pp: filtro de proyecto, posp: {paso: «oculto hasta»}, aj: {paso: ajuste de importancia}, t: [pendientes personales] } */
+const semOf = () => cfgUOf(miUsuario()).sem || {};
+function semSet(o) { if (FL.verComo) { toast('En «Ver como» no se guardan cambios', 'err'); return false; } cfgSet(miUsuario(), { sem: Object.assign({}, semOf(), o) }); return true; }
+const pospGet = () => { let l = {}; try { l = JSON.parse(localStorage.getItem('apih_posp') || '{}'); } catch (e) { } return Object.assign({}, l, semOf().posp || {}); };
+const pospSet = o => { try { localStorage.removeItem('apih_posp'); } catch (e) { } semSet({ posp: o }); };
 const pospOn = k => { const p = pospGet()[k]; return !!p && p > hoy(); };
+/* Importancia 0–100 = base automática (plazo y criticidad, reglas fijas) + ajuste propio guardado por paso */
+const SEM_AJ = [[-20, 'Baja'], [0, 'Normal'], [15, 'Alta'], [30, 'Máxima']];
+const SEM_CATS = ['Trabajo', 'Desarrollo profesional', 'Personal'];
+function pasoBase(p) { const d = p.f ? diffD(hoy(), p.f) : 0; return [75, 50, 25][p.u] + (d > 0 ? 8 + Math.min(7, d) : Math.max(0, 7 + d)) + (/cr[ií]tico|vencido/i.test(p.tipo) ? 10 : 0); }
+const pasoAj = p => { const v = +(semOf().aj || {})[p.k] || 0; return SEM_AJ.some(a => a[0] === v) ? v : 0; };
+const pasoPts = p => Math.max(0, Math.min(100, pasoBase(p) + pasoAj(p)));
+/* Pendientes personales: viven aparte del portafolio (sin tenedores, sin reportes, sin presentaciones) */
+function tareasPasos() { const H = hoy(); return (semOf().t || []).filter(t => !t.hecha).map(t => ({ k: 'T:' + t.id, u: t.f ? (t.f <= H ? 0 : diffD(t.f, H) <= 7 ? 1 : 2) : 2, tipo: t.cat, t: t.t, por: t.f ? (t.f < H ? 'Venció el ' : 'Fecha: ') + fzd(t.f) + '.' : 'Sin fecha.', prot: 'Tu lista personal', btn: 'Marcar hecho', act: 'tareahecha', d: { id: t.id }, f: t.f || '9999-12-31', ini: null, tarea: t, nota: '' })); }
 /* Pasos sugeridos de una iniciativa. u: 0 hoy · 1 esta semana · 2 próximo. prot: tenedor o compuerta que protege */
 function pasosDe(i) {
   if (!i || isDone(i)) return [];
@@ -3672,12 +3685,39 @@ function pasosDe(i) {
   return out.filter(p => !pospOn(p.k)).sort(by(p => p.u + '|' + p.f));
 }
 function pasoHTML(p, conIni) {
-  const U = PASO_U[p.u];
-  return `<div class="ps-it"><div class="ps-h"><span class="ps-u" style="background:${U[1]};color:${U[2]}">${U[0]}</span><span class="mut">${esc(p.tipo)}</span>${conIni ? `<a class="lnk ps-ini" data-act="sel" data-t="ini" data-id="${p.ini.id}">${esc(cut(p.ini.titulo, 34))}</a>` : ''}</div>
+  const U = PASO_U[p.u], aj = pasoAj(p);
+  const pt = conIni ? `<span class="ps-pt" title="Importancia (0–100): plazo y criticidad${aj ? ', ' + (aj > 0 ? '+' : '') + aj + ' por tu ajuste' : ''}">${pasoPts(p)}</span>` : '';
+  const ajSel = conIni ? `<select class="ps-aj edit-only" data-chg="pasoaj" data-k="${esc(p.k)}" aria-label="Tu ajuste de importancia">${selOpts(SEM_AJ.map(a => ({ v: a[0], t: 'Importancia: ' + a[1] })), aj)}</select>` : '';
+  const acc = p.tarea ? btn('Editar', 'tareaedit', { d: { id: p.tarea.id }, cls: 'sm' }) : btn('Ocultar hasta mañana', 'pasopos', { d: { k: p.k }, cls: 'sm', title: 'Ocultar hasta mañana' });
+  return `<div class="ps-it"><div class="ps-h"><span class="ps-u" style="background:${U[1]};color:${U[2]}">${U[0]}</span><span class="mut">${esc(p.tipo)}</span>${pt}${conIni ? (p.ini ? `<a class="lnk ps-ini" data-act="sel" data-t="ini" data-id="${p.ini.id}">${esc(cut(p.ini.titulo, 34))}</a>` : '<span class="ps-ini mut">Pendiente personal</span>') : ''}</div>
     <div class="ps-t">${esc(p.t)}</div><div class="ps-p">${esc(p.por)}</div>${p.nota ? `<div class="ps-nota">${icon('info', 12)}<span>${esc(p.nota)}</span></div>` : ''}
-    <div class="ps-a"><span class="ps-pr">protege: ${esc(p.prot)}</span><span class="edit-only ps-b">${btn(p.btn, p.act, { d: p.d, cls: 'sm pri' })}${btn('Ocultar hasta mañana', 'pasopos', { d: { k: p.k }, cls: 'sm', title: 'Ocultar hasta mañana' })}</span></div></div>`;
+    <div class="ps-a"><span class="ps-pr">${p.tarea ? '' : 'protege: '}${esc(p.prot)}</span><span class="edit-only ps-b">${ajSel}${btn(p.btn, p.act, { d: p.d, cls: 'sm pri' })}${acc}</span></div></div>`;
 }
-Acts.pasopos = d => { const p = pospGet(); p[d.k] = addD(hoy(), 1); Object.keys(p).forEach(k => { if (p[k] <= hoy()) delete p[k]; }); pospSet(p); toast('Paso oculto hasta mañana'); render(); };
+Acts.pasopos = d => { if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); const p = pospGet(); p[d.k] = addD(hoy(), 1); Object.keys(p).forEach(k => { if (p[k] <= hoy()) delete p[k]; }); pospSet(p); toast('Paso oculto hasta mañana'); refresh(); };
+Chg.pasoaj = el => { if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); const aj = Object.assign({}, semOf().aj), v = +el.value || 0, k = el.dataset.k; if (!SEM_AJ.some(a => a[0] === v)) return; if (v) aj[k] = v; else delete aj[k]; if (semSet({ aj })) { toast('Importancia ajustada: queda guardada en tu perfil'); refresh(); } };
+/* Pendientes personales (clasificados; «Desarrollo profesional» alimenta tu historial) */
+function tareaForm(t) {
+  const nw = !t, tareas = () => (semOf().t || []);
+  openForm({
+    title: nw ? 'Nuevo pendiente personal' : 'Editar pendiente', saveLabel: nw ? 'Agregar' : 'Guardar', danger: nw ? null : 'Eliminar', values: t ? clone(t) : { t: '', cat: SEM_CATS[0], f: '' },
+    fields: [{ k: 't', l: '¿Qué necesitas hacer?', t: 'textarea', req: true, w: 3 }, { k: 'cat', l: 'Clasificación', t: 'select', opts: SEM_CATS, w: 2 }, { k: 'f', l: 'Fecha (opcional)', t: 'date', w: 1 }],
+    onDanger: () => confirmBox('¿Eliminar este pendiente?', () => { if (semSet({ t: tareas().filter(x => x.id !== t.id) })) { toast('Pendiente eliminado'); refresh(); } }, 'Eliminar', true),
+    onSave(o) {
+      if (o.t.length > 200) { toast('El pendiente admite hasta 200 caracteres', 'err'); return false; }
+      if (o.f && (!/^\d{4}-\d{2}-\d{2}$/.test(o.f) || +o.f.slice(0, 4) < 1900 || +o.f.slice(0, 4) > 2100)) { toast('La fecha no es válida', 'err'); return false; }
+      if (!SEM_CATS.includes(o.cat)) o.cat = SEM_CATS[0];
+      if (nw && tareas().length >= 300) { toast('Llegaste al máximo de 300 pendientes: elimina los que ya no uses', 'err'); return false; }
+      const L = tareas().slice();
+      if (nw) { const n = L.reduce((m, x) => Math.max(m, +String(x.id).slice(2) || 0), 0) + 1; L.push({ id: 'T-' + n, t: o.t, cat: o.cat, f: o.f || '', creada: hoy(), hecha: '' }); }
+      else { const x = L.find(y => y.id === t.id); if (x) { x.t = o.t; x.cat = o.cat; x.f = o.f || ''; } }
+      if (!semSet({ t: L })) return false;
+      toast(nw ? 'Pendiente agregado a tu lista' : 'Pendiente actualizado'); refresh();
+    }
+  });
+}
+Acts.tareanew = () => { if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); tareaForm(null); };
+Acts.tareaedit = d => { if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); const t = (semOf().t || []).find(x => x.id === d.id); if (t) tareaForm(t); };
+Acts.tareahecha = d => { if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); const L = (semOf().t || []).map(x => x.id === d.id ? Object.assign({}, x, { hecha: hoy() }) : x); if (semSet({ t: L })) { toast('Pendiente hecho'); refresh(); } };
 /* Pestaña «Planificación» de la ficha: fases, cronograma, próximos 14 días y siguientes pasos */
 function planFichaHTML(i) {
   const V = fasesVentana(i), H = hoy(), P = pasosDe(i);
@@ -3694,19 +3734,19 @@ function planFichaHTML(i) {
 Acts.fzir = d => { const f = F('fases', {}); f.tab = 'linea'; f.id = d.id; UI.view = 'fases'; render(); };
 /* Mi cocina: pasos de todos mis proyectos activos */
 function pasosCocinaHTML(me) {
-  const f = F('cielo', {}), mine = proyActivos(me, hoyW());
-  if (!mine.length) return '';
-  let P = mine.flatMap(pasosDe).filter(p => p.u <= 1); const pp = f.pp && mine.some(i => i.id === f.pp) ? f.pp : '';
-  if (pp) P = P.filter(p => p.ini.id === pp);
-  P.sort(by(p => p.u + '|' + p.f)); const tot = P.length; if (!f.psAll) P = P.slice(0, 5);
+  const f = F('cielo', {}), mine = proyActivos(me, hoyW()), TP = tareasPasos();
+  let P = mine.flatMap(pasosDe).filter(p => p.u <= 1); const pp0 = f.pp !== undefined ? f.pp : (semOf().pp || ''), pp = pp0 === '__per' && TP.length ? '__per' : (mine.some(i => i.id === pp0) ? pp0 : '');
+  if (pp === '__per') P = []; else if (pp) P = P.filter(p => p.ini.id === pp);
+  if (!pp || pp === '__per') P = P.concat(TP);
+  P.sort((a, b) => pasoPts(b) - pasoPts(a) || (a.f < b.f ? -1 : a.f > b.f ? 1 : 0)); const tot = P.length; if (!f.psAll) P = P.slice(0, 5);
   const KT = { 'Al día': 'dia', Hitos: 'hit', Compromisos: 'cmp', Riesgos: 'rsk' };
-  const prender = new Set(P.filter(p => p.u === 0 && KT[p.prot] && (starsOf(p.ini, hoyW()).find(x => x.k === KT[p.prot]) || {}).s === 'off').map(p => p.ini.id + KT[p.prot])).size;
-  const chips = `<div class="ps-f">${[['', 'Todos'], ...mine.map(i => [i.id, cut(i.titulo, 26)])].map(([v, t]) => `<button class="${pp === v ? 'on' : ''}" data-act="pasof" data-v="${v}">${esc(t)}</button>`).join('')}</div>`;
-  const grp = [0, 1].map(u => { const L = P.filter(p => p.u === u); return L.length ? `<div class="ps-g" style="color:${PASO_U[u][2]}">${PASO_U[u][0].toUpperCase()} · ${L.length}</div>${L.map(p => pasoHTML(p, true)).join('')}` : ''; }).join('');
-  return `<section class="card ps-card"><header><h2>Tus siguientes pasos</h2><small>ordenados por lo que más tenedores y plazos protege</small></header>
+  const prender = new Set(P.filter(p => p.ini && p.u === 0 && KT[p.prot] && (starsOf(p.ini, hoyW()).find(x => x.k === KT[p.prot]) || {}).s === 'off').map(p => p.ini.id + KT[p.prot])).size;
+  const chips = `<div class="ps-f">${[['', 'Todos'], ...mine.map(i => [i.id, cut(i.titulo, 26)]), ...(TP.length ? [['__per', 'Mis pendientes (' + TP.length + ')']] : [])].map(([v, t]) => `<button class="${pp === v ? 'on' : ''}" data-act="pasof" data-v="${v}">${esc(t)}</button>`).join('')}</div>`;
+  const grp = P.map(p => pasoHTML(p, true)).join('');
+  return `<section class="card ps-card"><header><h2>Tus siguientes pasos</h2><small>ordenados por importancia (plazo, criticidad y tu ajuste)</small><span class="edit-only" style="margin-left:auto">${btn('Agregar pendiente', 'tareanew', { ic: 'plus', cls: 'sm' })}</span></header>
     ${prender ? `<div class="ps-ban">${icon('fork', 15)}<span>Si completas los pasos de hoy puedes encender <b>${prender}</b> tenedor${prender === 1 ? '' : 'es'} esta semana.</span></div>` : ''}${chips}${grp || '<p class="mut">Sin pasos para hoy ni esta semana. ¡Mesa al día!</p>'}${tot > 5 ? btn(f.psAll ? 'Ver solo los 5 primeros' : 'Ver los ' + tot + ' pasos', 'pasoall', { cls: 'sm' }) : ''}</section>`;
 }
-Acts.pasof = d => { F('cielo', {}).pp = d.v; render(); };
+Acts.pasof = d => { F('cielo', {}).pp = d.v; if (!soloLectura()) semSet({ pp: d.v }); render(); };
 Acts.pasoall = () => { const f = F('cielo', {}); f.psAll = !f.psAll; render(); };
 
 /* ======================= GANTT ======================= */
@@ -9769,6 +9809,8 @@ const GUIA = {
     ['Lee tus tenedores', 'Cada proyecto activo muestra sus 5 tenedores de la semana, de lunes a domingo.'],
     ['Enciende los apagados', 'Toca (o pasa el mouse sobre) un tenedor apagado para ver cómo ganarlo.'],
     ['Actualiza', '«Ronda de actualización» te lleva proyecto por proyecto para dejarlos al día.'],
+    ['Ordena tu semana', 'Tus siguientes pasos van por importancia (0–100: plazo y criticidad). Ajusta la importancia de un paso una sola vez: queda guardada en tu perfil. Filtra por un proyecto o mira todos juntos.'],
+    ['Agrega tus pendientes', '«Agregar pendiente» suma tareas propias (trabajo, desarrollo profesional, personal). Viven aparte del portafolio: no cuentan para tenedores ni salen en reportes.'],
     ['Revisa tus logros', 'Pestañas Insignias y Galería Michelin: lo obtenido y lo que falta. Las reglas están en «?» → «Reglas del juego».']] },
   compromisos: { t: 'Compromisos', p: [
     ['Lee qué debes y qué te deben', 'Incluye los acuerdos de reuniones y las acciones de comité.'],
@@ -10376,7 +10418,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.69', b: '20-10-2026 17:00' };
+  const VER = { v: 'V22.70', b: '20-10-2026 20:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
