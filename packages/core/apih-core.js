@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = { v: 'C2.23', b: '19-10-2026', origen: 'V22.65' };
+  const VERSION = { v: 'C2.24', b: '20-10-2026', origen: 'V22.66' };
 
   /* ---------- fechas (ISO 'AAAA-MM-DD', hora local fija 12:00 para evitar saltos por horario de verano) ---------- */
   const pad = n => String(n).padStart(2, '0');
@@ -140,6 +140,7 @@
     if (h.cat != null && h.cat !== '' && !HITO_CATS.includes(h.cat)) err('cat', 'categoría de hito válida o vacía');
     if (h.subfase != null && h.subfase !== '' && (typeof h.subfase !== 'string' || !/^(PROP|PRJ|PRO)-\d+-SF\d+$/.test(h.subfase))) err('subfase', 'id de subfase (<iniciativa>-SF<n>)');
     if (h.desc != null && (typeof h.desc !== 'string' || h.desc.length > 500)) err('desc', 'texto de hasta 500 caracteres');
+    if (h.peso != null && !(typeof h.peso === 'number' && h.peso >= 0 && h.peso <= 100)) err('peso', 'número de 0 a 100 (peso en el reporte, opcional)');
     return e;
   }
   function validarRiesgo(r, umbral) {

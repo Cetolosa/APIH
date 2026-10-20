@@ -50,3 +50,6 @@ En la ficha de un proyecto, **Completar con IA** exporta un archivo con las inst
 
 ## 8. Ayuda
 Menú **Ayuda → Para qué sirve**, o escribe a Sistemas BISE.
+
+## Reporte de avance de la ficha
+En la ficha de un proyecto, el botón **«Reporte»** arma la infografía de avance lista para copiar o descargar como HTML. Hay dos formas: **A** (una fase activa, con la línea de hitos) y **B** (múltiples hitos y fases paralelas, una caja por subfase activa). Se elige sola —B si la fase actual tiene 2 o más subfases activas— y se puede forzar. El reporte no se escribe a mano: toma el estado del RAG, el avance, los hitos (con su peso opcional), las subfases, los logros, los próximos pasos, el issue, y las decisiones pendientes y compromisos abiertos. Para que aparezca el «↑ desde» de cada fase, registra la actualización semanal.

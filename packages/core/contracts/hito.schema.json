@@ -17,6 +17,7 @@
     "resp": { "type": "string" },
     "cat": { "enum": ["", "Entregable", "Gobierno", "Técnico", "Proveedor", "Pago", "Comunicación", "Otro"] },
     "subfase": { "type": "string", "pattern": "^((PROP|PRJ)-\\d+-SF\\d+)?$", "description": "Subfase de la misma iniciativa y misma fase (C2.11)" },
+    "peso": { "type": "number", "minimum": 0, "maximum": 100, "description": "Peso en el reporte de avance (V22.66, opcional)" },
     "desc": { "type": "string", "maxLength": 500, "description": "Descripción/instrucciones; se ve en Mi cocina (C2.17)" }
   }
 }
