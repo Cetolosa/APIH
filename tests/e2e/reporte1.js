@@ -74,6 +74,28 @@ const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
   await p.selectOption('#rep-forma', 'B'); await p.waitForTimeout(200);
   const m2 = await p.evaluate(() => ({ t: document.querySelector('#rep-prev').innerText, info: document.querySelector('#rep-info').textContent }));
   ok(/Forma B \(forzada\)/.test(m2.info) && /Próxima semana/.test(m2.t), 'modal: forzar Forma B');
+  // V22.69 · solo lo marcado «En presentación» se ve en lista, marcadores y pendientes; el cálculo sigue usando todos
+  const F = await p.evaluate(() => {
+    const i = byId('PRJ-777'); const base = { A: repHtml(i, 'A').html, B: repHtml(i, 'B').html };
+    St.hitos.find(h => h.id === 'HIT-772').inPres = false; St.decisiones.find(d => d.id === 'DEC-777').inPres = false;
+    const aft = { A: repHtml(i, 'A').html, B: repHtml(i, 'B').html }; const d0 = repDatos(i);
+    return { base, aft, ms: d0.ms.length, vis: d0.ms.filter(m => m.vis).length, overall: d0.overall, pend: d0.pend.map(x => x.text) };
+  });
+  ok(F.ms === 4 && F.vis === 3, 'ms/vis: ' + F.ms + '/' + F.vis);
+  ok(/Hito 2/.test(F.base.A) && /Hito 2/.test(F.base.B), 'base debe mostrar Hito 2');
+  ok(!/Hito 2/.test(F.aft.A) && !/Hito 2/.test(F.aft.B), 'Hito 2 sin marcar aparece en el 1 a 1');
+  ok(/1 de 4 hitos cumplidos/.test(F.aft.B) && F.overall === 40, 'el cálculo debe seguir usando los 4 hitos');
+  ok(!F.pend.includes('Definir TyC con Abogados') && F.pend.includes('Enviar cotización'), 'pendientes: ' + F.pend.join('|'));
+  ok(/>3</.test(F.aft.B) && !/>4</.test(F.aft.B.replace(/<[^>]*>[^<]*(\d{2}\/\d{2})[^<]*/g, '')), 'numeración consecutiva de los visibles');
+  await p.evaluate(() => { St.riesgos.push({ id: 'RSK-777', ini: 'PRJ-777', desc: 'Riesgo prueba', cat: 'Técnico', prob: 3, imp: 3, estado: 'Abierto', dueno: miUsuario(), fIdent: hoy(), fRev: addD(hoy(), 30), mit: '' }); St.hitos.find(h => h.id === 'HIT-772').inPres = false; });
+  for (const tab of ['hitos', 'riesgos', 'actividad']) {
+    const n = await p.evaluate(t => { selectEntity('ini', 'PRJ-777', t); return document.querySelectorAll('#panel input[data-chg="incl"], #panel input[data-chg="bitpres"]').length; }, tab);
+    ok(n >= (tab === 'actividad' ? 0 : 1), 'casilla «En presentación» ausente en la pestaña ' + tab);
+  }
+  const ch = await p.evaluate(() => { selectEntity('ini', 'PRJ-777', 'hitos'); const el = [...document.querySelectorAll('#panel input[data-chg="incl"][data-e="hito"]')].find(x => x.dataset.id === 'HIT-772'); if (!el) return 'sin casilla'; return el.checked; });
+  ok(ch === false, 'la casilla de HIT-772 debe verse desmarcada: ' + ch);
+  await p.evaluate(() => { const el = [...document.querySelectorAll('#panel input[data-chg="incl"][data-e="hito"]')].find(x => x.dataset.id === 'HIT-772'); el.click(); });
+  ok(await p.evaluate(() => byId('PRJ-777') && St.hitos.find(h => h.id === 'HIT-772').inPres !== false), 'marcar desde la pestaña debe reactivar el hito');
   // Exportar a PNG y PDF (descargas reales)
   for (const [act, ext, magic] of [['reppng', 'png', [0x89, 0x50, 0x4e, 0x47]], ['reppdf', 'pdf', [0x25, 0x50, 0x44, 0x46]]]) {
     const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 15000 }).catch(() => null), p.click('[data-act="' + act + '"]')]);
