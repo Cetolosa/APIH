@@ -3745,7 +3745,7 @@ function pasosCocinaHTML(me) {
   const prender = new Set(P.filter(p => p.ini && p.u === 0 && KT[p.prot] && (starsOf(p.ini, hoyW()).find(x => x.k === KT[p.prot]) || {}).s === 'off').map(p => p.ini.id + KT[p.prot])).size;
   const chips = `<div class="ps-f">${[['', 'Todos'], ...mine.map(i => [i.id, cut(i.titulo, 26)]), ...(TP.length ? [['__per', 'Mis pendientes (' + TP.length + ')']] : [])].map(([v, t]) => `<button class="${pp === v ? 'on' : ''}" data-act="pasof" data-v="${v}">${esc(t)}</button>`).join('')}</div>`;
   const grp = P.map(p => pasoHTML(p, true)).join('');
-  return `<section class="card ps-card"><header><h2>Tus siguientes pasos</h2><small>ordenados por importancia (plazo, criticidad y tu ajuste)</small><span class="edit-only" style="margin-left:auto">${btn('Agregar pendiente', 'tareanew', { ic: 'plus', cls: 'sm' })}</span></header>
+  return `<section class="card ps-card"><header><h2>Tus siguientes pasos</h2><small>ordenados por importancia (plazo, criticidad y tu ajuste)</small><span style="margin-left:auto;display:inline-flex;gap:6px;flex-wrap:wrap">${mine.length ? btn('Borrador del reporte semanal', 'semrep', { ic: 'send', cls: 'sm' }) : ''}<span class="edit-only">${btn('Agregar pendiente', 'tareanew', { ic: 'plus', cls: 'sm' })}</span></span></header>
     ${prender ? `<div class="ps-ban">${icon('fork', 15)}<span>Si completas los pasos de hoy puedes encender <b>${prender}</b> tenedor${prender === 1 ? '' : 'es'} esta semana.</span></div>` : ''}${chips}${grp || '<p class="mut">Sin pasos para hoy ni esta semana. ¡Mesa al día!</p>'}${tot > 5 ? btn(f.psAll ? 'Ver solo los 5 primeros' : 'Ver los ' + tot + ' pasos', 'pasoall', { cls: 'sm' }) : ''}</section>`;
 }
 Acts.pasof = d => { F('cielo', {}).pp = d.v; if (!soloLectura()) semSet({ pp: d.v }); render(); };
@@ -5170,6 +5170,22 @@ function cocFit() {
 }
 Acts.cocsel = d => { const f = F('cielo', {}); f.sel = (f.sel === d.id || !d.id) ? '' : d.id; render(); };
 Acts.cocpg = d => { const f = F('cielo', {}); f.pg = (f.pg || 0) + (+d.d); render(); };
+/* C2.31 · Borrador del reporte semanal: los informes de estado de tus proyectos vigentes (o del que filtraste) en un solo texto, listo para copiar.
+   Parte de lo que ya registraste; no incluye pendientes personales. */
+function semanalTxt(me, pp) {
+  const W = hoyW(), d7 = addD(hoy(), -7), mine = proyActivos(me, W).filter(i => !pp || pp === '__per' || i.id === pp);
+  if (!mine.length) return '';
+  const bloques = mine.map(i => {
+    const hc = hitosDe(i.id).filter(h => h.completado && h.fechaReal && h.fechaReal > d7 && h.fechaReal <= hoy()).sort(by('fechaReal'));
+    return informeTxt(i) + (hc.length ? '\n\nHITOS CUMPLIDOS EN LOS ÚLTIMOS 7 DÍAS\n' + hc.map(h => '- ' + h.nombre + ' · ' + fmtD(h.fechaReal)).join('\n') : '');
+  });
+  return ['REPORTE SEMANAL · ' + me, 'Semana del ' + semLbl(W) + ' · ' + mine.length + ' proyecto' + (mine.length === 1 ? '' : 's'), ''].join('\n') + '\n' + bloques.join('\n\n' + '='.repeat(48) + '\n\n');
+}
+Acts.semrep = () => {
+  const f = F('cielo', {}), pp = f.pp !== undefined ? f.pp : (semOf().pp || ''), t = semanalTxt(miUsuario(), pp);
+  if (!t) return toast('No tienes proyectos vigentes para armar el reporte', 'err');
+  Modal.open({ title: 'Borrador del reporte semanal', wide: true, body: `<p class="desc" style="margin-top:0">Se arma con lo último que registraste en cada proyecto. Revísalo, cópialo y pégalo en un correo o en Teams.</p><textarea id="txtcopy" rows="20" style="width:100%;font-family:ui-monospace,Consolas,monospace;font-size:12px">${esc(t)}</textarea>`, footer: `<button class="btn" data-act="mclose">Cerrar</button><button class="btn pri" data-act="copiartxt">${icon('copy', 14)}<span>Copiar</span></button>` });
+};
 /* C2.30 · «Qué cambió desde tu última visita»: lo que venció, lo que te asignaron y lo que otras personas hicieron en tus proyectos.
    La última visita se guarda en tu perfil (St.cfgU[usuario].sem.visita); «Entendido» la actualiza. Solo tus proyectos vigentes. */
 const nowTs = () => hoy() + 'T' + pad(new Date().getHours()) + ':' + pad(new Date().getMinutes());
@@ -9880,6 +9896,7 @@ const GUIA = {
     ['Actualiza', '«Ronda de actualización» te lleva proyecto por proyecto para dejarlos al día.'],
     ['Ordena tu semana', 'Tus siguientes pasos van por importancia (0–100: plazo y criticidad). Ajusta la importancia de un paso una sola vez: queda guardada en tu perfil. Filtra por un proyecto o mira todos juntos.'],
     ['Revisa qué cambió', 'Si desde tu última visita algo venció, te asignaron un compromiso o alguien tocó tus proyectos, aparece al inicio. «Entendido» lo despeja hasta la próxima vez.'],
+    ['Arma tu reporte', '«Borrador del reporte semanal» junta el informe de estado de tus proyectos (o del que filtraste) y los hitos cumplidos de los últimos 7 días, listo para copiar.'],
     ['Mira tu historial', 'La pestaña «Mi historial» junta tus proyectos, hitos y compromisos cumplidos y tu desarrollo profesional. «Copiar resumen» o «Descargar» lo exporta para tu evaluación o fin de año.'],
     ['Agrega tus pendientes', '«Agregar pendiente» suma tareas propias (trabajo, desarrollo profesional, personal). Viven aparte del portafolio: no cuentan para tenedores ni salen en reportes.'],
     ['Revisa tus logros', 'Pestañas Insignias y Galería Michelin: lo obtenido y lo que falta. Las reglas están en «?» → «Reglas del juego».']] },
@@ -10489,7 +10506,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.72', b: '20-10-2026 21:30' };
+  const VER = { v: 'V22.73', b: '20-10-2026 22:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
