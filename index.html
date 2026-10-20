@@ -5170,6 +5170,29 @@ function cocFit() {
 }
 Acts.cocsel = d => { const f = F('cielo', {}); f.sel = (f.sel === d.id || !d.id) ? '' : d.id; render(); };
 Acts.cocpg = d => { const f = F('cielo', {}); f.pg = (f.pg || 0) + (+d.d); render(); };
+/* C2.30 · «Qué cambió desde tu última visita»: lo que venció, lo que te asignaron y lo que otras personas hicieron en tus proyectos.
+   La última visita se guarda en tu perfil (St.cfgU[usuario].sem.visita); «Entendido» la actualiza. Solo tus proyectos vigentes. */
+const nowTs = () => hoy() + 'T' + pad(new Date().getHours()) + ':' + pad(new Date().getMinutes());
+function cambiosDesde(me) {
+  const v = semOf().visita; if (!v) return null;
+  const vd = v.slice(0, 10), H = hoy(), n = _nrm(me), ids = new Set(St.ini.filter(i => _nrm(i.lider) === n && !esSB(i) && !esProp(i) && !isDone(i)).map(i => i.id));
+  const venc = [
+    ...St.hitos.filter(h => !h.completado && ids.has(h.ini) && h.fecha > vd && h.fecha < H).map(h => ({ k: 'Hito', t: h.nombre, f: h.fecha, ini: h.ini })),
+    ...todosAcu().filter(a => a.abierto && _nrm(a.resp) === n && a.limite && a.limite > vd && a.limite < H).map(a => ({ k: 'Compromiso', t: a.texto, f: a.limite, ini: a.ini })),
+    ...St.riesgos.filter(r => ids.has(r.ini) && riesgoAbierto(r) && r.fRev && r.fRev > vd && r.fRev < H).map(r => ({ k: 'Revisión de riesgo', t: r.desc, f: r.fRev, ini: r.ini }))
+  ].sort((a, b) => a.f < b.f ? -1 : 1);
+  const nuevos = ACUERDOS().filter(a => a.estado === 'Abierto' && _nrm(a.resp) === n && _nrm(a.de) !== n && a.creada && a.creada > vd);
+  const otros = (St.bitacora || []).filter(b => b.ts > v && b.ini && ids.has(b.ini) && _nrm(b.autor) !== n);
+  return { v, vd, venc, nuevos, otros, total: venc.length + nuevos.length + otros.length };
+}
+function cambiosHTML(me) {
+  const D = cambiosDesde(me); if (!D || !D.total) return '';
+  const li = (tipo, txt, f) => `<li><span class="mut">${esc(tipo)}</span><span>${esc(cut(txt, 70))}</span><small>${f}</small></li>`;
+  const L = [...D.venc.slice(0, 4).map(x => li('Venció · ' + x.k, x.t, fmtD(x.f))), ...D.nuevos.slice(0, 3).map(a => li('Te asignaron', a.texto, a.limite ? 'límite ' + fmtD(a.limite) : '')), ...D.otros.slice(0, 4).map(b => li(b.autor || 'Otra persona', b.texto, fmtD(b.ts.slice(0, 10))))];
+  const resto = D.total - L.length;
+  return `<section class="card ps-card"><header><h2>Qué cambió desde tu última visita</h2><small>desde el ${fmtDL(D.vd)} · ${D.venc.length} vencido${D.venc.length === 1 ? '' : 's'} · ${D.nuevos.length} nuevo${D.nuevos.length === 1 ? '' : 's'} para ti · ${D.otros.length} cambio${D.otros.length === 1 ? '' : 's'} de otras personas</small><span class="edit-only" style="margin-left:auto">${btn('Entendido', 'cambvisto', { ic: 'check', cls: 'sm pri' })}</span></header><ul class="his-l">${L.join('')}</ul>${resto > 0 ? `<p class="mut" style="font-size:12px;margin:4px 0 0">y ${resto} más: míralos en Hitos, Compromisos o en la bitácora de cada proyecto.</p>` : ''}</section>`;
+}
+Acts.cambvisto = () => { if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); if (semSet({ visita: nowTs() })) { toast('Listo: desde ahora te mostraré lo nuevo'); refresh(); } };
 /* C2.29 · Mi historial: proyectos liderados, hitos y compromisos cumplidos y desarrollo profesional, en un solo lugar y exportable.
    Solo lo propio (sin comparar con otras personas); los pendientes «Personal» nunca entran. */
 const HIS_RANGOS = [['6m', 'Últimos 6 meses'], ['12m', 'Últimos 12 meses'], ['anio', 'Este año'], ['todo', 'Todo']];
@@ -5234,7 +5257,8 @@ Views.cielo = {
       <section class="card c6"><header><h2>Niveles, racha e insignias</h2></header><div class="sky-leg"><div>${icon('fork', 15)}<span><b>Racha:</b> semanas seguidas con los 5 tenedores (todos tus proyectos, sin ninguno pendiente).</span></div><div>${icon('spark', 15)}<span><b>Niveles:</b> Pinche, Cocinero (1 semana perfecta), Chef de partida (4) y Chef ejecutivo (12), contando las últimas 26 semanas.</span></div><div>${icon('flag', 15)}<span><b>Insignias:</b> ${insignias(me).length} reconocimientos por conductas concretas. Se ganan solas; no se pierden.</span></div><div>${icon('users', 15)}<span><b>Salón de chefs:</b> porcentaje de tenedores encendidos del portafolio frente a la meta (${meta}%), el promedio de tenedores y las estrellas Michelin repartidas. Sin ranking de personas.</span></div></div>
       <h3 class="sky-lt">Reglas del juego limpio</h3><div class="sky-leg"><div>${icon('check', 15)}<span>Reportar un rojo a tiempo vale lo mismo que un verde.</span></div><div>${icon('check', 15)}<span>«Sin novedades» no da tenedor la tercera semana seguida.</span></div><div>${icon('check', 15)}<span>No se usa para evaluar desempeño ni para bonos.</span></div></div></section></div>`;
     }
-    return head + pasosCocinaHTML(me) + cocaPase(me, P, C, meta, adm);
+    if (!semOf().visita && !FL.verComo && !soloLectura()) { semSet({ visita: nowTs() }); setTimeout(() => { try { save(); } catch (e) { } }, 0); }   // primera visita: queda la base, sin aviso
+    return head + cambiosHTML(me) + pasosCocinaHTML(me) + cocaPase(me, P, C, meta, adm);
     const ls = P.cur.slice().sort(by(x => -x.st.filter(y => y.s === 'off').length));
     const nx = NIV.find(n => n[0] === P.nivel), sigN = (NIV[NIV.indexOf(nx) + 1] || [])[0], falt = nx[2] - P.total;
     const proy = ls.length ? ls.map(x => `<button class="sky-r" data-act="sel" data-t="ini" data-id="${x.i.id}"><span class="sky-n">${esc(cut(x.i.titulo, 40))}<small>${esc(x.i.fase)} · ${x.st.filter(y => y.s === 'on').length} de ${x.st.filter(y => y.s !== 'na').length} tenedores</small></span><span class="rowg">${starsRow(x.st, 22)}${msRow(x.i, 22)}</span></button>`).join('') : '<p class="sky-e">No lideras proyectos activos esta semana.<br>Cuando lideres uno, aparecerá aquí con sus tenedores.</p>';
@@ -9855,6 +9879,7 @@ const GUIA = {
     ['Enciende los apagados', 'Toca (o pasa el mouse sobre) un tenedor apagado para ver cómo ganarlo.'],
     ['Actualiza', '«Ronda de actualización» te lleva proyecto por proyecto para dejarlos al día.'],
     ['Ordena tu semana', 'Tus siguientes pasos van por importancia (0–100: plazo y criticidad). Ajusta la importancia de un paso una sola vez: queda guardada en tu perfil. Filtra por un proyecto o mira todos juntos.'],
+    ['Revisa qué cambió', 'Si desde tu última visita algo venció, te asignaron un compromiso o alguien tocó tus proyectos, aparece al inicio. «Entendido» lo despeja hasta la próxima vez.'],
     ['Mira tu historial', 'La pestaña «Mi historial» junta tus proyectos, hitos y compromisos cumplidos y tu desarrollo profesional. «Copiar resumen» o «Descargar» lo exporta para tu evaluación o fin de año.'],
     ['Agrega tus pendientes', '«Agregar pendiente» suma tareas propias (trabajo, desarrollo profesional, personal). Viven aparte del portafolio: no cuentan para tenedores ni salen en reportes.'],
     ['Revisa tus logros', 'Pestañas Insignias y Galería Michelin: lo obtenido y lo que falta. Las reglas están en «?» → «Reglas del juego».']] },
@@ -10464,7 +10489,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.71', b: '20-10-2026 21:00' };
+  const VER = { v: 'V22.72', b: '20-10-2026 21:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;

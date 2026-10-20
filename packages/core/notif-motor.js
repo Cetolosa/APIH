@@ -1,4 +1,4 @@
-/* ARCHIVO GENERADO por tools/generar-motor-notif.js desde apps/corporativo/index.html (C2.29). NO EDITAR A MANO.
+/* ARCHIVO GENERADO por tools/generar-motor-notif.js desde apps/corporativo/index.html (C2.30). NO EDITAR A MANO.
  * Motor de notificaciones: mismas reglas que la campana de la SPA, para que el servidor envíe correo / Teams.
  * crearMotor(datos, usuario, hoyISO) → { avisos(): [{ key, tipo, g, sev, ini, titulo, texto, ts, canales }] }
  * «datos» = colecciones de APIH con la forma de la SPA (ini, hitos, riesgos, decisiones, compromisos, cambios, bitacora, comites, usuarios, cfg, cfgU). */
@@ -177,5 +177,5 @@ function puedeVerTodo() { const r = rolActual(), u = usuarioActual(); return r =
 const areaVisible = a => puedeVerTodo() || areasDe(a).includes('Transversal') || areasDe(a).some(x => areasPropias().includes(x));
   return { avisos: () => notifPara(usuario), NOTIF, NOTIF_CANALES, NOTIF_GRUPOS };
 }
-return { crearMotor, ORIGEN: "C2.29", FUNCIONES: ["MESES","MES3","pad","toISO","pD","diffD","fmtD","hoy","FASES_ACT","EST_FINAL","esProp","byId","audParse","isDone","esSB","isLive","isActive","ADMIN_USERS","miUsuario","respSel","ADMIN_EMAILS","_nrm","esAdminReal","_PP","personProjects","respOk","inArea","scopeP","DECS","CAMBIOS","ACUERDOS","_ixGen","_porIni","hitosDe","forecast","desv","atrasado","esperado","expo","riesgoAbierto","diasSinUpd","diasEnFase","NOTIF_CANALES","NOTIF_DEST","NOTIF_GRUPOS","NOTIF","NOTIF_VENT","rolDeUser","notifPref","notifPara","cut","usuarioSintetico","PRES_MIO","cfgUOf","cfgOf","cfgI","fijo","PERM_ROLES","usuarioActual","rolActual","areasDe","areasPropias","puedeVerTodo","areaVisible"] };
+return { crearMotor, ORIGEN: "C2.30", FUNCIONES: ["MESES","MES3","pad","toISO","pD","diffD","fmtD","hoy","FASES_ACT","EST_FINAL","esProp","byId","audParse","isDone","esSB","isLive","isActive","ADMIN_USERS","miUsuario","respSel","ADMIN_EMAILS","_nrm","esAdminReal","_PP","personProjects","respOk","inArea","scopeP","DECS","CAMBIOS","ACUERDOS","_ixGen","_porIni","hitosDe","forecast","desv","atrasado","esperado","expo","riesgoAbierto","diasSinUpd","diasEnFase","NOTIF_CANALES","NOTIF_DEST","NOTIF_GRUPOS","NOTIF","NOTIF_VENT","rolDeUser","notifPref","notifPara","cut","usuarioSintetico","PRES_MIO","cfgUOf","cfgOf","cfgI","fijo","PERM_ROLES","usuarioActual","rolActual","areasDe","areasPropias","puedeVerTodo","areaVisible"] };
 });
