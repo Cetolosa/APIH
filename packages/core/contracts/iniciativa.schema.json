@@ -13,6 +13,7 @@
     "actualizada":   { "$ref": "#/$defs/fecha", "readOnly": true },
     "modificadoPor": { "type": "string", "readOnly": true },
     "faseDesde":     { "$ref": "#/$defs/fecha", "readOnly": true },
+    "snapFase":      { "type": "array", "description": "V22.66: avance de la fase y de cada subfase en cada actualización [fecha, {clave: %}] (máx. 26); alimenta el «↑ desde» del reporte", "items": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/fecha" }, { "type": "object" }], "items": false } },
     "hist":          { "type": "array", "readOnly": true, "items": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/fecha" }, { "$ref": "#/$defs/pct" }], "items": false } },
 
     "tipo":          { "enum": ["Propuesta", "Proyecto"] },

@@ -114,6 +114,14 @@ module.exports = async function contratoIniciativa(fabrica, log = console.log) {
     const L = await d.listarHitos(a.id); assert.strictEqual(L.length, 1); assert.strictEqual(L[0].semaforo.k, 'done');
     const F = await d.fases(a.id); assert.strictEqual(F.length, 4); assert.strictEqual(F[0].done, 1);
   });
+  await caso('hitos: peso opcional 0–100 para el reporte; snapFase se guarda en la iniciativa', async () => {
+    const d = fabrica(); const a = await d.crear(prj());
+    await falla(d.crearHito(a.id, { nombre: 'P', fecha: '2026-10-20', peso: 150 }), 'INVALIDA', 'peso');
+    await falla(d.crearHito(a.id, { nombre: 'P', fecha: '2026-10-20', peso: 'x' }), 'INVALIDA', 'peso');
+    const h = await d.crearHito(a.id, { nombre: 'P', fecha: '2026-10-20', peso: 25 }); assert.strictEqual(h.peso, 25);
+    const sn = [['2026-10-13', { 'F:Planificación': 40 }]];
+    const b = await d.actualizar(a.id, { snapFase: sn }, a.version); assert.deepStrictEqual(b.snapFase, sn);
+  });
   await caso('riesgos: crítico exige mitigación; nivel y exposición', async () => {
     const d = fabrica(); const a = await d.crear(prj());
     await falla(d.crearRiesgo(a.id, { desc: 'R', prob: 5, imp: 4 }), 'INVALIDA', 'mit');
