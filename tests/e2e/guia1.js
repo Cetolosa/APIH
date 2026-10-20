@@ -31,7 +31,7 @@ const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
   if (hayRJ) { await rj.first().click(); await p.waitForTimeout(250); }
   const reglas = await p.evaluate(() => ({ h1: (document.querySelector('#main h1, #main .ph h1, #main h2') || {}).textContent, texto: document.querySelector('#main').textContent.includes('Los 5 tenedores de la semana'), volver: !!document.querySelector('[data-act="cielotab"][data-k="sem"]') }));
   const otra = await p.evaluate(() => { go('dashboard'); const x = document.querySelector('#main').textContent; return /Cómo funciona/.test(x); });
-  const ok = !bad.length && !tabs.some(t => /Cómo funciona/.test(t)) && tabs.length === 3 && hayRJ && reglas.texto && reglas.volver && !otra && !errs.length;
+  const ok = !bad.length && !tabs.some(t => /Cómo funciona/.test(t)) && tabs.length === 4 && tabs.includes('Mi historial') && hayRJ && reglas.texto && reglas.volver && !otra && !errs.length;
   console.log(JSON.stringify({ malas: bad, tabsCocina: tabs, reglas, errores: errs }));
   console.log(ok ? 'OK guia1' : 'FALLA guia1'); await b.close(); process.exit(ok ? 0 : 1);
 })();

@@ -700,6 +700,8 @@ body{font:13px/1.45 var(--font)}
 .ps-t{font-size:13px;font-weight:600;margin-top:6px}.ps-p{font-size:12px;color:var(--tx2);margin-top:2px}.ps-nota{display:flex;gap:6px;align-items:flex-start;margin-top:6px;padding:6px 8px;border-left:3px solid var(--pri);background:var(--pri-l);border-radius:0 4px 4px 0;font-size:12px}.ps-nota svg{flex:0 0 auto;margin-top:1px;color:var(--pri)}.desc-ic{display:inline-flex;vertical-align:middle;color:var(--pri);cursor:help}.desc-l{display:block;color:var(--tx2);font-style:italic;margin-top:1px}
 .ps-a{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}.ps-pr{font-size:11px;padding:1px 8px;border-radius:10px;background:var(--pri-l);color:var(--pri)}.ps-b{display:inline-flex;gap:6px;margin-left:auto}
 .ps-card{margin-bottom:12px}.ps-g{font-size:11px;font-weight:700;letter-spacing:.04em;margin:12px 0 6px}
+.his-l{list-style:none;margin:0;padding:0}.his-l li{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd3);font-size:13px}.his-l li:last-child{border:0}.his-l small{margin-left:auto;color:var(--mut);white-space:nowrap;font-size:11px}
+@media(max-width:700px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 .ps-pt{font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;border:1px solid var(--bd3);background:var(--card);color:var(--tx)}.ps-aj{min-height:30px;font-size:12px;border:1px solid var(--bd3);border-radius:6px;background:var(--card);color:var(--tx)}
 .ps-f{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 4px}.ps-f button{min-height:32px;padding:0 12px;border:1px solid var(--bd3);border-radius:16px;background:var(--card);color:var(--tx);font:inherit;font-size:12px;cursor:pointer}.ps-f button.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .ps-ban{display:flex;gap:8px;align-items:center;background:var(--navy);color:#fff;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:8px}
@@ -5270,12 +5272,55 @@ function cocFit() {
 }
 Acts.cocsel = d => { const f = F('cielo', {}); f.sel = (f.sel === d.id || !d.id) ? '' : d.id; render(); };
 Acts.cocpg = d => { const f = F('cielo', {}); f.pg = (f.pg || 0) + (+d.d); render(); };
-const CIELO_TABS = [['sem', 'Esta semana'], ['ins', 'Insignias'], ['gal', 'Galería Michelin']];
+/* C2.29 · Mi historial: proyectos liderados, hitos y compromisos cumplidos y desarrollo profesional, en un solo lugar y exportable.
+   Solo lo propio (sin comparar con otras personas); los pendientes «Personal» nunca entran. */
+const HIS_RANGOS = [['6m', 'Últimos 6 meses'], ['12m', 'Últimos 12 meses'], ['anio', 'Este año'], ['todo', 'Todo']];
+const hisDesde = k => k === '6m' ? addD(hoy(), -182) : k === '12m' ? addD(hoy(), -365) : k === 'anio' ? hoy().slice(0, 4) + '-01-01' : '0000-01-01';
+function hisData(me, k) {
+  const d0 = hisDesde(k), H = hoy(), n = _nrm(me), dentro = f => !!f && f >= d0 && f <= H;
+  const mias = St.ini.filter(i => _nrm(i.lider) === n && !esSB(i) && !esProp(i));
+  const ids = new Set(mias.map(i => i.id));
+  const proy = mias.filter(i => isDone(i) ? dentro(i.finReal || i.finEst || i.finPlan) : (i.inicioReal || i.inicioPlan || '0000-01-01') <= H)
+    .sort((a, b) => String(b.finReal || b.finPlan || '9999').localeCompare(String(a.finReal || a.finPlan || '9999')));
+  const hitos = St.hitos.filter(h => h.completado && ids.has(h.ini) && dentro(h.fechaReal || h.fecha)).sort((a, b) => String(b.fechaReal || b.fecha).localeCompare(String(a.fechaReal || a.fecha)));
+  const aTiempo = hitos.filter(h => !h.fechaReal || h.fechaReal <= h.fecha).length;
+  const comp = todosAcu().filter(a => a.estado === 'Cumplido' && _nrm(a.resp) === n && dentro(a.fechaReal)).sort((a, b) => String(b.fechaReal).localeCompare(String(a.fechaReal)));
+  const T = (semOf().t || []).filter(t => t.hecha && dentro(t.hecha)).sort((a, b) => String(b.hecha).localeCompare(String(a.hecha)));
+  return { d0, H, proy, hitos, aTiempo, comp, dev: T.filter(t => t.cat === 'Desarrollo profesional'), trab: T.filter(t => t.cat === 'Trabajo'), estrellas: proy.reduce((a, i) => a + msN(i), 0) };
+}
+function hisTxt(me, k) {
+  const D = hisData(me, k), r = (HIS_RANGOS.find(x => x[0] === k) || HIS_RANGOS[1])[1], one = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim(), L = [];
+  L.push('# Resumen de logros · ' + one(me), '', r + (k === 'todo' ? '' : ' (desde ' + fmtDL(D.d0) + ')') + ' · al ' + fmtDL(D.H), '');
+  L.push('## En cifras', '- Proyectos liderados: ' + D.proy.length + (D.estrellas ? ' (' + D.estrellas + ' estrella' + (D.estrellas === 1 ? '' : 's') + ' Michelin)' : ''), '- Hitos cumplidos: ' + D.hitos.length + (D.hitos.length ? ' (' + D.aTiempo + ' a tiempo)' : ''), '- Compromisos cumplidos: ' + D.comp.length, '- Capacitación y desarrollo profesional: ' + D.dev.length, '');
+  if (D.proy.length) { L.push('## Proyectos liderados'); D.proy.forEach(i => L.push('- ' + one(i.titulo) + ' · ' + i.estado + (isDone(i) ? ' · cerrado ' + fmtD(i.finReal || i.finEst || i.finPlan) : ' · ' + i.fase + ' · avance ' + pct(i.avance)) + (msN(i) ? ' · ' + msN(i) + ' estrella' + (msN(i) === 1 ? '' : 's') + ' Michelin' : ''))); L.push(''); }
+  if (D.hitos.length) { L.push('## Hitos cumplidos'); D.hitos.forEach(h => L.push('- ' + fmtD(h.fechaReal || h.fecha) + ' · ' + one(h.nombre) + ' (' + one(nameOf(h.ini)) + ')')); L.push(''); }
+  if (D.comp.length) { L.push('## Compromisos cumplidos'); D.comp.forEach(a => L.push('- ' + fmtD(a.fechaReal) + ' · ' + one(a.texto) + (a.ini ? ' (' + one(nameOf(a.ini)) + ')' : ''))); L.push(''); }
+  if (D.dev.length) { L.push('## Capacitación y desarrollo profesional'); D.dev.forEach(t => L.push('- ' + fmtD(t.hecha) + ' · ' + one(t.t))); L.push(''); }
+  if (D.trab.length) { L.push('## Otros pendientes de trabajo cumplidos'); D.trab.forEach(t => L.push('- ' + fmtD(t.hecha) + ' · ' + one(t.t))); L.push(''); }
+  return L.join('\n');
+}
+Acts.hisr = d => { if (HIS_RANGOS.some(x => x[0] === d.k)) { F('cielo', {}).hr = d.k; render(); } };
+Acts.hiscopy = () => copyText(hisTxt(miUsuario(), F('cielo', {}).hr || '12m'));
+Acts.hisdl = () => { download('APIH_logros_' + hoy() + '.md', hisTxt(miUsuario(), F('cielo', {}).hr || '12m'), 'text/markdown'); toast('Resumen descargado'); };
+function hisHTML(me) {
+  const f = F('cielo', {}), k = f.hr || '12m', D = hisData(me, k), kp = (l, v, sub) => `<div class="kpi sm"><div class="k-top"><span class="k-l">${l}</span></div><div class="k-v">${v}</div>${sub ? `<small class="mut">${sub}</small>` : ''}</div>`;
+  const lst = (arr, fn, n = 6) => arr.length ? `<ul class="his-l">${arr.slice(0, n).map(fn).join('')}</ul>${arr.length > n ? `<p class="mut" style="font-size:12px;margin:4px 0 0">y ${arr.length - n} más: están en el resumen exportable.</p>` : ''}` : '<p class="mut" style="font-size:12px;margin:0">Nada en este período.</p>';
+  const sec = (t, sub, body) => `<section class="card c6"><header><h2>${t}</h2><small>${sub}</small></header>${body}</section>`;
+  return `<div class="toolbar"><div class="seg">${HIS_RANGOS.map(([v, t]) => `<button class="${k === v ? 'on' : ''}" data-act="hisr" data-k="${v}">${t}</button>`).join('')}</div><span style="margin-left:auto;display:inline-flex;gap:6px">${btn('Copiar resumen', 'hiscopy', { ic: 'copy', cls: 'sm' })}${btn('Descargar (.md)', 'hisdl', { ic: 'download', cls: 'sm pri' })}</span></div>
+  <div class="note" style="margin:0 0 10px">${icon('info', 14)}<span>Es tu historial: solo lo tuyo, sin compararte con nadie. Los pendientes «Personal» nunca entran. Sirve para responder «¿y tú qué has hecho?» o armar tu resumen de fin de año.</span></div>
+  <div class="grid4" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px">${kp('Proyectos liderados', D.proy.length, D.estrellas ? D.estrellas + ' estrella' + (D.estrellas === 1 ? '' : 's') + ' Michelin' : '')}${kp('Hitos cumplidos', D.hitos.length, D.hitos.length ? D.aTiempo + ' a tiempo' : '')}${kp('Compromisos cumplidos', D.comp.length, '')}${kp('Desarrollo profesional', D.dev.length, '')}</div>
+  <div class="grid12">${sec('Proyectos liderados', 'vigentes y cerrados en el período', lst(D.proy, i => `<li><a class="lnk" data-act="sel" data-t="ini" data-id="${i.id}">${esc(cut(i.titulo, 44))}</a><small>${esc(i.estado)}${isDone(i) ? ' · cerrado ' + fmtD(i.finReal || i.finEst || i.finPlan) : ' · ' + esc(i.fase) + ' · ' + pct(i.avance)}${msN(i) ? ' · ' + msN(i) + ' ★' : ''}</small></li>`))}
+  ${sec('Capacitación y desarrollo', 'pendientes «Desarrollo profesional» hechos', lst(D.dev, t => `<li><span>${esc(cut(t.t, 60))}</span><small>${fmtD(t.hecha)}</small></li>`) + `<div style="margin-top:8px" class="edit-only">${btn('Agregar pendiente', 'tareanew', { ic: 'plus', cls: 'sm' })}</div>`)}
+  ${sec('Hitos cumplidos', 'de los proyectos que lideras', lst(D.hitos, h => `<li><span>${esc(cut(h.nombre, 50))}</span><small>${fmtD(h.fechaReal || h.fecha)} · ${esc(cut(nameOf(h.ini), 28))}</small></li>`))}
+  ${sec('Compromisos cumplidos', 'los que tenías como responsable', lst(D.comp, a => `<li><span>${esc(cut(a.texto, 60))}</span><small>${fmtD(a.fechaReal)}</small></li>`))}</div>`;
+}
+const CIELO_TABS = [['sem', 'Esta semana'], ['his', 'Mi historial'], ['ins', 'Insignias'], ['gal', 'Galería Michelin']];
 Views.cielo = {
   render() {
     const f = F('cielo', { tab: 'sem' }), me = miUsuario(), P = cieloPersona(me), C = cieloColectivo(), meta = cfgMi('cieloMeta') || 80, adm = rolActual() === 'Gasto' || rolActual() === 'Administrador';
     const tabs = `<div class="seg" style="margin-bottom:12px">${CIELO_TABS.map(([k, l]) => `<button class="${f.tab === k ? 'on' : ''}" data-act="cielotab" data-k="${k}">${l}</button>`).join('')}</div>`;
     const head = pageHead('Mi cocina', 'Tenedores por gestionar bien el día a día (se mueven cada semana) y estrellas Michelin por cumplir hitos (una vez ganadas, no se pierden). Un proyecto en rojo que se reporta a tiempo también enciende sus tenedores.', `<span class="edit-only">${btn('Ronda de actualización' + (rondaIds().length ? ' (' + rondaIds().length + ')' : ''), 'ronda', { ic: 'refresh', cls: 'pri' })}</span>`) + tabs;
+    if (f.tab === 'his') return head + hisHTML(me);
     if (f.tab === 'ins') {
       const B = insignias(me), n = B.filter(x => x.ok).length;
       return head + `<section class="card"><header><h2>Insignias</h2><small>${n} de ${B.length} obtenidas · se ganan por conductas de gestión, nunca por competir</small></header><div class="badges">${B.map(b => `<div class="badge ${b.ok ? 'on' : ''}">${medalla(b)}<div><b>${b.n}</b><small>${esc(b.d)}</small><span class="bprog"><i style="width:${Math.round(b.v / b.of * 100)}%"></i></span><em>${b.ok ? 'Obtenida' : b.v + ' de ' + b.of}</em></div></div>`).join('')}</div></section>`;
@@ -9912,6 +9957,7 @@ const GUIA = {
     ['Enciende los apagados', 'Toca (o pasa el mouse sobre) un tenedor apagado para ver cómo ganarlo.'],
     ['Actualiza', '«Ronda de actualización» te lleva proyecto por proyecto para dejarlos al día.'],
     ['Ordena tu semana', 'Tus siguientes pasos van por importancia (0–100: plazo y criticidad). Ajusta la importancia de un paso una sola vez: queda guardada en tu perfil. Filtra por un proyecto o mira todos juntos.'],
+    ['Mira tu historial', 'La pestaña «Mi historial» junta tus proyectos, hitos y compromisos cumplidos y tu desarrollo profesional. «Copiar resumen» o «Descargar» lo exporta para tu evaluación o fin de año.'],
     ['Agrega tus pendientes', '«Agregar pendiente» suma tareas propias (trabajo, desarrollo profesional, personal). Viven aparte del portafolio: no cuentan para tenedores ni salen en reportes.'],
     ['Revisa tus logros', 'Pestañas Insignias y Galería Michelin: lo obtenido y lo que falta. Las reglas están en «?» → «Reglas del juego».']] },
   compromisos: { t: 'Compromisos', p: [
@@ -10520,7 +10566,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'C2.28', b: '20-10-2026 20:30' };
+  const VER = { v: 'C2.29', b: '20-10-2026 21:00' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
