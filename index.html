@@ -871,6 +871,19 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px!
 #main>.ph>div:first-child:has(>h1){flex:0 1 auto!important;min-width:max-content!important}
 #main>.ph>div:first-child:has(>h1) p{flex:0 1 auto;max-width:44ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+</style><style id="mejoras-visuales-2">
+/* C2.35 · mejoras visuales: contadores del menú neutros, estados legibles, pie de tarjetas, franja cálida, tablas */
+.nav em,.nav em.red{background:#ECEEF0!important;color:#4D4F4E!important}
+#main .pill:not(.soft):not(.deck .pill),#panel .pill:not(.soft),#main .rag,#panel .rag{color:color-mix(in srgb,var(--c,var(--tx2)) 62%,#000)}
+#main .deck .pill{color:var(--c)}
+.dc.dcf{display:flex;flex-direction:column}
+.dc .dfoot{margin-top:auto;padding:10px 0 2px;border-top:1px solid var(--bd2);font-weight:600;font-size:13px;color:var(--pri);cursor:pointer;display:block;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
+.ps-ban{background:#FFF6E5!important;color:#6B4A00!important;border:1px solid #F1DDB0!important;border-radius:12px!important}
+.ps-ban *{color:#6B4A00!important}
+#panel .pn-p .pill[style*="--c:#0D446A"]{background:transparent;border-color:transparent;color:var(--tx2)}
+.tbl thead th,.tbl th{background:transparent!important;font-weight:600!important;color:#6B6D6C!important;border-bottom:1px solid #CFCFCF!important;text-transform:none!important;letter-spacing:0!important;font-size:12px!important}
+.tbl td{height:48px;padding-top:6px;padding-bottom:6px;border-bottom:1px solid #EEF0F2}
+.tbl tbody tr:hover td{background:#F1F6FA}
 </style></head>
 <body>
 <div id="app"></div>
@@ -3292,10 +3305,10 @@ Views.dashboard = {
         <div class="funnel f4 short" style="grid-template-columns:repeat(${FASES_PROP.length},minmax(0,1fr))">${FASES_PROP.map(f => { const n = scopeP().filter(i => i.fase === f && isLive(i)).length; return `<div class="fn" data-act="go" data-v="propuestas"><span class="fn-n">${n}</span><span class="fn-b"><b style="height:${n / phaseMaxP * 100}%;background:${FASE_COLOR[f]}"></b></span><span class="fn-l">${f}</span></div>`; }).join('')}</div>
         <div class="legend-row">${ESTADOS_PROP.map(e => `<span>${estPill(e)} <b>${scopeP().filter(i => i.estado === e).length}</b></span>`).join('')}</div></section>
       <section class="card dc dsal"><header><h2 title="altura = avance · +Nd = atraso">Salud del portfolio</h2><small>altura = avance · +Nd = atraso</small></header>${ragMosaic(live)}</section>
-      <section class="card dc"><header><h2>Top riesgos</h2><button class="lnk" data-act="go" data-v="riesgos">Matriz →</button></header>
-        ${risks.map(r => { const n = nivelRiesgo(expo(r)); return `<button class="row" data-act="sel" data-t="risk" data-id="${r.id}"><span class="expo" style="background:${n.c}">${expo(r)}</span><span class="r-m"><b>${esc(r.desc)}</b><small>${esc(nameOf(r.ini))} · ${esc(r.dueno || 'sin dueño')}</small></span><span class="pill soft">${r.estado}</span></button>`; }).join('') || empty('Sin riesgos', 'shield')}</section>
-      <section class="card dc s2"><header><h2>Top proyectos críticos</h2><button class="lnk" data-act="go" data-v="portfolio">Portfolio →</button></header>
-        <table class="mini"><thead><tr><th>Proyecto</th><th>RAG</th><th>Avance</th><th>Desv.</th><th>Riesgos</th><th>Líder</th></tr></thead><tbody>${crit.map(i => `<tr data-act="sel" data-t="ini" data-id="${i.id}"><td><b>${esc(i.titulo)}</b><small>${i.fase}</small></td><td>${ragPill(i.rag)}</td><td class="n">${pct(i.avance)}${prog(i.avance, i.rag, 4)}</td><td class="n ${desv(i) > St.cfg.tolDesv ? 'neg' : ''}">${desv(i) ? '+' + desv(i) + ' d' : '—'}</td><td class="n">${riesgosDe(i.id).filter(riesgoAbierto).length}</td><td>${avatar(i.lider, 22)}</td></tr>`).join('')}</tbody></table></section>
+      <section class="card dc dcf"><header><h2>Top riesgos</h2><button class="lnk" data-act="go" data-v="riesgos">Matriz →</button></header>
+        ${risks.map(r => { const n = nivelRiesgo(expo(r)); return `<button class="row" data-act="sel" data-t="risk" data-id="${r.id}"><span class="expo" style="background:${n.c}">${expo(r)}</span><span class="r-m"><b>${esc(r.desc)}</b><small>${esc(nameOf(r.ini))} · ${esc(r.dueno || 'sin dueño')}</small></span><span class="pill soft">${r.estado}</span></button>`; }).join('') || empty('Sin riesgos', 'shield')}${risks.length ? `<button class="dfoot" data-act="go" data-v="riesgos">Ver los ${RIESGOS().filter(riesgoAbierto).length} riesgos →</button>` : ''}</section>
+      <section class="card dc s2 dcf"><header><h2>Top proyectos críticos</h2><button class="lnk" data-act="go" data-v="portfolio">Portfolio →</button></header>
+        <table class="mini"><thead><tr><th>Proyecto</th><th>RAG</th><th>Avance</th><th>Desv.</th><th>Riesgos</th><th>Líder</th></tr></thead><tbody>${crit.map(i => `<tr data-act="sel" data-t="ini" data-id="${i.id}"><td><b>${esc(i.titulo)}</b><small>${i.fase}</small></td><td>${ragPill(i.rag)}</td><td class="n">${pct(i.avance)}${prog(i.avance, i.rag, 4)}</td><td class="n ${desv(i) > St.cfg.tolDesv ? 'neg' : ''}">${desv(i) ? '+' + desv(i) + ' d' : '—'}</td><td class="n">${riesgosDe(i.id).filter(riesgoAbierto).length}</td><td>${avatar(i.lider, 22)}</td></tr>`).join('')}</tbody></table>${crit.length ? `<button class="dfoot" data-act="go" data-v="portfolio">Ver los ${live.length} proyectos →</button>` : ''}</section>
       <section class="card dc tabsc t-${UI.dtab || 'hitos'}"><header><div class="tabs-h" role="tablist"><button role="tab" aria-selected="${(UI.dtab || 'hitos') === 'hitos'}" data-act="dtab" data-k="hitos">Hitos${hv ? ` <i class="bd">${hv}</i>` : ''}</button><button role="tab" aria-selected="${UI.dtab === 'dec'}" data-act="dtab" data-k="dec">Decisiones <i class="bd">${dp.length}</i></button><button role="tab" aria-selected="${UI.dtab === 'work'}" data-act="dtab" data-k="work">Mi trabajo <i class="bd">${work.length}</i></button></div></header>
         <div class="tb tb-hitos">${hv ? `<div class="note bad" style="margin-bottom:8px">${icon('warn', 14)} <span><b>${hv}</b> ${hv === 1 ? 'hito vencido sin completar' : 'hitos vencidos sin completar'}</span></div>` : ''}
         ${hp.map(h => { const e = hitoEstado(h); return `<button class="row" data-act="sel" data-t="hito" data-id="${h.id}"><span class="dt"><b>${pD(h.fecha).getDate()}</b>${MES3[pD(h.fecha).getMonth()]}</span><span class="r-m"><b>${esc(h.nombre)}</b><small>${esc(nameOf(h.ini))}</small></span><span class="pill" style="--c:${e.c}">${rel(h.fecha)}</span></button>`; }).join('') || empty('Sin hitos próximos', 'flag')}</div>
@@ -10585,7 +10598,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.76', b: '21-10-2026 12:39' };
+  const VER = { v: 'V22.77', b: '21-10-2026 13:19' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
