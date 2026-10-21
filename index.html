@@ -704,7 +704,9 @@ body{font:13px/1.45 var(--font)}
 .ps-card{margin-bottom:12px}.ps-g{font-size:11px;font-weight:700;letter-spacing:.04em;margin:12px 0 6px}
 .his-l{list-style:none;margin:0;padding:0}.his-l li{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd3);font-size:13px}.his-l li:last-child{border:0}.his-l small{margin-left:auto;color:var(--mut);white-space:nowrap;font-size:11px}
 @media(max-width:700px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-.ps-pt{font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;border:1px solid var(--bd3);background:var(--card);color:var(--tx)}.ps-aj{min-height:30px;font-size:12px;border:1px solid var(--bd3);border-radius:6px;background:var(--card);color:var(--tx)}
+.ps-pt{font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;border:1px solid var(--bd3);background:var(--card);color:var(--tx)}.ps-ptw{position:relative;display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border-radius:10px;border:1px solid var(--bd3);background:var(--card);flex:0 0 auto}.ps-ptw .ps-pt{border:0;padding:0;background:none}.ps-ar{font-style:normal;font-size:10px;color:var(--tx2)}.ps-ptw .ps-aj{position:absolute;inset:0;width:100%;height:100%;min-height:0;opacity:0;cursor:pointer}.ps-ptw:focus-within{outline:2px solid var(--pri);outline-offset:1px}
+.ps-gr{display:grid;grid-template-columns:repeat(auto-fit,minmax(max(300px,calc((100% - 16px)/3)),1fr));gap:8px}.ps-gr .ps-it{margin-bottom:0;display:flex;flex-direction:column;min-width:0;padding:8px 10px}.ps-gr .ps-h{flex-wrap:nowrap;gap:6px}.ps-gr .ps-u{white-space:nowrap}.ps-gr .ps-k{white-space:nowrap;flex:0 0 auto}.ps-gr .ps-ini{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ps-gr .ps-t{margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ps-gr .ps-p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ps-gr .ps-a{margin-top:auto;padding-top:6px;flex-wrap:nowrap}.ps-gr .ps-pr{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.ps-gr .ps-b{flex:0 0 auto}.btn.ic-only{width:32px;padding:0;justify-content:center}
+.ps-aj{min-height:30px;font-size:12px;border:1px solid var(--bd3);border-radius:6px;background:var(--card);color:var(--tx)}
 .ps-f{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 4px}.ps-f button{min-height:32px;padding:0 12px;border:1px solid var(--bd3);border-radius:16px;background:var(--card);color:var(--tx);font:inherit;font-size:12px;cursor:pointer}.ps-f button.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .ps-ban{display:flex;gap:8px;align-items:center;background:var(--navy);color:#fff;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:8px}
 /* ---------- V21: errores visuales ---------- */
@@ -3688,12 +3690,11 @@ function pasosDe(i) {
 }
 function pasoHTML(p, conIni) {
   const U = PASO_U[p.u], aj = pasoAj(p);
-  const pt = conIni ? `<span class="ps-pt" title="Importancia (0–100): plazo y criticidad${aj ? ', ' + (aj > 0 ? '+' : '') + aj + ' por tu ajuste' : ''}">${pasoPts(p)}</span>` : '';
-  const ajSel = conIni ? `<select class="ps-aj edit-only" data-chg="pasoaj" data-k="${esc(p.k)}" aria-label="Tu ajuste de importancia">${selOpts(SEM_AJ.map(a => ({ v: a[0], t: 'Importancia: ' + a[1] })), aj)}</select>` : '';
-  const acc = p.tarea ? btn('Editar', 'tareaedit', { d: { id: p.tarea.id }, cls: 'sm' }) : btn('Ocultar hasta mañana', 'pasopos', { d: { k: p.k }, cls: 'sm', title: 'Ocultar hasta mañana' });
-  return `<div class="ps-it"><div class="ps-h"><span class="ps-u" style="background:${U[1]};color:${U[2]}">${U[0]}</span><span class="mut">${esc(p.tipo)}</span>${pt}${conIni ? (p.ini ? `<a class="lnk ps-ini" data-act="sel" data-t="ini" data-id="${p.ini.id}">${esc(cut(p.ini.titulo, 34))}</a>` : '<span class="ps-ini mut">Pendiente personal</span>') : ''}</div>
-    <div class="ps-t">${esc(p.t)}</div><div class="ps-p">${esc(p.por)}</div>${p.nota ? `<div class="ps-nota">${icon('info', 12)}<span>${esc(p.nota)}</span></div>` : ''}
-    <div class="ps-a"><span class="ps-pr">${p.tarea ? '' : 'protege: '}${esc(p.prot)}</span><span class="edit-only ps-b">${ajSel}${btn(p.btn, p.act, { d: p.d, cls: 'sm pri' })}${acc}</span></div></div>`;
+  const pt = conIni ? `<span class="ps-ptw" title="Importancia (0–100): plazo y criticidad${aj ? ', ' + (aj > 0 ? '+' : '') + aj + ' por tu ajuste' : ''}. Toca para ajustarla"><span class="ps-pt">${pasoPts(p)}</span><i class="ps-ar edit-only" aria-hidden="true">▾</i><select class="ps-aj edit-only" data-chg="pasoaj" data-k="${esc(p.k)}" aria-label="Tu ajuste de importancia (puntaje ${pasoPts(p)})">${selOpts(SEM_AJ.map(a => ({ v: a[0], t: 'Importancia: ' + a[1] })), aj)}</select></span>` : '';
+  const acc = p.tarea ? btn('Editar', 'tareaedit', { d: { id: p.tarea.id }, cls: 'sm' }) : `<button class="btn sm ic-only" data-act="pasopos" data-k="${esc(p.k)}" title="Ocultar hasta mañana" aria-label="Ocultar hasta mañana">${icon('eyeoff', 15)}</button>`;
+  return `<div class="ps-it"><div class="ps-h"><span class="ps-u" style="background:${U[1]};color:${U[2]}">${U[0]}</span><span class="mut ps-k">${esc(p.tipo)}</span>${conIni ? (p.ini ? `<a class="lnk ps-ini" data-act="sel" data-t="ini" data-id="${p.ini.id}" title="${esc(p.ini.titulo)}">${esc(cut(p.ini.titulo, 34))}</a>` : '<span class="ps-ini mut">Pendiente personal</span>') : ''}${pt}</div>
+    <div class="ps-t" title="${esc(p.t)}">${esc(p.t)}</div><div class="ps-p" title="${esc(p.por)}">${esc(p.por)}</div>${p.nota ? `<div class="ps-nota">${icon('info', 12)}<span>${esc(p.nota)}</span></div>` : ''}
+    <div class="ps-a"><span class="ps-pr">${p.tarea ? '' : 'protege: '}${esc(p.prot)}</span><span class="edit-only ps-b">${btn(p.btn, p.act, { d: p.d, cls: 'sm pri' })}${acc}</span></div></div>`;
 }
 Acts.pasopos = d => { if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); const p = pospGet(); p[d.k] = addD(hoy(), 1); Object.keys(p).forEach(k => { if (p[k] <= hoy()) delete p[k]; }); pospSet(p); toast('Paso oculto hasta mañana'); refresh(); };
 Chg.pasoaj = el => { if (soloLectura()) return NO_PERM('Tu rol o el modo solo lectura no permiten editar'); const aj = Object.assign({}, semOf().aj), v = +el.value || 0, k = el.dataset.k; if (!SEM_AJ.some(a => a[0] === v)) return; if (v) aj[k] = v; else delete aj[k]; if (semSet({ aj })) { toast('Importancia ajustada: queda guardada en tu perfil'); refresh(); } };
@@ -3744,7 +3745,7 @@ function pasosCocinaHTML(me) {
   const KT = { 'Al día': 'dia', Hitos: 'hit', Compromisos: 'cmp', Riesgos: 'rsk' };
   const prender = new Set(P.filter(p => p.ini && p.u === 0 && KT[p.prot] && (starsOf(p.ini, hoyW()).find(x => x.k === KT[p.prot]) || {}).s === 'off').map(p => p.ini.id + KT[p.prot])).size;
   const chips = `<div class="ps-f">${[['', 'Todos'], ...mine.map(i => [i.id, cut(i.titulo, 26)]), ...(TP.length ? [['__per', 'Mis pendientes (' + TP.length + ')']] : [])].map(([v, t]) => `<button class="${pp === v ? 'on' : ''}" data-act="pasof" data-v="${v}">${esc(t)}</button>`).join('')}</div>`;
-  const grp = P.map(p => pasoHTML(p, true)).join('');
+  const grp = P.length ? '<div class="ps-gr">' + P.map(p => pasoHTML(p, true)).join('') + '</div>' : '';
   return `<section class="card ps-card"><header><h2>Tus siguientes pasos</h2><small>ordenados por importancia (plazo, criticidad y tu ajuste)</small><span style="margin-left:auto;display:inline-flex;gap:6px;flex-wrap:wrap">${mine.length ? btn('Borrador del reporte semanal', 'semrep', { ic: 'send', cls: 'sm' }) : ''}<span class="edit-only">${btn('Agregar pendiente', 'tareanew', { ic: 'plus', cls: 'sm' })}</span></span></header>
     ${prender ? `<div class="ps-ban">${icon('fork', 15)}<span>Si completas los pasos de hoy puedes encender <b>${prender}</b> tenedor${prender === 1 ? '' : 'es'} esta semana.</span></div>` : ''}${chips}${grp || '<p class="mut">Sin pasos para hoy ni esta semana. ¡Mesa al día!</p>'}${tot > 5 ? btn(f.psAll ? 'Ver solo los 5 primeros' : 'Ver los ' + tot + ' pasos', 'pasoall', { cls: 'sm' }) : ''}</section>`;
 }
@@ -10506,7 +10507,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.73', b: '20-10-2026 22:00' };
+  const VER = { v: 'V22.74', b: '20-10-2026 23:30' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
