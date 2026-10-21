@@ -21,7 +21,7 @@ h1,h2,h3,h4{margin:0;font-weight:600}button{font:inherit;color:inherit;cursor:po
 .ic{flex:none;vertical-align:middle}
 
 /* ---------- layout ---------- */
-#app{display:grid;grid-template-columns:224px minmax(0,1fr) 392px;grid-template-rows:52px minmax(0,1fr);height:100vh;height:100dvh}
+#app{display:grid;grid-template-columns:224px minmax(0,1fr) 428px;grid-template-rows:52px minmax(0,1fr);height:100vh;height:100dvh}
 #app.nopanel{grid-template-columns:224px minmax(0,1fr)}#app.nopanel #panel{display:none}
 .top{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 14px;background:linear-gradient(90deg,#0B2A4A,#0E4377);color:#fff;z-index:30;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .brand{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:196px}.logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#4FC3F7,#0D446A);display:grid;place-items:center;font-weight:800;color:#fff;font-size:18px}.logo.big{width:4cqw;height:4cqw;font-size:2.4cqw;border-radius:.8cqw}
@@ -208,7 +208,7 @@ table.mini{width:100%;border-collapse:collapse;font-size:12px}table.mini th{text
 /* ---------- misc ---------- */
 .ro .edit-only,.ro .composer.big{display:none!important}
 @media (max-width:1280px){#app{grid-template-columns:200px minmax(0,1fr) 340px}.agents{grid-template-columns:repeat(2,1fr)}.kpis{grid-template-columns:repeat(2,1fr)}.kpis.k5{grid-template-columns:repeat(3,1fr)}.c4,.c5,.c6,.c7{grid-column:span 12}.cal-w,.com-w,.pres-w{grid-template-columns:1fr}.com-l,.pres-c,.cal-side{position:static;max-height:none}}
-@media (max-width:980px){#app.side-open::after{content:'';position:fixed;left:0;right:0;top:52px;bottom:0;background:rgba(0,0,0,.35);z-index:39}#app{grid-template-columns:minmax(0,1fr);grid-template-rows:52px minmax(0,1fr)}#app .side{position:fixed;left:0;top:52px;bottom:0;width:224px;z-index:40;transform:translateX(-100%);transition:.2s;box-shadow:var(--shl)}#app.side-open .side{transform:none}.hamb{display:inline-grid}#panel{position:fixed;right:0;top:52px;bottom:0;width:min(392px,100%);z-index:35;box-shadow:var(--shl)}.b-t small,.usr span,.areasel span{display:none}.brand{min-width:0}.fgrid{grid-template-columns:1fr 1fr}.funnel{grid-template-columns:repeat(4,1fr);height:auto}}
+@media (max-width:980px){#app.side-open::after{content:'';position:fixed;left:0;right:0;top:52px;bottom:0;background:rgba(0,0,0,.35);z-index:39}#app{grid-template-columns:minmax(0,1fr);grid-template-rows:52px minmax(0,1fr)}#app .side{position:fixed;left:0;top:52px;bottom:0;width:224px;z-index:40;transform:translateX(-100%);transition:.2s;box-shadow:var(--shl)}#app.side-open .side{transform:none}.hamb{display:inline-grid}#panel{position:fixed;right:0;top:52px;bottom:0;width:min(428px,100%);z-index:35;box-shadow:var(--shl)}.b-t small,.usr span,.areasel span{display:none}.brand{min-width:0}.fgrid{grid-template-columns:1fr 1fr}.funnel{grid-template-columns:repeat(4,1fr);height:auto}}
 @media (max-width:640px){#main{padding:12px 12px 40px}.kpis,.kpis.k4,.kpis.k5,.agents{grid-template-columns:1fr}.ph{flex-direction:column}.ph-act{margin-left:0;justify-content:flex-start}.fgrid{grid-template-columns:1fr}.fld.w2,.fld.w3{grid-column:auto}.areasel,.gsearch{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{body{overflow:visible;height:auto;background:#fff}#app,#modal,#toasts{display:none!important}#printdeck{display:block}#printdeck .slide{width:100%;border-radius:0;box-shadow:none;page-break-after:always;break-after:page}@page{size:landscape;margin:0}}
@@ -632,7 +632,7 @@ body{font:13px/1.45 var(--font)}
 /* ---------- V22.47: menú lateral contraíble (solo iconos; al pasar el mouse se expande sobre el contenido) ---------- */
 .rail-t{border:0;background:none;width:100%;text-align:left;font:inherit;cursor:pointer;color:var(--tx2);margin:0 0 4px;border-bottom:1px solid var(--bd2);border-radius:0;padding-bottom:10px}
 @media (min-width:981px){
-  #app.rail{grid-template-columns:60px minmax(0,1fr) 392px}#app.rail.nopanel{grid-template-columns:60px minmax(0,1fr)}
+  #app.rail{grid-template-columns:60px minmax(0,1fr) 428px}#app.rail.nopanel{grid-template-columns:60px minmax(0,1fr)}
   #app.rail .side{width:60px;justify-self:start;padding-left:8px;padding-right:8px;overflow:hidden;transition:width .16s ease,box-shadow .16s;z-index:45}
   #app.rail .side:not(.nohov):hover,#app.rail .side:not(.nohov):has(:focus-visible){width:224px;overflow:auto;box-shadow:6px 0 18px rgba(0,0,0,.14)}
   #app.rail .side .nav{white-space:nowrap}
@@ -794,7 +794,84 @@ body{font:13px/1.45 var(--font)}
 .sky-pop{inset:auto 20px 20px auto;display:block;background:none;width:min(300px,calc(100vw - 40px))}   /* U-26: la celebración ya no tapa la pantalla de trabajo */
 .flt-guia,.guia-min{display:none!important}   /* U-25: la ayuda vive en un solo botón «?» de la barra superior */
 </style>
-</head>
+<style id="mejoras-visuales">.top{background:var(--card)!important;color:var(--tx)!important;border-bottom:3px solid var(--ar-red)!important}
+.top .icon-btn,.top .b-t,.top .b-t *,.top .hdate,.top .sync{color:var(--tx)!important}
+.top .b-t small,.top .b-t .v22-ver,.top .v22-ver{color:var(--tx2)!important}
+.top .gsearch input{background:var(--bg)!important;border:1px solid var(--bd)!important;color:var(--tx)!important}
+.top :focus-visible{outline-color:var(--pri)!important}
+.top .v22-seg{border-color:var(--bd)!important;background:var(--bg)!important}
+.top .v22-seg button{color:var(--tx2)!important}
+.top .v22-seg button.on{background:var(--card)!important;color:var(--tx)!important;box-shadow:0 0 0 1px var(--bd)}
+.top .icon-btn{border-color:var(--bd)!important}
+.top small,.top .b-t small{color:var(--tx2)!important}
+.top .v22-help{color:var(--tx)!important;background:var(--card)!important;border:1px solid var(--bd)!important}
+.top .v22-help *{color:var(--tx)!important}
+.top input::placeholder{color:var(--tx2)!important;opacity:1!important}
+.top .gsearch,.top .gsearch *{color:var(--tx2)!important}
+.top .gsearch input{opacity:1!important}
+.top .gsearch svg{color:var(--tx2)!important}
+.top .btn.pri,.top .btn.pri *{color:#fff!important}
+
+.btn,.icon-btn,.top .v22-seg,.top .v22-seg button,.top .gsearch input,.top .v22-help,.top .sync,.tabs button,.menu-tabs button,.menu-tabs{border-radius:12px!important}
+
+.btn,.top .btn,.menu-tabs button,.seg button,.top .icon-btn,.nav.rail-t,.tabs button{box-sizing:border-box}
+.btn{height:32px!important;min-height:32px!important}.btn.sm{height:28px!important;min-height:28px!important}
+.top .icon-btn{width:32px!important;height:32px!important}.icon-btn.xp{width:28px!important;height:28px!important}
+.nav.rail-t{height:32px!important}.seg button{height:32px!important}.menu-tabs button{height:32px!important}
+#panel .tabs button{height:40px!important}
+input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px!important}
+
+.btn{border-radius:12px!important;font-weight:600!important;font-size:13px!important;background:#fff!important;border:1px solid #C5CBD2!important;color:var(--pri)!important;box-shadow:none!important}
+.btn:hover{background:var(--pri-l)!important;border-color:var(--pri)!important}
+.btn.pri{background:var(--pri)!important;border-color:var(--pri)!important;color:#fff!important;box-shadow:0 1px 2px rgba(13,68,106,.4),inset 0 1px 0 rgba(255,255,255,.14)!important}
+.btn.pri *{color:#fff!important}.btn.pri:hover{filter:brightness(1.15)}
+.btn.sxbtn{background:transparent!important;border-color:transparent!important;color:var(--tx2)!important}
+.btn.sxbtn:hover{background:var(--bg)!important;color:var(--pri)!important}
+.btn.mine,.btn.pf-advb{border-radius:999px!important;color:var(--tx)!important;border-color:var(--bd3)!important;padding:0 14px!important}
+.seg,.menu-tabs{background:#E9ECEF!important;padding:3px!important;border-radius:12px!important;gap:2px!important;display:inline-flex!important;border:0!important;box-shadow:none!important}
+.seg button,.menu-tabs button{border:0!important;background:transparent!important;border-radius:9px!important;color:var(--tx2)!important;font-weight:600!important;height:30px!important;box-shadow:none!important;border-bottom:0!important}
+.seg button.on,.menu-tabs button.on{background:#fff!important;color:var(--pri-d)!important;box-shadow:0 1px 3px rgba(0,0,0,.18)!important}
+.icon-btn{border:0!important;background:transparent!important;color:var(--tx2)!important;border-radius:10px!important}
+.icon-btn:hover{background:#E9ECEF!important;color:var(--tx)!important}
+.nav.rail-t{border-color:transparent!important;color:var(--tx2)!important;background:transparent!important}
+#panel .tabs button.on{border-bottom:2px solid var(--pri)!important;color:var(--pri-d)!important;font-weight:700!important;background:transparent!important}
+#panel .tabs button{font-weight:600!important;color:var(--tx2)!important;border-bottom:2px solid transparent!important}
+.lnk{font-weight:600!important;text-decoration:none!important}
+.top .v22-seg{background:#E9ECEF!important;border:0!important;padding:3px!important;border-radius:12px!important}
+.top .v22-seg button{border-radius:9px!important;height:26px!important}
+.top .v22-seg button.on{background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.18)!important}
+.btn.pri.v22-main,.v22-main{box-shadow:0 1px 2px rgba(13,68,106,.4),inset 0 1px 0 rgba(255,255,255,.14)!important}
+.menu-tabs{width:fit-content!important;max-width:100%!important;flex:none!important;align-self:flex-start!important}
+.btn.mine{border-color:var(--bd3)!important}
+.btn.mine.on{background:var(--pri-l)!important;border-color:var(--pri)!important;color:var(--pri-d)!important}
+.menu-tabs button::after,.menu-tabs button::before,.seg button::after{display:none!important;content:none!important}
+.menu-tabs button.on{border-bottom:0!important;box-shadow:0 1px 3px rgba(0,0,0,.18)!important}
+.top .btn.pri{background:#fff!important;color:var(--pri)!important;border:1px solid #C5CBD2!important;box-shadow:none!important}
+.top .btn.pri *{color:var(--pri)!important}
+.top .btn.pri:hover{background:var(--pri-l)!important;border-color:var(--pri)!important;filter:none}
+
+/* cabecera de página sin caja (título sobre el fondo) */
+#main>.ph{background:transparent!important;border:0!important;box-shadow:none!important;padding:4px 0 0!important}
+#main>.ph h1{font-size:24px!important}
+#main>.ph h1::before{display:none!important}
+/* panel: botones en una fila */
+#panel .pn-a{flex-wrap:nowrap!important;gap:6px!important}
+#panel .pn-a .btn{padding:0 10px!important;font-size:12.5px!important;white-space:nowrap;flex:0 0 auto}
+/* franja de atención del Dashboard */
+.foco{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--card);border:1px solid #E6D3D6;border-left:4px solid #C8102E;border-radius:12px;padding:10px 14px;margin:0 0 10px;font-size:13px}
+.foco>b{font-size:14px}
+.foco-c{border-radius:999px;padding:4px 10px;font-weight:600;font-size:12px;background:#FDF1D6;color:#6B4A00}
+.foco-c.r{background:#FBE3E5;color:#8E0B20}
+.kpi.bad{background:#FFF6F6!important;border-color:#E8B4BA!important}
+/* Mi cocina: primer paso destacado, el resto secundario */
+.ps-gr>.ps-it:first-child{border:2px solid #0D446A!important;box-shadow:0 4px 14px rgba(13,68,106,.18);position:relative;padding-top:30px!important;overflow:hidden}
+.ps-gr>.ps-it:first-child::before{content:'EMPIEZA POR AQUÍ';position:absolute;top:0;left:0;right:0;height:20px;background:#0D446A;color:#fff;font:700 10px/20px Inter,system-ui,sans-serif;letter-spacing:.08em;padding:0 12px}
+.ps-gr>.ps-it:not(:first-child) .btn.pri{background:#fff!important;color:var(--pri)!important;border:1px solid #C5CBD2!important;box-shadow:none!important}
+.ps-gr>.ps-it:not(:first-child) .btn.pri *{color:var(--pri)!important}
+#main>.ph>div:first-child:has(>h1){flex:0 1 auto!important;min-width:max-content!important}
+#main>.ph>div:first-child:has(>h1) p{flex:0 1 auto;max-width:44ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+</style></head>
 <body>
 <div id="app"></div>
 <div id="toasts" role="status" aria-live="polite"></div>
@@ -2224,7 +2301,7 @@ function shell() {
   <a class="skip" href="#main" data-act="skipmain">Saltar al contenido</a>
   <header class="top" role="banner">
     <button class="icon-btn hamb" data-act="side" aria-label="Menú">${icon('menu', 18)}</button>
-    <div class="brand" data-act="go" data-v="dashboard"><img class="brand-img" src="${LOGO.arBR}" alt="Aramark"><span class="b-t app"><b>APIH</b><small>Portfolio Intelligence Hub</small></span></div>
+    <div class="brand" data-act="go" data-v="dashboard"><img class="brand-img" src="${LOGO.arC}" alt="Aramark"><span class="b-t app"><b>APIH</b><small>Portfolio Intelligence Hub</small></span></div>
     <button class="icon-btn gstog" data-act="gstog" aria-label="Buscar">${icon('search', 18)}</button>
     <div class="gsearch"><span class="gs-i">${icon('search', 15)}</span><input id="gs" data-key="gs" type="search" placeholder="Buscar…  ( / )  ·  Ctrl+K: pantallas y acciones" autocomplete="off" data-chg="gsearch"><div class="gs-res" id="gsres"></div></div>
     <div class="top-r">
@@ -2375,7 +2452,7 @@ function panelIni(i) {
   }
   const fin = isDone(i), canAprobar = PR && !fin && i.fase === 'Aprobación' && i.estado === 'Vigente';   // (Stand By no aprueba)
   return pnHead(`${tipoLbl(i)} ${i.id} · ${esc(i.area)}`, esc(i.titulo), `${PR ? '' : ragPill(i.rag)} ${faseTag(i)} ${estPill(i.estado)} ${prioPill(i.prioridad)} ${PR ? '' : starsMini(i)}`,
-    `${!PR ? btn('Reporte 1 a 1', 'reporte', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Reporte de avance 1 a 1 (forma A o B; guardar como PNG, PDF o HTML)' }) : ''}${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin && !esSB(i) ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : (esSB(i) ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' })) + btn(esSB(i) ? 'Reactivar' : 'Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm', title: esSB(i) ? 'Stand By: fuera de indicadores. Reactívala cambiando el estado' : 'Cambiar estado' })}${fin && !PR ? btn('Reabrir', 'reabrirPrj', { d: { id: i.id }, ic: 'refresh', cls: 'sm', title: 'Solo Gasto: vuelve el proyecto a En curso' }) : ''}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
+    `${!PR ? btn('1 a 1', 'reporte', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Reporte de avance 1 a 1 (forma A o B; guardar como PNG, PDF o HTML)' }) : ''}${btn('Informe', 'informe', { d: { id: i.id }, ic: 'slides', cls: 'sm', title: 'Informe de estado listo para copiar' })}<span class="edit-only">${!PR && !fin && !esSB(i) ? btn('Actualizar', 'wk', { d: { id: i.id }, ic: 'refresh', cls: 'sm pri', title: 'Actualización semanal en 60 segundos' }) : ''}${canAprobar ? btn('Aprobar', 'aprobar', { d: { id: i.id }, ic: 'check', cls: 'sm pri' }) : ''}${btn('Con IA', 'proyia', { d: { id: i.id }, ic: 'spark', cls: 'sm', title: 'Descargar este proyecto para completarlo con una IA y subir la respuesta' })}${btn('Editar', 'edit', { d: { t: 'ini', id: i.id }, ic: 'edit', cls: 'sm' })}${fin ? '' : (esSB(i) ? '' : btn('Fase', 'advance', { d: { id: i.id }, ic: 'chev', cls: 'sm', title: 'Cambiar de fase / compuertas' })) + btn(esSB(i) ? 'Reactivar' : 'Estado', 'estado', { d: { id: i.id }, ic: 'pause2', cls: 'sm', title: esSB(i) ? 'Stand By: fuera de indicadores. Reactívala cambiando el estado' : 'Cambiar estado' })}${fin && !PR ? btn('Reabrir', 'reabrirPrj', { d: { id: i.id }, ic: 'refresh', cls: 'sm', title: 'Solo Gasto: vuelve el proyecto a En curso' }) : ''}${PR && ['Rechazada', 'Retirada'].includes(i.estado) ? btn('Reabrir', 'reopen', { d: { id: i.id }, ic: 'undo', cls: 'sm' }) : ''}</span>${PR ? '' : btn('Gantt', 'ganttfocus', { d: { id: i.id }, ic: 'gantt', cls: 'sm' })}${btn('Presentar', 'presentar', { d: { id: i.id }, ic: 'slides', cls: 'sm' })}`) +
     `<div class="tabs sm">${tabs.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="ptab" data-tab="${k}">${n}</button>`).join('')}</div><div class="pn-b">${b}</div>`;
 }
 function panelRisk(r) {
@@ -3192,6 +3269,7 @@ Views.dashboard = {
     const kp = (cls, ic, lbl, val, sub, extra = '', go = '') => `<div class="kpi ${cls}" ${go ? `data-act="go" data-v="${go}" tabindex="0" role="button"` : ''}><div class="k-top"><span class="k-ic">${icon(ic, 16)}</span><span class="k-l">${lbl}</span></div><div class="k-v">${val}</div><div class="k-s">${sub}</div>${extra}</div>`;
     const roiG = K.pres ? Math.round((K.beneficio - K.pres) / K.pres * 100) : 0;
     return pageHead('Dashboard ejecutivo', `Portafolio TI Operaciones · ${esc(St.cfg.areaGlobal === 'Todas' ? 'Todas las áreas' : St.cfg.areaGlobal)} · al ${fmtDL(hoy())}`, btn('Presentación ejecutiva', 'go', { d: { v: 'presentaciones' }, ic: 'slides' }) + btn('Agentes IA', 'go', { d: { v: 'ia' }, ic: 'spark', cls: 'pri' })) + `
+    ${(() => { const nDec = DECS().filter(d => d.estado === 'Pendiente').length, nRojo = live.filter(i => i.rag === 'Rojo').length; if (!nDec && !hv && !nRojo) return ''; const go = nDec ? ['decisiones', 'Resolver decisiones →'] : hv ? ['hitos', 'Revisar hitos vencidos →'] : ['portfolio', 'Ver proyectos en rojo →']; return `<div class="foco" role="status"><b>Requiere tu atención hoy</b>${nDec ? `<span class="foco-c">${nDec} decisión${nDec === 1 ? '' : 'es'} pendiente${nDec === 1 ? '' : 's'}</span>` : ''}${hv ? `<span class="foco-c r">${hv} hito${hv === 1 ? '' : 's'} vencido${hv === 1 ? '' : 's'}</span>` : ''}${nRojo ? `<span class="foco-c r">${nRojo} proyecto${nRojo === 1 ? '' : 's'} en rojo</span>` : ''}<span style="flex:1"></span><button class="btn pri" data-act="go" data-v="${go[0]}">${go[1]}</button></div>`; })()}
     <section class="kpis" aria-label="Indicadores clave">
       ${kp('', 'play', 'Proyectos Activos', K.activos, `${K.total} proyectos · ${K.cerradas} completados`, stackBar(FASES_ACT.map(f => ({ l: f, v: L.filter(i => i.fase === f && isActive(i)).length, c: FASE_COLOR[f] })), 6), 'proyectos')}
       ${kp(K.atrasados ? 'bad' : 'good', 'clock', 'Atrasados', K.atrasados, K.atrasados ? `${Math.round(K.atrasados / Math.max(1, K.activos) * 100)}% de los activos · desv. &gt; ${cfgMi('tolDesv')} d` : (hv ? `Proyectos sin desvío, pero ${hv} ${hv === 1 ? 'hito vencido' : 'hitos vencidos'}` : 'Sin desviaciones relevantes'), '', 'gantt')}
@@ -10391,7 +10469,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
     const tpl = h => { const t = document.createElement('template'); t.innerHTML = h; return t.content; };
     const pf = tpl(R.pills); pf.querySelectorAll('.pill.tp,.pill.soft').forEach(x => x.remove());
     const af = tpl(R.acts), main = [], seg = [], more = [];
-    af.querySelectorAll('button').forEach(b => { const t = b.textContent.trim(); b.classList.remove('sm'); b.setAttribute('title', t); if (/^Actualizar/.test(t)) main.push(b.outerHTML.replace('class="btn', 'class="btn')); else if (/^(Reporte|Informe|Editar|Gantt|Presentar)/.test(t)) seg.push(b.outerHTML); else more.push(b.outerHTML); });
+    af.querySelectorAll('button').forEach(b => { const t = b.textContent.trim(); b.classList.remove('sm'); b.setAttribute('title', t); if (/^Actualizar/.test(t)) main.push(b.outerHTML.replace('class="btn', 'class="btn')); else if (/^(Reporte|1 a 1|Informe|Editar|Gantt|Presentar)/.test(t)) seg.push(b.outerHTML); else more.push(b.outerHTML); });
     const kick = R.kicker.replace(/\s*<button[\s\S]*?<\/button>/g, '');
     const acts = `<div class="fl2-a">${main.join('')}${seg.join('')}${more.length ? `<div class="popw"><button class="btn" data-act="pop" data-id="pop-flmore" aria-label="Más acciones" title="Fase, estado y más">${icon('dots', 16)}<span>Más</span></button><div class="pop" id="pop-flmore" style="right:0">${more.join('')}</div></div>` : ''}</div>`;
     const PRIM = ['res', 'pla', 'cif', 'sal', 'log', 'hit', 'rie'], prim = lista.filter(x => PRIM.includes(x[0])), rest = lista.filter(x => !PRIM.includes(x[0]));
@@ -10440,7 +10518,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
       const t = document.createElement('template'); t.innerHTML = h; const f = t.content, pa = f.querySelector('.pn-a');
       if (pa) {
         const bs = [...pa.querySelectorAll('button')], vis = [], tools = [];
-        bs.forEach(b => { const tx = b.textContent.trim(); b.classList.remove('sm'); if (b.classList.contains('pri')) { b.classList.add('pn-main'); vis.push(b.outerHTML); } else if (/^(Ficha|Reporte)/.test(tx)) vis.push(b.outerHTML); else tools.push(b.outerHTML); });
+        bs.forEach(b => { const tx = b.textContent.trim(); b.classList.remove('sm'); if (b.classList.contains('pri')) { b.classList.add('pn-main'); vis.push(b.outerHTML); } else if (/^(Ficha|Reporte|1 a 1)/.test(tx)) vis.push(b.outerHTML); else tools.push(b.outerHTML); });
         vis.sort((x, y) => (/pn-main/.test(y) ? 1 : 0) - (/pn-main/.test(x) ? 1 : 0)); pa.innerHTML = vis.join('') + (tools.length ? `<div class="popw"><button class="btn" data-act="pop" data-id="pop-ptools" aria-haspopup="true">Herramientas <span aria-hidden="true">▾</span></button><div class="pop" id="pop-ptools" style="right:0">${tools.join('')}</div></div>` : '');
       }
       const fl = f.querySelector('.pn-b .flow'), fs = fl && fl.closest('.pn-sec');
@@ -10466,7 +10544,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   function primaria() {
     const ph = sr('#main .ph-act'); if (ph) {
       const P = PRIM[UI.view], pri = sra('.btn.pri', ph);
-      if (!P) pri.slice(1).forEach(b => b.classList.remove('pri'));
+      if (!P || UI.view === 'dashboard') pri.forEach(b => b.classList.remove('pri', 'v22-main'));
       else {
         pri.forEach(b => b.classList.remove('pri'));
         let b = sra('[data-act="' + P.act + '"]', ph).find(x => Object.entries(P.d).every(([k, v]) => x.dataset[k] === v));
@@ -10507,7 +10585,7 @@ NAV.push(['ficha', 'Ficha', 'list']); NAV_GRP.ficha = 'Sistema';
   }
   document.addEventListener('click', e => { if (e.target.closest('.v22-pop [data-act]') && !e.target.closest('[data-act="pop"]')) closePops(); }, true);
 
-  const VER = { v: 'V22.75', b: '21-10-2026 08:41' };
+  const VER = { v: 'V22.76', b: '21-10-2026 12:39' };
   V.version = VER;
   const verCss = document.createElement('style'); verCss.textContent = '.top .b-t.app small.v22-ver{display:block!important;font-size:10px;letter-spacing:.2px;opacity:.85}'; document.head.appendChild(verCss);
   const renderChrome0 = renderChrome;
