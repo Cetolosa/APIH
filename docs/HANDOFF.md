@@ -1,6 +1,6 @@
 # APIH — Documento de traspaso
 
-> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (18-10-2026 · Prototipo V22.62 · Corporativo C2.18)
+> **Repositorio público (GitHub Pages).** Aquí no van correos personales, nombres de terceros ni el detalle de conversaciones con TI: eso vive solo en la copia privada del traspaso (proyecto de claude.ai). Este archivo se actualiza al cerrar cada versión para retomar desde cualquier cuenta. (28-10-2026 · Prototipo V22.79 · Corporativo C2.37 · último cambio de código 21-10)
 
 Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al inicio de la conversación y adjunta/clona el repo.
 
@@ -17,7 +17,7 @@ Para retomar el trabajo en otra cuenta/sesión de Claude. Pega este archivo al i
 | | APIH Prototipo | APIH Corporativo |
 | --- | --- | --- |
 | Estado | **Abierto** (V22.79). Congelar cuando el usuario lo pida | **C2.37** · usabilidad de pantallas (tabla con panel, títulos, distribución RAG, resumen en tarjetas) · escala tipográfica de 6 tamaños (11/12/13/15/18/24) · mejoras visuales (menú neutro, estados legibles, pie de tarjetas, franja cálida, tablas) · jerarquía visual y estilo (header claro, botones 12 px, alturas 28/32/40, un llamado a la acción por pantalla) · «Tus siguientes pasos» en grilla compacta (3/2/1 columnas), «Borrador del reporte semanal», «Qué cambió desde tu última visita», «Mi historial» y «Mi semana» en Mi cocina (historial de logros exportable; importancia + ajuste propio guardado, pendientes personales clasificados) + reporte de avance de la ficha (V22.66) + estado Stand By (V22.65) + paridad con el Prototipo + guía «Cómo operar» en todas las pantallas (V22.64) + verificación de despliegue (compuertas de Cierre, reabrir solo Admin, importación endurecida, ayuda «?» única, Administración con una barra) · `tests/e2e/correr-corporativo.sh` 16/16 · seguridad 25/25 (`defensas-api.js`) · producción objetivo **27-11-2026** |
-| Versionado | V22.x (no sube más) | **C<n>.<m>** — ver `CHANGELOG.md` |
+| Versionado | V22.x (sube con cada cambio mientras esté abierto) | **C<n>.<m>** — ver `CHANGELOG.md` |
 | Arquitectura | SPA de un archivo + Supabase (interino) en GitHub Pages | 3 capas exigidas por TI: SPA + Entra ID, backend/API, Azure SQL |
 | Repo | `Cetolosa/APIH` (raíz: index.html, apih-config.js, supabase/) | mismo repo: `apps/corporativo`, `services/api`, `packages/core`, `db/`, `infra/`, `powerbi/`, `tests/`; luego repo de Aramark que indique TI |
 | Salida | Se retira al entrar Corporativo (03-12) | Producción objetivo **27-11-2026** (plan acelerado C1.3) |
@@ -42,16 +42,16 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 - **Contrato de Iniciativa (para TI):** `packages/core/contracts/iniciativa.md` + `iniciativa.schema.json`.
 
 ## 5. Arquitectura del prototipo (para no redescubrirla)
-- Un solo `index.html` (~1,4 MB, ~10.200 líneas), vistas con `Views.x`, acciones `Acts.x`, cambios `Chg.x`; render con `render()`; wrapper v22 post-render. Colecciones: ini, riesgos, hitos, decisiones, compromisos, cambios, notas, documentos, bitacora, comites. 22 vistas. CSP con `'unsafe-inline'`.
+- Un solo `index.html` (~1,6 MB, ~11.150 líneas; `apps/corporativo/index.html` ~11.250), vistas con `Views.x`, acciones `Acts.x`, cambios `Chg.x`; render con `render()`; wrapper v22 post-render (`compactar()` arma el encabezado compacto). Colecciones: ini, riesgos, hitos, decisiones, compromisos, cambios, notas, documentos, bitacora, comites. 24 pantallas (cada una con «Cómo operar» en «?»). Mi cocina guarda preferencias por usuario en `St.cfgU[usuario].sem` (importancia, ocultos, pendientes personales, última visita). CSP con `'unsafe-inline'`.
 - Servicios: `AuthService` (provider msal|supabase), `DataService`, `SharePointService`, `SupabaseService extends SharePointService`. Config pública en `apih-config.js`; SQL en `supabase/apih_servidor.sql` (RLS, trigger de versión).
 - `save()` → `audit()` (diff vs. baseline `audSnap`) → `DataService.commit()`. Historial por registro (`Edición` en bitácora), Notificaciones paramétricas (`NOTIF`, canales correo/Teams apagados), Calendario con modal de mes, panel contextual `pn-*`, menú lateral contraíble (`UI.rail`), Capacidad de equipos (`capData`), importadores (`impini`), **Completar con IA** por proyecto (`iapExport` / `Chg.proyiaf`, formato `apih-proyecto-ia`).
 - Compuertas de fase: ver `gates()`. "Completado" solo en fase Cierre (`Acts.estado`). Roles: `rolActual()`, `puedeGobernar()`, `puedeEditarIni()`.
 - Editar CSS: bloques de override antes de `/* ---------- V21: errores visuales ---------- */`; reglas posteriores necesitan prefijo `#main` o `!important`.
 
 ## 6. Pruebas
-- Prototipo: `tests/e2e/` (Playwright sobre copia demo; ver su README). Regresión mínima: imp3, fin1, sf1, fz1, ps1, t13, t43, t44, cap2, r1, c4, imp1, imp2, ia1.
-- Corporativo: `bash tests/e2e/correr-corporativo.sh` (corp1-3 + fin1/sf1/fz1/ps1/imp3 sobre la SPA corporativa, base nueva por prueba); `node tests/unit/*.js` (equivalencia 130.317 casos, subfases-categorías, notificaciones, Power BI, Teams, migración); `node tests/contract/run.js` y `http-seguridad.js`.
-- **Flujo vigente (desde ADR-014):** Prototipo congelado; los cambios van directo a `apps/corporativo` → `correr-corporativo.sh`. (Mientras estuvo abierto: Prototipo primero → traspaso verificado línea a línea.)
+- Prototipo: `tests/e2e/` (Playwright sobre copia demo; ver su README). Regresión mínima: imp3, fin1, sf1, fz1, ps1, desc1, standby1, reporte1, sem1, his1, cam1, rsem1, grid1, guia1, t13, t43, t44, cap2, r1, c4, imp1, imp2, ia1.
+- Corporativo: `bash tests/e2e/correr-corporativo.sh` (16 pruebas: corp1-3 + fin1/sf1/fz1/ps1/imp3/xss1/guia1/standby1/reporte1/sem1/his1/cam1/rsem1/grid1 sobre la SPA corporativa, base nueva por prueba); `node tests/unit/*.js` (equivalencia 130.317 casos, **paridad Prototipo-Corporativo**, subfases-categorías, notificaciones, Power BI, Teams, migración, conexión mssql); `node tests/contract/run.js` y `http-seguridad.js`; `node tests/seguridad/defensas-api.js` (25 ataques); despliegue: `tools/verificar-paquete.js` y `tests/e2e/verificar-despliegue.js`.
+- **Flujo vigente (ADR-015 + C2.22):** Prototipo abierto; cada cambio se hace **primero en el Prototipo** y se traspasa al Corporativo **en la misma entrega** (versión doble V22.x / C2.y), luego `correr-corporativo.sh` y la prueba de paridad (las SPA solo pueden diferir en hosting y versión).
 
 ## 6b. Estado del Corporativo
 | Versión | Contenido |
@@ -78,33 +78,34 @@ Estructura objetivo del monorepo: `packages/core` (reglas puras), `packages/ui`,
 | C2.15 | Importar/exportar subfases y categorías (archivo de iniciativas, «Con IA»); la iniciativa con subfases se sincroniza antes que sus hitos |
 | C2.16 | Revisión de seguridad: `docs/revision-seguridad-2026-10-17.md` (5 hallazgos corregidos, e2e `xss1`) |
 | C2.17 | Descripción/instrucciones por objeto (V22.61, ADR-015): `faseDesc` global + `faseNota` por proyecto, `desc` en subfase e hito; se ven en Mi cocina, ficha y Fases; core valida ≤500 y escapa; e2e `corp3` verifica round-trip al servidor |
+| C2.18 | Encabezado compacto en 2 líneas (V22.62): el subtítulo se recorta con «…» y las acciones quedan en la línea del título (antes «Ver todo» caía a una línea propia con aire); solo CSS, sin cambio de lógica |
+| C2.19 | Traspaso de V22.63: núcleo (fechas con año 1900–2100, compuerta de Cierre exige avance 100 %, hitos completos y sin riesgos críticos abiertos), API (completar proyecto exige compuertas de Cierre; reabrir Completado/Cancelado solo Admin y limpia fecha de fin real), SPA (importación con lista blanca, ayuda «?» única, Administración con una barra, «Ver como»). `esAdminReal` tolerante se mantiene (S-17 solo Prototipo). |
+| C2.20 | Verificación de despliegue: verificador de paquete y de ambiente, reintentos de conexión SQL, reemplazo de `<TENANT-ID>` en el pipeline, lista de comprobación por etapas (`docs/operacion/lista-despliegue.md`). |
+| C2.21 | Traspaso de V22.64: guía «Cómo operar esta pantalla» en todas las pantallas (solo desde «?»), «Reglas del juego» de Mi cocina en «?». |
+| C2.22 | Paridad Prototipo ↔ Corporativo: misma regla de administrador (S-17) y prueba de paridad en el pipeline. **Regla: todo cambio del Prototipo se traspasa a Corporativo en la misma entrega; las SPA solo difieren en hosting y versión.** |
+| C2.23 | Traspaso de V22.65: estado **Stand By** (Propuestas y Proyectos) fuera de indicadores, avisos y presentación; la Tabla lo muestra; la presentación solo cuenta su número en «Movimientos del ciclo». Solo motivo; se reactiva a En curso/Vigente. Prueba `standby1`. |
+| C2.24 | Traspaso de V22.66: botón «Reporte» en la ficha (infografías Forma A y B, automática o forzada); hito con peso opcional; `snapFase` por actualización. Prueba `reporte1`. |
+| C2.25 | Traspaso de V22.67: botón «Reporte 1 a 1» visible en la ficha y el panel. |
+| C2.26 | Traspaso de V22.68: «Reporte 1 a 1» exportable a PNG y PDF. |
+| C2.27 | Traspaso de V22.69: 1 a 1 respeta la marca «En presentación»; casilla en pestañas de la ficha. |
+| C2.28 | Prototipo V22.70 + traspaso: «Tus siguientes pasos» por importancia 0–100 con ajuste propio persistente (perfil del usuario) y pendientes personales clasificados (Trabajo · Desarrollo profesional · Personal). Prueba `sem1`. |
+| C2.29 | Prototipo V22.71 + traspaso: pestaña «Mi historial» en Mi cocina (proyectos liderados, hitos y compromisos cumplidos, desarrollo profesional; por período; copiar/descargar .md). Prueba `his1`. |
+| C2.30 | Prototipo V22.72 + traspaso: «Qué cambió desde tu última visita» al inicio de Mi cocina (vencidos, compromisos nuevos, cambios de otras personas); última visita en el perfil. Prueba `cam1`. |
+| C2.31 | Prototipo V22.73 + traspaso: «Borrador del reporte semanal» en Mi cocina (informes de estado de tus proyectos + hitos cumplidos en 7 días, para copiar). Prueba `rsem1`. |
+| C2.32 | Prototipo V22.74: «Tus siguientes pasos» en grilla compacta de 3/2/1 columnas; el puntaje es el control de importancia y «Ocultar hasta mañana» es icono. Prueba `grid1`. |
+| C2.33 | Prototipo V22.75: el panel contextual ya no repite el tipo («Propuesta»/«Proyecto») bajo el título. |
+| C2.34 | Prototipo V22.76: jerarquía visual y estilo (ver CHANGELOG). Franja «Requiere tu atención hoy» en el Dashboard; botón «1 a 1» (antes «Reporte 1 a 1»); panel de 428 px. Pruebas `reporte1`, `ps1`, `grid1`, `standby1`. |
 | C2.35 | Prototipo V22.77: mejoras visuales (ver CHANGELOG). |
 | C2.36 | Prototipo V22.78: escala tipográfica de 6 tamaños (ver CHANGELOG). |
 | C2.37 | Prototipo V22.79: usabilidad de pantallas (ver CHANGELOG). |
-| C2.34 | Prototipo V22.76: jerarquía visual y estilo (ver CHANGELOG). Franja «Requiere tu atención hoy» en el Dashboard; botón «1 a 1» (antes «Reporte 1 a 1»); panel de 428 px. Pruebas `reporte1`, `ps1`, `grid1`, `standby1`. |
-| C2.32 | Prototipo V22.74: «Tus siguientes pasos» en grilla compacta de 3/2/1 columnas; el puntaje es el control de importancia y «Ocultar hasta mañana» es icono. Prueba `grid1`. |
-| C2.31 | Prototipo V22.73 + traspaso: «Borrador del reporte semanal» en Mi cocina (informes de estado de tus proyectos + hitos cumplidos en 7 días, para copiar). Prueba `rsem1`. |
-| C2.30 | Prototipo V22.72 + traspaso: «Qué cambió desde tu última visita» al inicio de Mi cocina (vencidos, compromisos nuevos, cambios de otras personas); última visita en el perfil. Prueba `cam1`. |
-| C2.29 | Prototipo V22.71 + traspaso: pestaña «Mi historial» en Mi cocina (proyectos liderados, hitos y compromisos cumplidos, desarrollo profesional; por período; copiar/descargar .md). Prueba `his1`. |
-| C2.28 | Prototipo V22.70 + traspaso: «Tus siguientes pasos» por importancia 0–100 con ajuste propio persistente (perfil del usuario) y pendientes personales clasificados (Trabajo · Desarrollo profesional · Personal). Prueba `sem1`. |
-| C2.27 | Traspaso de V22.69: 1 a 1 respeta la marca «En presentación»; casilla en pestañas de la ficha. |
-| C2.26 | Traspaso de V22.68: «Reporte 1 a 1» exportable a PNG y PDF. |
-| C2.25 | Traspaso de V22.67: botón «Reporte 1 a 1» visible en la ficha y el panel. |
-| C2.24 | Traspaso de V22.66: botón «Reporte» en la ficha (infografías Forma A y B, automática o forzada); hito con peso opcional; `snapFase` por actualización. Prueba `reporte1`. |
-| C2.23 | Traspaso de V22.65: estado **Stand By** (Propuestas y Proyectos) fuera de indicadores, avisos y presentación; la Tabla lo muestra; la presentación solo cuenta su número en «Movimientos del ciclo». Solo motivo; se reactiva a En curso/Vigente. Prueba `standby1`. |
-| C2.22 | Paridad Prototipo ↔ Corporativo: misma regla de administrador (S-17) y prueba de paridad en el pipeline. **Regla: todo cambio del Prototipo se traspasa a Corporativo en la misma entrega; las SPA solo difieren en hosting y versión.** |
-| C2.21 | Traspaso de V22.64: guía «Cómo operar esta pantalla» en todas las pantallas (solo desde «?»), «Reglas del juego» de Mi cocina en «?». |
-| C2.20 | Verificación de despliegue: verificador de paquete y de ambiente, reintentos de conexión SQL, reemplazo de `<TENANT-ID>` en el pipeline, lista de comprobación por etapas (`docs/operacion/lista-despliegue.md`). |
-| C2.19 | Traspaso de V22.63: núcleo (fechas con año 1900–2100, compuerta de Cierre exige avance 100 %, hitos completos y sin riesgos críticos abiertos), API (completar proyecto exige compuertas de Cierre; reabrir Completado/Cancelado solo Admin y limpia fecha de fin real), SPA (importación con lista blanca, ayuda «?» única, Administración con una barra, «Ver como»). `esAdminReal` tolerante se mantiene (S-17 solo Prototipo). |
-| C2.18 | Encabezado compacto en 2 líneas (V22.62): el subtítulo se recorta con «…» y las acciones quedan en la línea del título (antes «Ver todo» caía a una línea propia con aire); solo CSS, sin cambio de lógica |
 | Pentest | Pentest de caja gris de ambas versiones: `docs/pentest-2026-10-17.md` + `tests/seguridad/defensas-api.js` (25 ataques). Incorporado a la propuesta v2 y a la página de entregable a TI |
 | Docs 17-10 | Propuesta v2 (Claude Docs), docs de operación, seguridad y plan C2.15 actualizados |
 | Envío | 16-10-2026: propuesta enviada a TI (versión en `docs/propuesta/APIH_Corporativo_Propuesta_TI_enviada_16-10-2026.pdf`, sin la nota de login en Teams del punto 6). Cambios posteriores se acumulan para una v2 que se envía solo si TI la pide o al responder sus comentarios |
 
-Reglas clave: **el Prototipo no se toca; lo que se necesite se copia y sigue con versión C** (ADR-002). Cada componente declara la última versión C en que cambió (ADR-005).
+Reglas clave: con ADR-015 el Prototipo volvió a ser el punto de partida de los cambios de UI; todo cambio se traspasa al Corporativo en la misma entrega (C2.22). Lo exclusivo del Corporativo (API, SQL, infra) se construye solo con versión C (ADR-002). Cada componente declara la última versión C en que cambió (ADR-005).
 
 ## 7. Pendientes
-- **TI:** comentarios a la propuesta (esperados hacia el 21-10, sin presión); habilitar ambiente dev (04-11). La v2 de la propuesta se envía solo si TI la pide o al responder sus comentarios.
+- **TI:** comentarios a la propuesta (esperados hacia el 21-10; al 28-10 no hay registro en el repo de respuesta: confirmar con el usuario); habilitar ambiente dev (04-11). La v2 de la propuesta se envía solo si TI la pide o al responder sus comentarios.
 - **Al habilitar dev:** desplegar, validar en Azure (`tests/contract/run-azure-sql.js`), ejecutar el guion UAT.
 - **Pendiente funcional (ideas aprobadas el 20-10):** historial (C2.29), «qué cambió» (C2.30) y borrador del reporte semanal (C2.31) ya hechos; bitácora automática ya existía; falta la comparación solo contra su propio historial (sin ranking). Editor de listas de categorías en Administración; selector Tipo en Calendario y Capacidad; funciones diferidas (Pronóstico, Ruta crítica, Escenarios): el usuario aún no decide; core: `pasosDe` y contratos propios de decisiones, compromisos, bitácora y comités (C1.5).
 - **Prototipo:** abierto (V22.79). Congelar cuando el usuario lo pida.

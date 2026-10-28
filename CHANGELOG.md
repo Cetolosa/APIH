@@ -1,6 +1,6 @@
 # Registro de cambios — APIH Corporativo
 
-Versiones **C<n>.<m>**. El Prototipo queda congelado en **V22.52** y no aparece aquí (ver [ADR-001](docs/decisiones/ADR-001-versionado-c.md)).
+Versiones **C<n>.<m>**. Desde ADR-015 el Prototipo está abierto: cada cambio se hace primero en él y se traspasa en la misma entrega, por eso las filas recientes indican ambas versiones (V22.x / C2.y). Vigente al 28-10-2026: **V22.79 / C2.37**. Versionado original: [ADR-001](docs/decisiones/ADR-001-versionado-c.md).
 Cada componente declara la última versión C en que cambió ([ADR-005](docs/decisiones/ADR-005-version-por-componente.md)).
 
 | Versión | Fecha | Rama · commit | Cambio | Componentes |
