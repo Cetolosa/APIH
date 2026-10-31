@@ -1,4 +1,6 @@
-# APIH Prototipo Despliegue
+# APIH Despliegue
+
+Ambiente en uso por Sistemas BISE: https://cetolosa.github.io/APIH/ (el código anterior, V22, está en la rama `respaldo-prototipo-v22-final`).
 
 Tercer ambiente de APIH: la misma SPA y el mismo servidor que [`apih-prototipo-arquitectura`](https://github.com/Cetolosa/apih-prototipo-arquitectura), en un **proyecto Supabase propio con los datos reales del portafolio**. Arquitectura sigue con datos anonimizados para la revisión de TI; los documentos de `docs/ti/` describen ese ambiente.
 
@@ -10,8 +12,8 @@ Tercer ambiente de APIH: la misma SPA y el mismo servidor que [`apih-prototipo-a
 3. Supabase → Authentication → URL Configuration: agregar la URL de GitHub Pages de este repositorio.
 4. GitHub → Settings → Secrets and variables → Actions → **Variables**: `SUPABASE_URL` (`https://<proyecto>.supabase.co`) y `SUPABASE_PUBLISHABLE_KEY`. Settings → Pages → Source: GitHub Actions.
 
-## Cambios de la SPA
-Los cambios parten en Arquitectura. Para traerlos aquí basta copiar `js/`, `css/` e `index.html` (salvo la línea `connect-src` de la CSP) y las migraciones; después, volver a pegar `aplicar_en_supabase.sql` en Supabase.
+## Paridad
+Este repositorio es idéntico a [`apih-prototipo-arquitectura`](https://github.com/Cetolosa/apih-prototipo-arquitectura) (y por lo tanto a `apih-corporativo-arquitectura`) en SPA, pruebas y servidor. Los cambios parten en Arquitectura y se traen con `node tools/paridad.mjs ../apih --sincronizar` (desde Arquitectura); el CI de este repositorio falla si algo difiere. Si cambiaron migraciones, volver a aplicar `supabase/aplicar_en_supabase.sql` en el proyecto Supabase.
 
 ## Estructura
 - `index.html`, `js/`, `css/`: la SPA (módulos ES, sin paso de compilación).
