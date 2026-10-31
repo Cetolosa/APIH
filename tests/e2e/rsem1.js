@@ -1,8 +1,8 @@
 // C2.31 · Borrador del reporte semanal (Mi cocina): proyectos propios vigentes, filtro por proyecto, hitos cumplidos 7 días, sin pendientes personales, sin inyección
-const { chromium } = require('/opt/npm-tools/node_modules/playwright');
+const { chromium, launchOpts } = require('./_pw');
 const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] }); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  const b = await chromium.launch(launchOpts); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
   await p.addInitScript(() => localStorage.setItem('apih_tour22', '1')); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto(URL); await p.waitForTimeout(1500);
   const r = {};
@@ -14,8 +14,9 @@ const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
     St.hitos.push({ id: nextId('HIT', St.hitos), ini: 'PRJ-901', nombre: 'Hito reciente', fase: 'Ejecución', fecha: addD(H, -3), completado: true, fechaReal: addD(H, -2), resp: me });
     St.hitos.push({ id: nextId('HIT', St.hitos), ini: 'PRJ-901', nombre: 'Hito de hace un mes', fase: 'Ejecución', fecha: addD(H, -30), completado: true, fechaReal: addD(H, -29), resp: me });
     cfgSet(me, { sem: { visita: nowTs(), t: [{ id: 'T-1', t: 'Pendiente personal secreto', cat: 'Personal', f: '', creada: H, hecha: '' }] } });
-    UI.view = 'cielo'; F('cielo', {}).tab = 'sem'; render();
   });
+  await p.evaluate(async () => { await sembrarSt(); await DataService.refresh(false, true); render(); }); await p.waitForTimeout(400);
+  await p.evaluate(() => { UI.view = 'cielo'; F('cielo', {}).tab = 'sem'; render(); });
   await p.waitForTimeout(500);
   const abrir = async () => { await p.click('#main [data-act="semrep"]'); await p.waitForTimeout(300); const t = await p.$eval('#txtcopy', e => e.value); return t; };
   const cerrar = async () => { await p.click('[data-act="mclose"]'); await p.waitForTimeout(200); };
@@ -34,7 +35,7 @@ const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
   await p.evaluate(() => { F('cielo', {}).pp = 'PRJ-901'; render(); }); await p.waitForTimeout(300);
   const t2 = await abrir(); r.filtro = /1 proyecto\b/.test(t2) && /Proyecto Alfa/.test(t2) && !/Proyecto Beta/.test(t2); await cerrar();
   // 3) sin proyectos vigentes: no abre el borrador y avisa
-  await p.evaluate(() => { St.ini.forEach(i => { if (i.lider === miUsuario()) i.estado = 'Completado'; }); F('cielo', {}).pp = ''; render(); }); await p.waitForTimeout(300);
+  await p.evaluate(async () => { St.ini.forEach(i => { if (i.lider === miUsuario()) i.estado = 'Completado'; }); await sembrarSt(); await DataService.refresh(false, true); F('cielo', {}).pp = ''; render(); }); await p.waitForTimeout(300);
   r.sinBotonSinProy = await p.$$eval('#main [data-act="semrep"]', a => a.length === 0);
   await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(200); r.scrollX = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
   r.errores = errs; console.log(JSON.stringify(r, null, 1));

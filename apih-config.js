@@ -1,12 +1,13 @@
-/* Configuración pública de APIH (se puede editar directo en GitHub, sin recompilar).
-   Ambos valores son PÚBLICOS por diseño: la seguridad real está en el inicio de sesión individual y en las reglas del servidor (RLS).
-   Los obtienes en Supabase → Project Settings → API:  "Project URL"  y  la clave "anon / publishable".
-   NUNCA pegues aquí la clave "service_role". */
+/* Configuración pública de APIH Prototipo Despliegue (proyecto Supabase propio, con datos reales del portafolio).
+   La URL y la clave publishable no se guardan en el repositorio: el despliegue las inyecta desde las variables de Actions
+   SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY. La seguridad real está en el login individual y en RLS.
+   NUNCA pegues aquí la clave "secret" / "service_role". */
 window.APIH_OVERRIDE = {
   auth: { provider: 'supabase' },
   supabase: {
-    url: 'https://hpsjzuqcijjwthrxgmeu.supabase.co',
-    anonKey: 'sb_publishable__j0Wnhk0dwEoGTFZHrGafQ_B_X5KIC2'
-  },
-  ia: false
+    url: '',      /* la inyecta el despliegue desde la variable de Actions SUPABASE_URL */
+    anonKey: ''   /* la inyecta el despliegue desde la variable de Actions SUPABASE_PUBLISHABLE_KEY */
+  }
 };
+/* Versión del prototipo de despliegue. Fecha y commit se completan en el despliegue. */
+window.APIH_BUILD = { v: 'D1.0', b: '', c: '' };

@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+// Verifica la arquitectura de módulos de js/: (1) principal.js los carga en orden, (2) cada módulo solo importa módulos ANTERIORES
+// (sin ciclos), (3) todo lo definido en un módulo posterior se alcanza por ENLACES, (4) los nombres privados del generador no escapan.
+const fs = require('fs'), path = require('path');
+const dir = path.join(__dirname, '..', 'js'), arch = fs.readdirSync(dir).filter(f => /^\d\d.*\.js$/.test(f)).sort();
+const orden = new Map(arch.map((f, i) => [f, i])); let fallas = 0; const mal = m => { console.log('FALLA', m); fallas++; };
+const principal = fs.readFileSync(path.join(dir, 'principal.js'), 'utf8');
+const cargados = [...principal.matchAll(/import\s+"\.\/([^"]+)"/g)].map(m => m[1]);
+if (JSON.stringify(cargados) !== JSON.stringify(arch.filter(f => f !== '00-registro.js'))) mal('principal.js no carga todos los módulos en orden de archivo');
+for (const f of arch) {
+  const t = fs.readFileSync(path.join(dir, f), 'utf8');
+  for (const m of t.matchAll(/^import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+'\.\/([^']+)';/gm)) {
+    const o = m[1]; if (!orden.has(o)) { mal(`${f}: importa ${o}, que no existe`); continue; }
+    if (orden.get(o) >= orden.get(f)) mal(`${f}: importa ${o}, que no es anterior (se prohíben ciclos; usar ENLACES)`);
+  }
+  if (/^08[a-g]\d?-/.test(f)) for (const m of t.matchAll(/^import\s+\{[^}]*\}\s+from\s+'\.\/(\d\d[^']*)'/gm)) { /* el generador puede leer la aplicación; la inversa se revisa abajo */ }
+  if (!/^08[a-g]\d?-/.test(f) && f !== '08g-generador-ensamble.js') for (const m of t.matchAll(/from\s+'\.\/(08[a-f]\d?-[^']+)'/g)) mal(`${f}: usa internals del generador (${m[1]}); solo GENE es público`);
+}
+{ const vistos = {}; for (const f of arch) for (const m of fs.readFileSync(path.join(dir, f), 'utf8').matchAll(/^(Acts|Chg)\.([A-Za-z0-9_]+)\s*=/gm)) { const k = m[1] + '.' + m[2]; if (vistos[k] && vistos[k] !== f) mal(`${k} definido en ${vistos[k]} y en ${f}: el último pisa al primero`); vistos[k] = f; } }   /* acciones duplicadas */
+{ /* (5) un nombre exportado por un módulo anterior y usado sin importar ni definir revienta en el navegador («X is not defined»); ningún otro control lo ve */
+  const exp = {}; for (const f of arch) for (const m of fs.readFileSync(path.join(dir, f), 'utf8').matchAll(/^export\s+(?:async\s+)?(?:const|let|var|function\*?|class)\s+([A-Za-z_$][\w$]*)/gm)) (exp[m[1]] = exp[m[1]] || []).push(f);
+  for (const f of arch) {
+    let t = fs.readFileSync(path.join(dir, f), 'utf8'); const sinImp = t.replace(/^import[^;]*;/gm, '');
+    const limpio = sinImp.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"`])\/\/[^\n]*/g, '$1').replace(/'(?:\\.|[^'\\\n])*'/g, "''").replace(/"(?:\\.|[^"\\\n])*"/g, '""');   /* sin comentarios ni cadenas '…' y "…" (las plantillas `…` sí se revisan: llevan ${código}) */
+    const imp = new Set([...t.matchAll(/^import\s+\{([^}]*)\}/gm)].flatMap(m => m[1].split(',').map(x => x.trim().split(/\s+as\s+/).pop()).filter(Boolean)));
+    for (const [n, fs2] of Object.entries(exp)) {
+      if (!/^[A-Z]/.test(n) || n.length < 2 || imp.has(n) || fs2.includes(f) || !fs2.some(o => orden.get(o) < orden.get(f))) continue;
+      if (new RegExp('(?<![\\w$.])' + n.replace(/\$/g, '\\$') + '(?![\\w$])').test(limpio) && !new RegExp('(?:const|let|var|function|class)\\s+' + n.replace(/\$/g, '\\$') + '(?![\\w$])|[,(]\\s*' + n.replace(/\$/g, '\\$') + '\\s*[,)=]|\\{[^}]*\\b' + n.replace(/\$/g, '\\$') + '\\b[^}]*\\}\\s*=').test(limpio)) mal(`${f}: usa ${n} sin importarlo (definido en ${fs2[0]})`);
+    }
+  }
+}
+console.log(fallas ? fallas + ' problemas' : `OK: ${arch.length} módulos, orden y dependencias correctos`); process.exit(fallas ? 1 : 0);

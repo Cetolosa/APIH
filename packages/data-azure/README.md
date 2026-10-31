@@ -1,1 +1,0 @@
-Pendiente (ver README raíz).

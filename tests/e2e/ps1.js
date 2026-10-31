@@ -1,20 +1,23 @@
 // V22.54 · Planificación en la ficha + Siguientes pasos (ficha y Mi cocina)
-const { chromium } = require('/opt/npm-tools/node_modules/playwright');
-const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').iniciativas[0];
+const { chromium, launchOpts } = require('./_pw');
+const plan = require('./fixtures/iniciativas-sinteticas.json').iniciativas[0];
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] }); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  const b = await chromium.launch(launchOpts); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  // Fecha fija: los pasos dependen de «hoy»; el plan sintético se calibra para el 2026-10-23.
+  await p.clock.setFixedTime(new Date('2026-10-23T12:00:00'));
   await p.addInitScript(() => localStorage.setItem('apih_tour22', '1')); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8765/demo/index.html'); await p.waitForTimeout(1500);
   await p.evaluate(x => { celebrar = () => {}; UI.uiOv = 'pro';
     const n = Object.assign({ id: 'PRJ-050', legacy: '', creada: '2026-10-15', faseDesde: '2026-10-15', origen: 'importación', est: [], hist: [['2026-10-15', x.avance]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, propuestaOrigen: null, estadoMotivo: '', estadoRev: null, gastado: 0, proyecto: null, deps: [], actualizada: '2026-10-16' }, x); delete n.hitos; delete n.riesgos; St.ini.push(n);
     x.hitos.forEach(h => St.hitos.push({ id: nextId('HIT', St.hitos), ini: n.id, nombre: h.nombre, fase: h.fase, fecha: h.fecha, completado: !!h.completado, fechaReal: h.completado ? h.fecha : null, resp: h.resp }));
     x.riesgos.forEach(r => St.riesgos.push(Object.assign({ id: nextId('RSK', St.riesgos), ini: n.id }, r)));
+    n.lider = St.cfg.usuario; const R = St.riesgos.filter(r => r.ini === n.id); R[0].fRev = '2026-10-20'; R[1].fRev = '2026-10-26'; R[2].fRev = '2026-10-19';   // dos revisiones vencidas y una próxima: 6+ pasos, para que al posponer uno entre el siguiente
     UI.view = 'fases'; render(); }, plan);
-  await p.waitForTimeout(500);
+  await p.evaluate(async () => { await sembrarSt(); await DataService.refresh(false, true); render(); }); await p.waitForTimeout(500);
   const r = {};
-  await p.evaluate(() => { Acts.ficha({ id: 'PRJ-050' }); }); await p.waitForTimeout(600);
-  await p.evaluate(() => { const b = document.querySelector('[data-act="fltab"][data-k="pla"]'); b && b.click(); }); await p.waitForTimeout(500);
-  r.tabPla = await p.$$eval('[data-act="fltab"][data-k="pla"]', a => a.length);
+  await p.evaluate(() => { Acts.ficha({ id: 'PRJ-050' }); Acts.flall({ m: 'open' }); }); await p.waitForTimeout(600);
+  await p.waitForTimeout(500);
+  r.tabPla = await p.$$eval('#fl-pla', a => a.length);   // la sección Planificación (ya no hay barra de pestañas: filas plegadas)
   r.pasosFicha = await p.$$eval('.ps-it', a => a.map(x => x.querySelector('.ps-t').textContent));
   r.pasos = await p.$$eval('.ps-it', a => a.length); r.fasesFicha = await p.$$eval('.fz-step', a => a.length); r.ganttFicha = await p.$$eval('.fz-sub', a => a.length);
   await p.screenshot({ path: '/tmp/t/ps-ficha.png', fullPage: true });

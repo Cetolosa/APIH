@@ -1,8 +1,8 @@
 // V22.56 · Versión final (pedido 16-10): propuestas con ficha como proyectos, Planificación con propuestas, categorías de hitos y riesgos
-const { chromium } = require('/opt/npm-tools/node_modules/playwright');
-const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').iniciativas[0];
+const { chromium, launchOpts } = require('./_pw');
+const plan = require('./fixtures/iniciativas-sinteticas.json').iniciativas[0];
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] }); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  const b = await chromium.launch(launchOpts); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
   await p.addInitScript(() => { localStorage.setItem('apih_tour22', '1'); localStorage.removeItem('apih_ptipo'); }); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8765/demo/index.html'); await p.waitForTimeout(1500);
   await p.evaluate(x => { celebrar = () => {}; UI.uiOv = 'pro';
@@ -15,24 +15,26 @@ const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').ini
       .forEach(([nm, f, d, c, ok]) => St.hitos.push({ id: nextId('HIT', St.hitos), ini: pr.id, nombre: nm, fase: f, fecha: d, completado: !!ok, resp: x.lider, cat: c }));
     St.riesgos.push({ id: nextId('RSK', St.riesgos), ini: pr.id, desc: 'Proveedor sin referencias en minería', cat: 'Proveedor', prob: 3, imp: 4, estado: 'Abierto', dueno: x.lider, fIdent: '2026-10-12', fRev: '2026-10-28', mit: 'Pedir referencias' });
     UI.view = 'gantt'; render(); }, plan);
+  await p.evaluate(async () => { await sembrarSt(); await DataService.refresh(false, true); render(); }); await p.waitForTimeout(300);
   await p.waitForTimeout(400);
   const r = {}, n = s => p.$$eval(s, a => a.length);
   // 2) Planificación: Gantt, Roadmap, Fases, Hitos y Riesgos con selector de tipo
   r.ganttAmbos = await p.$$eval('.g-bar', a => a.map(x => x.dataset.id).filter(id => /050/.test(id)).join(','));
-  await p.selectOption('[data-chg="ptipo"]', 'prop'); await p.waitForTimeout(200); r.ganttProp = await p.$$eval('.g-bar', a => a.map(x => x.dataset.id).join(','));
+  await p.click('[data-id="pop-fx-alc"]'); await p.selectOption('[data-chg="ptipo"]', 'prop'); await p.waitForTimeout(200); r.ganttProp = await p.$$eval('.g-bar', a => a.map(x => x.dataset.id).join(','));
   await p.selectOption('[data-chg="ptipo"]', 'all');
   for (const v of ['roadmap', 'fases', 'hitos', 'riesgos']) { await p.evaluate(v => { UI.view = v; render(); }, v); await p.waitForTimeout(250); r['seg_' + v] = await n('[data-chg="ptipo"] option'); }
   await p.evaluate(() => { UI.view = 'roadmap'; render(); }); await p.waitForTimeout(200); r.roadmapProp = await p.evaluate(() => document.body.innerText.includes('Propuesta Planificador de Menús'));
   await p.evaluate(() => { UI.view = 'fases'; F('fases', {}).id = 'PRO-050'; F('fases', {}).tab = 'linea'; render(); }); await p.waitForTimeout(250); r.fasesProp = await p.$$eval('.fz-step', a => a.map(x => x.textContent.split(' ')[0]).length);
   // 3) Categorías: filtro en Hitos
   await p.evaluate(() => { UI.view = 'hitos'; render(); }); await p.waitForTimeout(200);
-  r.hitosTodos = await n('.tbl tbody tr[data-t="hito"]'); r.hitosGobEsperado = await p.$$eval('.tbl tbody tr[data-t="hito"] small', a => a.filter(x => /^Gobierno ·/.test(x.textContent.trim())).length); await p.selectOption('[data-v="hitos"][data-f="cat"]', 'Gobierno'); await p.waitForTimeout(200);
+  r.hitosTodos = await n('.tbl tbody tr[data-t="hito"]'); r.hitosGobEsperado = await p.$$eval('.tbl tbody tr[data-t="hito"] small', a => a.filter(x => /^Gobierno ·/.test(x.textContent.trim())).length); await p.click('[data-id="pop-fx-fil"]'); await p.selectOption('[data-v="hitos"][data-f="cat"]', 'Gobierno'); await p.waitForTimeout(200);
   r.hitosGob = await n('.tbl tbody tr[data-t="hito"]');
   await p.screenshot({ path: '/tmp/t/fin-a.png' });
   // 1) Ficha de propuesta con Planificación e Hitos, filtro por categoría
   await p.evaluate(() => { UI.view = 'propuestas'; render(); selectEntity('ini', 'PRO-050', 'resumen'); }); await p.waitForTimeout(300);
   await p.click('button:has-text("Ficha")'); await p.waitForTimeout(400);
-  r.tabsFicha = await p.$$eval('.fl2-tab', a => a.map(x => x.textContent.trim()).join('|'));
+  await p.evaluate(() => Acts.flall({ m: 'open' })); await p.waitForTimeout(300);
+  r.tabsFicha = await p.$$eval('.fl-list .fl-t', a => a.map(x => x.textContent.trim()).join('|'));
   r.planProp = await n('.fz-steps .fz-step'); r.ganttFicha = await n('.fz-box .fz-row');
   await p.screenshot({ path: '/tmp/t/fin-b.png' });
   r.chipsH = await n('.cat-chips [data-t="h"]'); await p.click('.cat-chips [data-t="h"][data-c="Entregable"]'); await p.waitForTimeout(250);
@@ -47,7 +49,7 @@ const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').ini
   await p.evaluate(() => { UI.view = 'proyectos'; F('prj', {}).mode = 'board'; render(); }); await p.waitForTimeout(250);
   await p.screenshot({ path: '/tmp/t/fin-tablero.png' }); r.tableroCols = await p.$$eval('.kcol', a => a.length); r.tableroProp = await p.$$eval('.kcol[data-fase="Evaluación"] .icard', a => a.map(x => x.dataset.id).join(','));
   await p.evaluate(() => { const b = St.ini.find(x => x.id === 'PRO-050'); St.ini.push(Object.assign({}, b, { id: 'PRO-051', titulo: 'Propuesta sin fechas', inicioPlan: null, finPlan: null, creada: '2026-10-01' }));
-    St.hitos.push({ id: nextId('HIT', St.hitos), ini: 'PRO-051', nombre: 'Evaluar', fase: 'Evaluación', fecha: '2026-10-25', completado: false, resp: 'Christian Tolosa' }); selectEntity('ini', 'PRO-051', 'resumen'); }); await p.waitForTimeout(300);
+    St.hitos.push({ id: nextId('HIT', St.hitos), ini: 'PRO-051', nombre: 'Evaluar', fase: 'Evaluación', fecha: '2026-10-25', completado: false, resp: 'Christian Tolosa' }); }); await p.evaluate(async () => { await sembrarSt(); await DataService.refresh(false, true); render(); }); await p.waitForTimeout(300); await p.evaluate(() => selectEntity('ini', 'PRO-051', 'resumen')); await p.waitForTimeout(300);
   r.panelTabs = await p.$$eval('#panel [role=tab], #panel .tabs button', a => a.map(x => x.textContent.trim()).join('|'));
   await p.click('button:has-text("Ficha")'); await p.waitForTimeout(400); r.sinFechasPasos = await p.$$eval('.fz-steps .fz-step small', a => a[0] ? a[0].textContent : ''); r.sinFechasGantt = await p.$$eval('.fz-box .fz-row', a => a.length);
   await p.screenshot({ path: '/tmp/t/fin-c.png' });

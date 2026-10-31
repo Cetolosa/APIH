@@ -1,16 +1,18 @@
 // C2.28 · «Tus siguientes pasos» por importancia, ajuste propio persistente y pendientes personales (Mi cocina)
-const { chromium } = require('/opt/npm-tools/node_modules/playwright');
-const plan = require('../../docs/APIH_Corporativo_plan_acelerado_C1.3.json').iniciativas[0];
+const { chromium, launchOpts } = require('./_pw');
+const plan = require('../../docs/seed/iniciativas-sinteticas.json').iniciativas[0];
 const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] }); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  const b = await chromium.launch(launchOpts); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
   await p.addInitScript(() => localStorage.setItem('apih_tour22', '1')); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto(URL); await p.waitForTimeout(1500);
   await p.evaluate(x => { celebrar = () => {}; UI.uiOv = 'pro';
     const n = Object.assign({ id: 'PRJ-050', legacy: '', creada: '2026-10-15', faseDesde: '2026-10-15', origen: 'importación', est: [], hist: [['2026-10-15', x.avance]], tags: [], rec: null, folio: '', oc: '', ahorroReal: 0, inicioReal: null, propuestaOrigen: null, estadoMotivo: '', estadoRev: null, gastado: 0, proyecto: null, deps: [], actualizada: '2026-10-16' }, x); delete n.hitos; delete n.riesgos; St.ini.push(n);
     x.hitos.forEach(h => St.hitos.push({ id: nextId('HIT', St.hitos), ini: n.id, nombre: h.nombre, fase: h.fase, fecha: h.fecha, completado: !!h.completado, fechaReal: h.completado ? h.fecha : null, resp: h.resp }));
     x.riesgos.forEach(r => St.riesgos.push(Object.assign({ id: nextId('RSK', St.riesgos), ini: n.id }, r)));
-    UI.view = 'cielo'; F('cielo', {}).tab = 'sem'; render(); }, plan);
+    }, plan);
+  await p.evaluate(async () => { save(); await DataService.flush(); await DataService.refresh(false, true); render(); }); await p.waitForTimeout(400);
+  await p.evaluate(() => { UI.view = 'cielo'; F('cielo', {}).tab = 'sem'; render(); });
   await p.waitForTimeout(500);
   const pts = () => p.$$eval('.ps-card .ps-it', a => a.map(x => ({ k: x.querySelector('.ps-aj') ? x.querySelector('.ps-aj').dataset.k : null, pt: +x.querySelector('.ps-pt').textContent })));
   const r = {};

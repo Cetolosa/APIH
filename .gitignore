@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.local
+/*.png
+/tmp/
+pruebas-ti/informe.md
+pruebas-ti/informe.json
+test-results/
+
+# Datos reales: nunca al repositorio
+carga_respaldo*.sql
+*respaldo*.json

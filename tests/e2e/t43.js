@@ -1,5 +1,5 @@
-const { chromium } = require('/opt/npm-tools/node_modules/playwright');
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});const p=await b.newPage({viewport:{width:1440,height:1000}});await p.addInitScript(()=>localStorage.setItem('apih_tour22','1'));const errs=[];p.on('pageerror',e=>errs.push(e.message));
+const { chromium, launchOpts } = require('./_pw');
+(async()=>{const b=await chromium.launch(launchOpts);const p=await b.newPage({viewport:{width:1440,height:1000}});await p.addInitScript(()=>localStorage.setItem('apih_tour22','1'));const errs=[];p.on('pageerror',e=>errs.push(e.message));
 await p.goto('http://localhost:8765/demo/index.html');await p.waitForTimeout(1500);
 const r=await p.evaluate(()=>{
  celebrar=()=>{};
@@ -19,8 +19,8 @@ const r=await p.evaluate(()=>{
  // then local edit after replacement+render
  render(); const n5=St.bitacora.length; St.ini.find(x=>x.id===id).prioridad='Baja'; save(); out.e5=St.bitacora.slice(0,St.bitacora.length-n5).map(b=>b.texto);
  // 6 phase change semantic -> no dup fase
- const n6=St.bitacora.length; const ii=St.ini.find(x=>x.id===id); const was=ii.rag; ii.rag=was==='Rojo'?'Verde':'Rojo'; log('Cambio',id,'RAG '+was+' → '+ii.rag); save(); out.e6=St.bitacora.slice(0,St.bitacora.length-n6).map(b=>b.tipo+'|'+b.texto);
- UI.uiOv='pro'; Acts.ficha({id});
+ const n6=St.bitacora.length; const ii=St.ini.find(x=>x.id===id); const was=ii.rag; ii.rag=was==='Rojo'?'Verde':'Rojo'; save(); out.e6=St.bitacora.slice(0,St.bitacora.length-n6).map(b=>b.tipo+'|'+b.texto);
+ UI.uiOv='pro'; Acts.ficha({id}); Acts.flall({m:'open'});
  return out;});
 console.log(JSON.stringify(r,null,1));
 await p.waitForTimeout(900);

@@ -1,20 +1,20 @@
 // V22.61 · Descripción/instrucciones en fase (global + nota de proyecto), subfase e hito; se ven en Mi cocina, ficha y Fases; HTML escapado.
-const { chromium } = require('/opt/npm-tools/node_modules/playwright');
+const { chromium, launchOpts } = require('./_pw');
 const URL = process.env.APIH_URL || 'http://localhost:8765/demo/index.html';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] }); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  const b = await chromium.launch(launchOpts); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
   await p.addInitScript(() => localStorage.setItem('apih_tour22', '1')); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto(URL); await p.waitForTimeout(1500);
   const r = await p.evaluate(async () => { celebrar = () => {}; UI.uiOv = 'pro'; const H = hoy(), X = '<img src=x onerror="window.__x=1">';
     const me = St.cfg.usuario || 'Tester'; St.cfg.usuario = me;
     MET().faseDesc = Object.assign({}, MET().faseDesc, { 'Ejecución': 'FASE-GLOBAL: construir con compuertas en verde.' });
-    const n = { id: 'PRJ-700', tipo: 'Proyecto', titulo: 'Con descripciones', fase: 'Ejecución', estado: 'En curso', rag: 'Verde', prioridad: 'Alta', lider: me, area: 'BISE', avance: 40, presupuesto: 0, deps: [], tags: [], hist: [[H, 40]], est: [], creada: '2026-10-01', inicioPlan: '2026-10-01', finPlan: '2026-12-01', actualizada: H,
+    let n = { id: 'PRJ-700', tipo: 'Proyecto', titulo: 'Con descripciones', fase: 'Ejecución', estado: 'En curso', rag: 'Verde', prioridad: 'Alta', lider: me, area: 'BISE', avance: 40, presupuesto: 0, deps: [], tags: [], hist: [[H, 40]], est: [], creada: '2026-10-01', inicioPlan: '2026-10-01', finPlan: '2026-12-01', actualizada: H,
       faseNota: { 'Ejecución': 'NOTA-PROYECTO: coordinar ventana con TI.' },
       subfases: [{ id: 'PRJ-700-SF1', nombre: 'Construcción', fase: 'Ejecución', inicio: '2026-10-05', fin: '2026-11-20', desc: 'SUBFASE-DESC: hacer en local primero.' }] };
     St.ini.push(n);
     St.hitos.push({ id: 'HIT-700', ini: 'PRJ-700', nombre: 'Entrega A', fase: 'Ejecución', fecha: addD(H, 3), completado: false, resp: me, subfase: 'PRJ-700-SF1', desc: 'HITO-DESC: pedir revisión a TI.' });
     St.hitos.push({ id: 'HIT-701', ini: 'PRJ-700', nombre: 'Peligroso', fase: 'Ejecución', fecha: addD(H, 2), completado: false, resp: me, desc: X });
-    save();
+    await sembrarSt(); await DataService.refresh(false, true); n = byId(n.id);
     const pasos = pasosDe(n); const out = {};
     out.hitoNota = (pasos.find(x => /Entrega A/.test(x.t)) || {}).nota || '';
     out.xssNota = (pasos.find(x => /Peligroso/.test(x.t)) || {}).nota || '';

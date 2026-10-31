@@ -1,28 +1,36 @@
-# APIH — Aramark Portfolio Intelligence Hub
+# APIH Prototipo Despliegue
 
-Dos productos sobre un núcleo compartido:
+Tercer ambiente de APIH: la misma SPA y el mismo servidor que [`apih-prototipo-arquitectura`](https://github.com/Cetolosa/apih-prototipo-arquitectura), en un **proyecto Supabase propio con los datos reales del portafolio**. Arquitectura sigue con datos anonimizados para la revisión de TI; los documentos de `docs/ti/` describen ese ambiente.
 
-- **APIH Prototipo**: SPA + Supabase (interino). Hoy vive en `/index.html` y se publica en GitHub Pages.
-- **APIH Corporativo**: SPA + Entra ID + API + Azure SQL (arquitectura de 3 capas de TI). Stack del backend por definir por TI.
+**Los datos reales nunca van a este repositorio** (es público por GitHub Pages): viven solo en Supabase, detrás del login y de RLS. `.gitignore` bloquea respaldos y SQL de carga.
 
-## Estructura objetivo
-| Carpeta | Contenido |
-| --- | --- |
-| `packages/core` | Reglas puras (esperado, RAG, capacidad, avisos, auditoría, roles) |
-| `packages/ui` | Vistas y componentes; usan `core` y la interfaz `DataPort` |
-| `packages/data-supabase` | Adaptador `DataPort` → Supabase |
-| `packages/data-azure` | Adaptador `DataPort` → API corporativa |
-| `apps/prototipo`, `apps/corporativo` | Ensamblado de cada producto |
-| `services/api` | Backend corporativo (stack por definir) |
-| `db/supabase`, `db/azure-sql` | Esquemas y migraciones |
-| `tests` | Unitarios, contrato y e2e |
+## Puesta en marcha (una vez)
+1. Supabase → proyecto nuevo → SQL Editor: pegar `supabase/aplicar_en_supabase.sql` y ejecutar.
+2. Cargar el respaldo: `node tools/cargar-respaldo.js APIH_respaldo.json carga.sql --admin <tu correo>` y ejecutar `carga.sql` en el SQL Editor. Borra todos los registros y deja solo los del respaldo; crea los perfiles de las personas del respaldo.
+3. Supabase → Authentication → URL Configuration: agregar la URL de GitHub Pages de este repositorio.
+4. GitHub → Settings → Secrets and variables → Actions → **Variables**: `SUPABASE_URL` (`https://<proyecto>.supabase.co`) y `SUPABASE_PUBLISHABLE_KEY`. Settings → Pages → Source: GitHub Actions.
 
-## Prototipo congelado
-APIH Prototipo está **congelado desde V22.52 (15-10-2026)**: tag `prototipo-v22.52-congelado`. Solo se aceptan correcciones críticas (errores y seguridad) y la gestión de accesos. Excepciones aprobadas: **V22.53** vista *Fases* (ADR-006) y **V22.54** Planificación en ficha + Siguientes pasos (ADR-007). **Congelado nuevamente en V22.54 (16-10-2026).** Las funciones pendientes (Pronóstico financiero, Ruta crítica, Escenarios) se construyen una sola vez en APIH Corporativo sobre `packages/core`.
+## Cambios de la SPA
+Los cambios parten en Arquitectura. Para traerlos aquí basta copiar `js/`, `css/` e `index.html` (salvo la línea `connect-src` de la CSP) y las migraciones; después, volver a pegar `aplicar_en_supabase.sql` en Supabase.
 
-## Versionado
-- Prototipo: **V22.52 congelada**. No se modifica.
-- Corporativo: **C<n>.<m>** desde C1.0. Lo que se reutilice del Prototipo se copia y continúa con versión C.
+## Estructura
+- `index.html`, `js/`, `css/`: la SPA (módulos ES, sin paso de compilación).
+- `supabase/migrations/`: reglas del servidor (autorización, validación, comandos de negocio). `supabase/tests/`: pruebas SQL.
+- `tests/e2e/`: pruebas de navegador (Playwright). `tests/contract/`: contratos compartidos entre la SPA y el servidor.
+- `pruebas-ti/`: repite la revisión técnica de Arquitectura y deja un informe por hallazgo (ver su README).
+- `docs/ti/`: guía de UAT, anexo de arquitectura y mapa de portabilidad.
 
-## Estado
-Fase 1 en curso: **C1.2**. Registro: [`CHANGELOG.md`](CHANGELOG.md) · Decisiones: [`docs/decisiones/`](docs/decisiones/) · Traspaso: [`docs/HANDOFF.md`](docs/HANDOFF.md). Mientras tanto `/index.html`, `/apih-config.js` y `/supabase` siguen siendo la fuente y no se mueven, para no romper GitHub Pages.
+## Cómo probar
+```
+npm ci
+npm run test:e2e          # navegador, modo demo
+sudo -E bash tools/test-sql.sh   # migraciones y políticas en un Postgres temporal
+sudo -E env "PATH=$PATH" npm run pruebas-ti   # informe de revisión técnica
+```
+Node 22 (`.nvmrc`). Las pruebas SQL necesitan Postgres local.
+
+## Aplicar las reglas en Supabase
+Pegar `supabase/aplicar_en_supabase.sql` completo en Supabase → SQL Editor → Run (repetible; no borra datos). Se regenera con `node tools/empaquetar-migraciones.js` y la CI exige que esté al día. Sin esto, la SPA nueva muestra «Sin conexión a Supabase: … puede_editar does not exist».
+
+## Publicación
+`main` se publica en GitHub Pages (`.github/workflows/pages.yml`) con solo `index.html`, `apih-config.js`, `js/` y `css/`.
