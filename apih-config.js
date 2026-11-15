@@ -10,4 +10,4 @@ window.APIH_OVERRIDE = {
   }
 };
 /* Versión del prototipo de despliegue. Fecha y commit se completan en el despliegue. */
-window.APIH_BUILD = { v: 'D1.0', b: '', c: '' };
+window.APIH_BUILD = { v: 'D1.1', b: '', c: '' };
